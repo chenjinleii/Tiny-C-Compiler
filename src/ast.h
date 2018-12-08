@@ -6,6 +6,7 @@
 #define TINY_C_COMPILER_AST_H
 
 #include <llvm/IR/Value.h>
+
 #include <vector>
 #include <memory>
 #include <string>
@@ -138,7 +139,7 @@ public:
     std::unique_ptr<IdentifierOrType> function_name_;
     std::unique_ptr<VariableDeclarationList> args_;
     std::unique_ptr<Block> body_;
-    bool is_extern{false};
+    bool is_extern_{false};
 };
 
 class IfStatenment : public Statement {
@@ -146,22 +147,22 @@ public:
     IfStatenment(std::unique_ptr<Expression> condition_,
                  std::unique_ptr<Block> then_block,
                  std::unique_ptr<Block> else_block)
-            : condition_{std::move(condition_)}, then_block{std::move(then_block)},
-              else_block{std::move(else_block)} {}
+            : condition_{std::move(condition_)}, then_block_{std::move(then_block)},
+              else_block_{std::move(else_block)} {}
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> condition_;
-    std::unique_ptr<Block> then_block;
-    std::unique_ptr<Block> else_block;
+    std::unique_ptr<Block> then_block_;
+    std::unique_ptr<Block> else_block_;
 };
 
 class ForStatenment : public Statement {
 public:
-    ForStatenment(std::unique_ptr<Expression> inital,
+    ForStatenment(std::unique_ptr<Expression> initial,
                   std::unique_ptr<Expression> condition,
                   std::unique_ptr<Expression> increment,
                   std::unique_ptr<Block> block) :
-            initial_{std::move(inital)},
+            initial_{std::move(initial)},
             condition_{std::move(condition)},
             increment_{std::move(increment)}, block_{std::move(block)} {}
     llvm::Value *CodeGen(CodeGenContext &context) override;

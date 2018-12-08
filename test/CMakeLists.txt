@@ -13,7 +13,7 @@ add_definitions(-DBOOST_TEST_DYN_LINK
                 ${LLVM_DEFINITIONS})
 
 file(GLOB cppsrc "${PROJECT_SOURCE_DIR}/src/*.h" "${PROJECT_SOURCE_DIR}/src/*.cpp")
-list(REMOVE_ITEM cppsrc "${PROJECT_SOURCE_DIR}/src/main.cpp")
+list(REMOVE_ITEM cppsrc "${PROJECT_SOURCE_DIR}/src/tcc.cpp")
 file(GLOB cpptest "*.h" "*.cpp")
 
 add_executable(${TEST_NAME} ${cppsrc} ${cpptest})

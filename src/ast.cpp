@@ -33,7 +33,7 @@ llvm::Value *Assignment::CodeGen(CodeGenContext &context) {
 }
 
 llvm::Value *Block::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    llvm::Value
 }
 
 llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
