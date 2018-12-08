@@ -1,6 +1,6 @@
-extern int puts(const char *str);
+#include <stdio.h>
 
 int main() {
-    puts("hello world\n");
+    puts("Hello World!\n");
     return 0;
 }

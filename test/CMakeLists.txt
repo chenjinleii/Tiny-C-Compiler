@@ -8,7 +8,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 
 find_package(Boost 1.68 REQUIRED COMPONENTS unit_test_framework)
 find_package(LLVM REQUIRED CONFIG)
-find_package(fmt)
 
 add_definitions(-DBOOST_TEST_DYN_LINK
                 ${LLVM_DEFINITIONS})
@@ -28,7 +27,6 @@ llvm_map_components_to_libnames(llvm_libs
 target_link_libraries(${TEST_NAME}
                       ${Boost_LIBRARIES}
                       ${llvm_libs}
-                      fmt::fmt
                       stdc++fs)
 
 add_test(NAME MyTest COMMAND ${TEST_NAME})
