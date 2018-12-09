@@ -87,7 +87,8 @@ public:
 class IdentifierOrType : public Expression {
 public:
     IdentifierOrType() = default;
-    explicit IdentifierOrType(const std::string &name) : name_{name} {}
+    explicit IdentifierOrType(const std::string &name, bool is_type) :
+            name_{name}, is_type_{is_type} {}
     ASTNodeType Kind() const override { return ASTNodeType::kIdentifierOrType; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
