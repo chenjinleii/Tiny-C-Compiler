@@ -5,97 +5,52 @@
 #ifndef TINY_C_COMPILER_SCANNER_H
 #define TINY_C_COMPILER_SCANNER_H
 
-#include "dictionary.h"
 #include "token.h"
+
 #include <string>
+#include <cstdint>
 #include <vector>
-#include <fstream>
+#include <unordered_map>
+
+namespace tcc {
 
 class Scanner {
 public:
     explicit Scanner(const std::string &file_name);
-    Token GetNextToken();
-    std::vector<Token> GetTokenSequence();
+    std::vector<Token> Scan();
 private:
-    enum class State {
-        kNone,
-        kIdentifier,
-        kNumber,
-        kString,
-        kCharacter,
-        kOperators
-    };
+    Token GetNextToken();
 
-    char GetChar();
-    char PeekChar() const;
-    void PutBack();
-    void Clear();
-    void ErrorReport(const std::string &msg);
+    Token HandleIdentifierOrKeyword();
+    Token HandleNumber();
+    Token HandleChar();
+    Token HandleString();
+    Token HandleEscape();
+    Token HandleOctEscape();
+    Token HandleHexEscape();
 
-    void Skip();
-    void HandleWell();
+    void SkipSpace();
+    void SkipComment();
 
-    void HandleEscape();
-    void HandleChar();
-    void HandleString();
+    char GetNextChar();
+    char PeekNextChar() const;
+    bool HasNextChar() const;
+    bool Try(char ch);
+    bool Test(char ch) const;
 
-    void HandleNumber();
-    bool HandleDigit();
-    bool HandleFraction();
-    void HandleExp();
+    Token MakeToken(TokenValue value, const std::string &name);
+    Token MakeToken(TokenValue value, std::int32_t precedence, const std::string &name);
+    Token MakeToken(TokenValue value, const std::string &name, char char_value);
+    Token MakeToken(TokenValue value, const std::string &name, std::int32_t int32_value);
+    Token MakeToken(TokenValue value, const std::string &name, double double_value);
+    Token MakeToken(TokenValue value, const std::string &name, const std::string &string_value);
 
-    void HandleIdentifierOrKeyword();
-    void HandleOperatorOrDelimiter();
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name);
-    void MakeToken(TokenType type, TokenValue value,
-                   std::int32_t symbol_precedence, const std::string &name);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, bool bool_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned char unsigned_char_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, signed char signed_char_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, char char_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, short short_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, int int_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, long long_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, long long long_long_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned short unsigned_short_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned int unsigned_int_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned long unsigned_long_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned long long unsigned_long_long_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, float float_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, double double_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, const std::string &string_value);
-
-    char current_char_{};
+    SourceLocation location_;
     std::string input_;
-    decltype(input_)::size_type index_{};
-
-    State state_{State::kNone};
-
-    Dictionary dictionary_;
-    Token token_;
-    std::string buffer_;
+    std::string::size_type index_{};
+    std::unordered_map<std::string, std::pair<TokenValue, std::int32_t>> keywords_;
 };
+
+}
 
 #endif //TINY_C_COMPILER_SCANNER_H

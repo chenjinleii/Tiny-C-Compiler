@@ -13,6 +13,8 @@
 #include <string>
 #include <cstdint>
 
+namespace tcc {
+
 class Parser {
 public:
     explicit Parser(const std::vector<Token> &token_sequence) :
@@ -60,5 +62,7 @@ private:
 
     inline static Token eof_token_{Token{TokenType::kEof, TokenValue::kUnreserved, -1, "eof"}};
 };
+
+}
 
 #endif //TINY_C_COMPILER_PARSER_H

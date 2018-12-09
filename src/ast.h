@@ -12,6 +12,8 @@
 #include <string>
 #include <cstdint>
 
+namespace tcc {
+
 class CodeGenContext;
 class Expression;
 class Statement;
@@ -103,6 +105,7 @@ public:
 
     std::string name_;
     bool is_type_{false};
+    bool is_array_{false};
 };
 
 class FunctionCall : public Expression {
@@ -300,5 +303,7 @@ public:
 };
 
 //TODO struct array enum switch以及其他内置类型
+
+}
 
 #endif //TINY_C_COMPILER_AST_H

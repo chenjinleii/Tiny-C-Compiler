@@ -4,6 +4,10 @@
 
 #include "code_gen.h"
 
+namespace tcc {
+
 void CodeGenContext::GenerateCode(Block &root) {
+
+}
 
 }

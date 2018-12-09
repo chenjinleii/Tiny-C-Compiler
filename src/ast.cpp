@@ -4,6 +4,8 @@
 
 #include "ast.h"
 
+namespace tcc {
+
 llvm::Value *ASTNode::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
@@ -70,4 +72,6 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
+}
+
 }

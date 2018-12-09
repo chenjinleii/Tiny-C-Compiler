@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+namespace tcc {
+
 using SymbolTable=std::unordered_map<std::string, llvm::Value *>;
 
 //class CodeGenBlock
@@ -37,5 +39,7 @@ public:
 private:
     //std::vector<CodeGenBlock*> blockStack;
 };
+
+}
 
 #endif //TINY_C_COMPILER_CODE_GEN_H

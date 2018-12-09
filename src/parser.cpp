@@ -9,6 +9,8 @@
 #include <iostream>
 #include <cstdlib>
 
+namespace tcc {
+
 std::unique_ptr<Block> Parser::parse() {
     auto program_block{std::make_unique<Block>()};
 
@@ -399,4 +401,6 @@ std::unique_ptr<Expression> Parser::ParseParenExpr() {
 
     ExpectCurrent(TokenValue::kRightParen);
     return result;
+}
+
 }

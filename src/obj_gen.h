@@ -8,6 +8,10 @@
 #include "code_gen.h"
 #include <string>
 
+namespace tcc {
+
 void ObjGen(CodeGenContext &context, const std::string &obj_file);
+
+}
 
 #endif //TINY_C_COMPILER_OBJ_GEN_H

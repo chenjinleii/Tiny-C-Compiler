@@ -3,123 +3,61 @@
 //
 
 #include "token.h"
+
 #include <iostream>
 
-Token::Token(TokenType type, TokenValue value, const std::string &name) :
-        type_{type}, value_{value}, name_{name} {}
+namespace tcc {
 
-Token::Token(TokenType type,
-             TokenValue value,
-             std::int32_t symbol_precedence,
-             const std::string &name) : Token{type, value, name} {
-    precedence_ = symbol_precedence;
+SourceLocation::SourceLocation(const std::string &file_name, std::int32_t line, std::int32_t column)
+        : file_name_{file_name}, line_{line}, column_{column} {}
+
+std::string SourceLocation::ToString() const {
+    return file_name_ + ":" + std::to_string(line_) + ":" + std::to_string(column_) + ":";
 }
 
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             bool bool_value) : Token{type, value, name} {
-    bool_value_ = bool_value;
+Token::Token(const SourceLocation &location, TokenValue value, const std::string &name)
+        : location_{location}, value_{value}, name_{name} {}
+
+Token::Token(const SourceLocation &location, TokenValue value, std::int32_t precedence, const std::string &name)
+        : Token{location, value, name} { precedence_ = precedence; }
+
+Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, char char_value)
+        : Token{location, value, name} { char_value_ = char_value; }
+
+Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, int int32_value)
+        : Token{location, value, name} { int32_value_ = int32_value; }
+
+Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, double double_value)
+        : Token{location, value, name} { double_value_ = double_value; }
+
+Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, const std::string &string_value)
+        : Token{location, value, name} { string_value_ = string_value; }
+
+bool Token::IsChar() const {
+    return value_ == TokenValue::kCharacter;
 }
 
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             char char_value) : Token{type, value, name} {
-    char_value_ = char_value;
+bool Token::IsInt32() const {
+    return value_ == TokenValue::kInteger;
 }
 
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             unsigned char unsigned_char_value) : Token{type, value, name} {
-    unsigned_char_value_ = unsigned_char_value;
+bool Token::IsDouble() const {
+    return value_ == TokenValue::kDouble;
 }
 
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             signed char signed_char_value) : Token{type, value, name} {
-    signed_char_value_ = signed_char_value;
+bool Token::IsString() const {
+    return value_ == TokenValue::kString;
 }
 
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             short short_value) : Token{type, value, name} {
-    short_value_ = short_value;
+bool Token::IsTypeSpecifier() const {
+    return value_ == TokenValue::kCharKeyword ||
+            value_ == TokenValue::kIntKeyword ||
+            value_ == TokenValue::kDoubleKeyword ||
+            value_ == TokenValue::kVoidKeyword;
 }
 
-Token::Token(TokenType type, TokenValue value,
-             const std::string &name, int int_value) : Token{type, value, name} {
-    int_value_ = int_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             long long_value) : Token{type, value, name} {
-    long_value_ = long_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             long long long_long_value) : Token{type, value, name} {
-    long_long_value_ = long_long_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             unsigned short unsigned_short_value) : Token{type, value, name} {
-    unsigned_short_value_ = unsigned_short_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             unsigned int unsigned_int_value) : Token{type, value, name} {
-    unsigned_int_value_ = unsigned_int_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             unsigned long unsigned_long_value) : Token{type, value, name} {
-    unsigned_long_value_ = unsigned_long_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             unsigned long long unsigned_long_long_value) : Token{type, value, name} {
-    unsigned_long_long_value_ = unsigned_long_long_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             float float_value) : Token{type, value, name} {
-    float_value_ = float_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             double double_value) : Token{type, value, name} {
-    double_value_ = double_value;
-}
-
-Token::Token(TokenType type,
-             TokenValue value,
-             const std::string &name,
-             const std::string &string_value) : Token{type, value, name} {
-    string_value_ = string_value;
-}
-
-TokenType Token::GetTokenType() const {
-    return type_;
+bool Token::IsIdentifier() const {
+    return value_ == TokenValue::kIdentifier;
 }
 
 TokenValue Token::GetTokenValue() const {
@@ -134,24 +72,20 @@ std::int32_t Token::GetTokenPrecedence() const {
     return precedence_;
 }
 
-// TODO 支持更多的类型
-bool Token::IsTypeSpecifier() const {
-    return value_ == TokenValue::kIntKey ||
-            value_ == TokenValue::kDoubleKey;
-}
-
-bool Token::IsIdentifier() const {
-    return type_ == TokenType::kIdentifier;
-}
-
-bool Token::IsOperator() const {
-    return type_ == TokenType::kOperator;
+char Token::GetCharValue() const {
+    return char_value_;
 }
 
 std::int32_t Token::GetInt32Value() const {
-    return int_value_;
+    return int32_value_;
 }
 
 double Token::GetDoubleValue() const {
     return double_value_;
+}
+
+std::string Token::GetStringValue() const {
+    return string_value_;
+}
+
 }

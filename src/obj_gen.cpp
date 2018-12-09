@@ -18,6 +18,8 @@
 #include <iostream>
 #include <system_error>
 
+namespace tcc {
+
 void ObjGen(CodeGenContext &context, const std::string &obj_file) {
     // 初始化
     llvm::InitializeAllTargetInfos();
@@ -71,4 +73,6 @@ void ObjGen(CodeGenContext &context, const std::string &obj_file) {
 
     pass.run(*context.the_module_);
     dest.flush();
+}
+
 }
