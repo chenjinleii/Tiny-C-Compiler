@@ -29,11 +29,11 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
 }
 
 llvm::Value *Assignment::CodeGen(CodeGenContext &context) {
-    return BinaryOpExpression::CodeGen(context);
+    return nullptr;
 }
 
 llvm::Value *Block::CodeGen(CodeGenContext &context) {
-    llvm::Value
+    return nullptr;
 }
 
 llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
@@ -45,6 +45,10 @@ llvm::Value *VariableDeclaration::CodeGen(CodeGenContext &context) {
 }
 
 llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
+    return nullptr;
+}
+
+llvm::Value *FunctionDefinition::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 

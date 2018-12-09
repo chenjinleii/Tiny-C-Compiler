@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
         RunTcc(input_file, obj_files, files_to_delete);
     }
 
-    std::string cmd("gcc -std=c99 -o a.out " + obj_files.str());
+    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
     std::system(cmd.c_str());
 
     for (const auto &file:files_to_delete) {
@@ -113,19 +113,16 @@ void RunTcc(const std::string &input_file,
     std::system(cmd.c_str());
 
     Scanner scanner{processed_file};
-    auto token_sequence{scanner.GetTokenSequence()};
 
-    //Parser parse;
-    //parse.parse();
-
-    std::unique_ptr<Block> program_block;
+    Parser parse{scanner.GetTokenSequence()};
+    auto program_block{parse.parse()};
 
     CodeGenContext context;
     context.GenerateCode(*program_block);
 
     std::string obj_file(RemoveExtension(input_file) + ".o");
     files_to_delete.push_back(obj_file);
-    obj_files << obj_file << ' ';
+    obj_files << ' ' << obj_file;
 
     ObjGen(context, obj_file);
 }

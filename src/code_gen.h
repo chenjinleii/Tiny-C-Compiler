@@ -23,6 +23,9 @@ using SymbolTable=std::unordered_map<std::string, llvm::Value *>;
 
 class CodeGenContext {
 public:
+    CodeGenContext() : builder_{the_context_},
+                       the_module_{std::make_unique<llvm::Module>("main", the_context_)} {}
+
     llvm::LLVMContext the_context_;
     llvm::IRBuilder<> builder_;
     std::unique_ptr<llvm::Module> the_module_;
