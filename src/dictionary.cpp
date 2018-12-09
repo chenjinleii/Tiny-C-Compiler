@@ -10,10 +10,10 @@ Dictionary::Dictionary() {
     AddToken("++", {TokenType::kOperator, TokenValue::kInc, 150});
     AddToken("--", {TokenType::kOperator, TokenValue::kDec, 150});
 
-    AddToken("+", {TokenType::kOperator, TokenValue::kPlus, 120});
-    AddToken("-", {TokenType::kOperator, TokenValue::kMinus, 120});
-    AddToken("*", {TokenType::kOperator, TokenValue::kMultiply, 130});
-    AddToken("/", {TokenType::kOperator, TokenValue::kDivide, 130});
+    AddToken("+", {TokenType::kOperator, TokenValue::kAdd, 120});
+    AddToken("-", {TokenType::kOperator, TokenValue::kSub, 120});
+    AddToken("*", {TokenType::kOperator, TokenValue::kMul, 130});
+    AddToken("/", {TokenType::kOperator, TokenValue::kDiv, 130});
     AddToken("%", {TokenType::kOperator, TokenValue::kMod, 130});
     AddToken("~", {TokenType::kOperator, TokenValue::kNeg, 0});
     AddToken("&", {TokenType::kOperator, TokenValue::kAnd, 80});

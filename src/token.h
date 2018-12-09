@@ -10,84 +10,72 @@
 #include <vector>
 #include <iostream>
 
-enum class TokenType {
-    kBoolean,
+// TODO 更多内置类型
+enum class TokenValue {
     kCharacter,
-    KUnsignedCharacter,
-    KSignedCharacter,
-
-    kShortInterger,
     kInterger,
-    kLongInterger,
-    kLongLongInterger,
-
-    kUnsignedShortInterger,
-    kUnsignedInterger,
-    kUnsignedLongInterger,
-    kUnsignedLongLongInterger,
-
-    kFolat,
     kDouble,
-
     kString,
 
     kIdentifier,
-    kKeyword,
-    kOperator,
-    kDelimiter,
-    kEof,
 
-    kUnknown
-};
-
-enum class TokenValue {
-    kAutoKey,
-    kBreakKey,
-    kCaseKey,
-    kCharKey,
-    kConstKey,
-    kContinueKey,
-    kDefaultKey,
-    kDoKey,
-    kDoubleKey,
-    kElseKey,
-    kEnumKey,
-    kExternKey,
-    kFloatKey,
-    kForKey,
-    kGotoKey,
-    kIfKey,
-    kInlineKey,
-    kIntKey,
-    kLongKey,
-    kRegisterKey,
-    kRestrictKey,
-    kReturnKey,
-    kShortKey,
-    kSignedKey,
-    kSizeofKey,
-    kStaticKey,
-    kStructKey,
-    kSwitchKey,
-    kTypedefKey,
-    kUnionKey,
-    kUnsignedKey,
-    kVoidKey,
-    kVolatileKey,
-    kWhileKey,
-    kBoolKey,
-    kComplexKey,
-    kImaginaryKey,
+    kAutoKeyword,
+    kBreakKeyword,
+    kCaseKeyword,
+    kCharKeyword,
+    kConstKeyword,
+    kContinueKeyword,
+    kDefaultKeyword,
+    kDoKeyword,
+    kDoubleKeyword,
+    kElseKeyword,
+    kEnumKeyword,
+    kExternKeyword,
+    kFloatKeyword,
+    kForKeyword,
+    kGotoKeyword,
+    kIfKeyword,
+    kInlineKeyword,
+    kIntKeyword,
+    kLongKeyword,
+    kRegisterKeyword,
+    kRestrictKeyword,
+    kReturnKeyword,
+    kShortKeyword,
+    kSignedKeyword,
+    kSizeofKeyword,
+    kStaticKeyword,
+    kStructKeyword,
+    kSwitchKeyword,
+    kTypedefKeyword,
+    kUnionKeyword,
+    kUnsignedKeyword,
+    kVoidKeyword,
+    kVolatileKeyword,
+    kWhileKeyword,
+    kBoolKeyword,
+    kComplexKeyword,
+    kImaginaryKeyword,
 
     kAssign,           // =
+    kAddAssign,        // +=
+    kSubAssign,        // -=
+    kMulAssign,        // *=
+    kDivAssign,        // /=
+    kModAssign,        // %=
+    kAndAssign,        // &=
+    kOrAssign,         // |=
+    kXorAssign,        // ^=
+    kShlAssign,        // <<=
+    kShrAssign,        // >>=
 
     kInc,              // ++
     kDec,              // --
 
-    kPlus,             // +
-    kMinus,            // -
-    kMultiply,         // *
-    kDivide,           // /
+    kAdd,              // +
+    kSub,              // -
+    kMul,              // *
+    kDiv,              // /
     kMod,              // %
     kNeg,              // ~
     kAnd,              // &
@@ -119,101 +107,38 @@ enum class TokenValue {
     kLeftCurly,        // {
     kRightCurly,       // }
     kSemicolon,        // ;
-
-    kIdentifier,
-    kUnreserved
 };
 
 class Token {
 public:
     Token() = default;
-    Token(TokenType type, TokenValue value, const std::string &name);
-    Token(TokenType type,
-          TokenValue value,
-          std::int32_t symbol_precedence,
-          const std::string &name);
+    Token(TokenValue value, const std::string &name);
+    Token(TokenValue value, const std::string &name, char char_value);
+    Token(TokenValue value, const std::string &name, int int32_value);
+    Token(TokenValue value, const std::string &name, double double_value);
+    Token(TokenValue value, const std::string &name, const std::string &string_value);
 
-    Token(TokenType type, TokenValue value, const std::string &name, bool bool_value);
-    Token(TokenType type, TokenValue value, const std::string &name, char char_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned char unsigned_char_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          signed char signed_char_value);
-
-    Token(TokenType type, TokenValue value, const std::string &name, short short_value);
-    Token(TokenType type, TokenValue value, const std::string &name, int int_value);
-    Token(TokenType type, TokenValue value, const std::string &name, long long_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          long long long_long_value);
-
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned short unsigned_short_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned int unsigned_int_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned long unsigned_long_value);
-    Token(TokenType type, TokenValue value,
-          const std::string &name,
-          unsigned long long unsigned_long_long_value);
-
-    Token(TokenType type, TokenValue value, const std::string &name, float float_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          double double_value);
-
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          const std::string &string_value);
-
-    TokenType GetTokenType() const;
     TokenValue GetTokenValue() const;
     std::string GetTokenName() const;
     std::int32_t GetTokenPrecedence() const;
 
+    bool IsKeyword() const;
     bool IsTypeSpecifier() const;
     bool IsIdentifier() const;
     bool IsOperator() const;
 
+    char GetCharValue() const;
     std::int32_t GetInt32Value() const;
     double GetDoubleValue() const;
+    std::string GetStringValue() const;
 private:
-    TokenType type_{TokenType::kUnknown};
-    TokenValue value_{TokenValue::kUnreserved};
+    TokenValue value_;
     std::string name_;
-    std::int32_t precedence_{};
+    std::int32_t precedence_{-1};
 
-    bool bool_value_{};
     char char_value_{};
-    unsigned char unsigned_char_value_{};
-    signed char signed_char_value_{};
-
-    short short_value_{};
-    int int_value_{};
-    long long_value_{};
-    long long long_long_value_{};
-
-    unsigned short unsigned_short_value_{};
-    unsigned int unsigned_int_value_{};
-    unsigned long unsigned_long_value_{};
-    unsigned long long unsigned_long_long_value_{};
-
-    float float_value_{};
+    std::int32_t int32_value_{};
     double double_value_{};
-
     std::string string_value_;
 };
 
