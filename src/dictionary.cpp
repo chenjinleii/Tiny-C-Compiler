@@ -7,8 +7,8 @@
 Dictionary::Dictionary() {
     AddToken("=", {TokenType::kOperator, TokenValue::kAssign, 20});
 
-    AddToken("++", {TokenType::kOperator, TokenValue::kPlusPlus, 150});
-    AddToken("--", {TokenType::kOperator, TokenValue::kMinusMinus, 150});
+    AddToken("++", {TokenType::kOperator, TokenValue::kInc, 150});
+    AddToken("--", {TokenType::kOperator, TokenValue::kDec, 150});
 
     AddToken("+", {TokenType::kOperator, TokenValue::kPlus, 120});
     AddToken("-", {TokenType::kOperator, TokenValue::kMinus, 120});

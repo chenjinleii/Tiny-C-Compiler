@@ -24,6 +24,14 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
+llvm::Value *UnaryPrefixOpExpression::CodeGen(CodeGenContext &context) {
+    return nullptr;
+}
+
+llvm::Value *UnarySuffixOpExpression::CodeGen(CodeGenContext &context) {
+    return nullptr;
+}
+
 llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
@@ -48,18 +56,18 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *FunctionDefinition::CodeGen(CodeGenContext &context) {
+llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *IfStatenment::CodeGen(CodeGenContext &context) {
+llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *ForStatenment::CodeGen(CodeGenContext &context) {
+llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *ReturnStatenment::CodeGen(CodeGenContext &context) {
+llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
 }

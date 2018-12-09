@@ -8,14 +8,20 @@
 #include <cstdlib>
 
 std::unique_ptr<Block> Parser::parse() {
-    while (HasNext()) {
-        program_block_->statements_->push_back(ParseGlobal());
+    auto program_block{std::make_unique<Block>()};
+
+    if (std::size(token_sequence_) == 0) {
+        ErrorReportAndExit("no token");
     }
 
-    return std::move(program_block_);
+    while (HasNext()) {
+        program_block->statements_->push_back(ParseGlobal());
+    }
+
+    return program_block;
 }
 
-void Parser::ErrorReport(const std::string &msg) {
+void Parser::ErrorReportAndExit(const std::string &msg) {
     std::cerr << msg << '\n';
     std::exit(EXIT_FAILURE);
 }
@@ -25,11 +31,11 @@ Token Parser::GetCurrentToken() {
 }
 
 Token Parser::GetNextToken() {
-    return token_sequence_[index_++];
+    return token_sequence_[++index_];
 }
 
 Token Parser::PeekNextToken() {
-    return token_sequence_[index_];
+    return token_sequence_[index_ + 1];
 }
 
 bool Parser::Try(TokenValue value) {
@@ -43,13 +49,14 @@ bool Parser::Try(TokenValue value) {
 
 void Parser::Expect(TokenValue value) {
     if (GetNextToken().GetTokenValue() != value) {
-        std::cerr << "expect error\n";
-        std::exit(EXIT_FAILURE);
+        ErrorReportAndExit("expect error");
+    } else {
+        GetNextToken();
     }
 }
 
 bool Parser::HasNext() const {
-    return index_ < std::size(token_sequence_);
+    return index_ + 1 < std::size(token_sequence_);
 }
 
 std::unique_ptr<Statement> Parser::ParseGlobal() {
@@ -71,11 +78,192 @@ std::unique_ptr<Statement> Parser::ParseGlobal() {
     return result;
 }
 
+// TODO 目前只支持形如 int a;的声明,其他待完成
 std::unique_ptr<Statement> Parser::ParseDeclaration() {
-    auto type{ParseTypeSpecifier()};
+    auto var_declaration_no_init{ParVarDeclarationNoInit()};
 
+    if (Try(TokenValue::kLeftParen)) {
+        auto function{ParseFunctionDeclaration()};
+        function->return_type_ = std::move(var_declaration_no_init->type_);
+        function->function_name_ = std::move(var_declaration_no_init->variable_name_);
+        return function;
+    } else if (Try(TokenValue::kEqual)) {
+        auto initialization_expression{ParseExpression()};
+        var_declaration_no_init->initialization_expression_ = std::move(initialization_expression);
+        return var_declaration_no_init;
+    } else {
+        return var_declaration_no_init;
+    }
 }
 
 std::unique_ptr<IdentifierOrType> Parser::ParseTypeSpecifier() {
+    if (PeekNextToken().IsTypeSpecifier()) {
+        GetNextToken();
+        return std::make_unique<IdentifierOrType>
+                (GetCurrentToken().GetTokenName(), true);
+    } else {
+        return nullptr;
+    }
+}
+
+std::unique_ptr<IdentifierOrType> Parser::ParseIdentifier() {
+    if (PeekNextToken().IsIdentifier()) {
+        GetNextToken();
+        return std::make_unique<IdentifierOrType>
+                (GetCurrentToken().GetTokenName(), false);
+    } else {
+        return nullptr;
+    }
+}
+
+std::unique_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
+    auto function{std::make_unique<FunctionDeclaration>()};
+
+    while (HasNext() && PeekNextToken().GetTokenValue() != TokenValue::kRightParen) {
+        function->args_->push_back(ParVarDeclarationNoInit());
+        Expect(TokenValue::kComma);
+    }
+    Expect(TokenValue::kRightParen);
+
+    if (Try(TokenValue::kLeftCurly)) {
+        function->has_body_ = true;
+        function->body_ = ParseBlock();
+        Expect(TokenValue::kRightCurly);
+        return function;
+    } else {
+        return function;
+    }
+}
+
+std::unique_ptr<Block> Parser::ParseBlock() {
+    auto block{std::make_unique<Block>()};
+
+    while (HasNext() && PeekNextToken().GetTokenValue() != TokenValue::kRightCurly) {
+        block->statements_->push_back(ParseStatement());
+    }
+
+    return block;
+}
+
+std::unique_ptr<VariableDeclaration> Parser::ParVarDeclarationNoInit() {
+    auto type{ParseTypeSpecifier()};
+    if (!type) {
+        ErrorReportAndExit("expect a type specifier");
+    }
+
+    auto identifier{ParseIdentifier()};
+    if (!identifier) {
+        ErrorReportAndExit("expect a identifier");
+    }
+    return std::make_unique<VariableDeclaration>(std::move(type), std::move(identifier));
+}
+
+std::unique_ptr<VariableDeclaration> Parser::ParVarDeclarationWithInit() {
+    auto var_declaration_no_init{ParVarDeclarationNoInit()};
+
+    if (Try(TokenValue::kEqual)) {
+        auto initialization_expression{ParseExpression()};
+        var_declaration_no_init->initialization_expression_ = std::move(initialization_expression);
+    }
+    Expect(TokenValue::kSemicolon);
+    return var_declaration_no_init;
+}
+
+std::unique_ptr<Statement> Parser::ParseStatement() {
+    if (Try(TokenValue::kIfKey)) {
+        return ParseIfStatement();
+    } else if (Try(TokenValue::kWhileKey)) {
+        return ParseWhileStatement();
+    } else if (Try(TokenValue::kForKey)) {
+        return ParseForStatement();
+    } else if (Try(TokenValue::kReturnKey)) {
+        return ParseReturnStatement();
+    } else if (PeekNextToken().IsTypeSpecifier()) {
+        return ParVarDeclarationWithInit();
+    } else {
+        return ParseExpressionStatement();
+    }
+}
+
+std::unique_ptr<IfStatement> Parser::ParseIfStatement() {
+    auto if_statement{std::make_unique<IfStatement>()};
+
+    Expect(TokenValue::kLeftParen);
+    if_statement->condition_ = ParseExpression();
+    Expect(TokenValue::kRightParen);
+
+    // 强制要求有大括号
+    Expect(TokenValue::kLeftCurly);
+    if_statement->then_block_ = ParseBlock();
+    Expect(TokenValue::kRightCurly);
+
+    if (Try(TokenValue::kElseKey)) {
+        Expect(TokenValue::kLeftCurly);
+        if_statement->else_block_ = ParseBlock();
+        Expect(TokenValue::kRightCurly);
+    }
+
+    return if_statement;
+}
+
+std::unique_ptr<WhileStatement> Parser::ParseWhileStatement() {
+    auto while_statement{std::unique_ptr<WhileStatement>()};
+
+    Expect(TokenValue::kLeftParen);
+    while_statement->condition_ = ParseExpression();
+    Expect(TokenValue::kRightParen);
+
+    // 强制要求有大括号
+    Expect(TokenValue::kLeftCurly);
+    while_statement->block_ = ParseBlock();
+    Expect(TokenValue::kRightCurly);
+
+    return while_statement;
+}
+
+std::unique_ptr<ForStatement> Parser::ParseForStatement() {
+    auto for_statement{std::make_unique<ForStatement>()};
+
+    Expect(TokenValue::kLeftParen);
+    //TODO 支持声明变量
+    for_statement->initial_ = ParseExpression();
+    Expect(TokenValue::kSemicolon);
+
+    for_statement->condition_ = ParseExpression();
+    Expect(TokenValue::kSemicolon);
+    for_statement->increment_ = ParseExpression();
+    Expect(TokenValue::kRightParen);
+
+    // 强制要求有大括号
+    Expect(TokenValue::kLeftCurly);
+    for_statement->block_ = ParseBlock();
+    Expect(TokenValue::kRightCurly);
+
+    return for_statement;
+}
+
+std::unique_ptr<ReturnStatement> Parser::ParseReturnStatement() {
+    auto return_statement{std::make_unique<ReturnStatement>()};
+
+    if (Try(TokenValue::kSemicolon)) {
+        return return_statement;
+    } else {
+        return_statement->expression_ = ParseExpression();
+        Expect(TokenValue::kSemicolon);
+        return return_statement;
+    }
+}
+
+std::unique_ptr<ExpressionStatement> Parser::ParseExpressionStatement() {
+    auto expression_statement{std::make_unique<ExpressionStatement>()};
+
+    expression_statement->expression_ = ParseExpression();
+    Expect(TokenValue::kSemicolon);
+
+    return expression_statement;
+}
+
+// TODO 强制类型转换,?:运算符
+std::unique_ptr<Expression> Parser::ParseExpression() {
 
 }

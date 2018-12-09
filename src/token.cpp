@@ -133,3 +133,13 @@ std::string Token::GetTokenName() const {
 std::int32_t Token::GetTokPrecedence() const {
     return symbol_precedence_;
 }
+
+bool Token::IsTypeSpecifier() const {
+    return value_ == TokenValue::kIntKey ||
+            value_ == TokenValue::kDoubleKey;
+    // TODO 支持更多的类型
+}
+
+bool Token::IsIdentifier() const {
+    return type_ == TokenType::kIdentifier;
+}

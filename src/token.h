@@ -81,8 +81,8 @@ enum class TokenValue {
 
     kAssign,           // =
 
-    kPlusPlus,         // ++
-    kMinusMinus,       // --
+    kInc,              // ++
+    kDec,              // --
 
     kPlus,             // +
     kMinus,            // -
@@ -183,6 +183,9 @@ public:
     TokenValue GetTokenValue() const;
     std::string GetTokenName() const;
     std::int32_t GetTokPrecedence() const;
+
+    bool IsTypeSpecifier() const;
+    bool IsIdentifier() const;
 private:
     TokenType type_{TokenType::kUnknown};
     TokenValue value_{TokenValue::kUnreserved};

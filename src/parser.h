@@ -18,7 +18,7 @@ public:
             token_sequence_{token_sequence} {}
     std::unique_ptr<Block> parse();
 private:
-    void ErrorReport(const std::string &msg);
+    void ErrorReportAndExit(const std::string &msg);
     Token GetCurrentToken();
     Token GetNextToken();
     Token PeekNextToken();
@@ -29,11 +29,21 @@ private:
     std::unique_ptr<Statement> ParseGlobal();
     std::unique_ptr<Statement> ParseDeclaration();
     std::unique_ptr<IdentifierOrType> ParseTypeSpecifier();
+    std::unique_ptr<IdentifierOrType> ParseIdentifier();
+    std::unique_ptr<Expression> ParseExpression();
+    std::unique_ptr<FunctionDeclaration> ParseFunctionDeclaration();
+    std::unique_ptr<Block> ParseBlock();
+    std::unique_ptr<VariableDeclaration> ParVarDeclarationNoInit();
+    std::unique_ptr<VariableDeclaration> ParVarDeclarationWithInit();
+    std::unique_ptr<Statement> ParseStatement();
+    std::unique_ptr<IfStatement> ParseIfStatement();
+    std::unique_ptr<WhileStatement> ParseWhileStatement();
+    std::unique_ptr<ForStatement> ParseForStatement();
+    std::unique_ptr<ReturnStatement> ParseReturnStatement();
+    std::unique_ptr<ExpressionStatement> ParseExpressionStatement();
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};
-
-    std::unique_ptr<Block> program_block_{std::make_unique<Block>()};
 };
 
 #endif //TINY_C_COMPILER_PARSER_H
