@@ -130,7 +130,7 @@ std::string Token::GetTokenName() const {
     return name_;
 }
 
-std::int32_t Token::GetTokPrecedence() const {
+std::int32_t Token::GetTokenPrecedence() const {
     return precedence_;
 }
 

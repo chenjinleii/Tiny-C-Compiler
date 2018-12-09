@@ -338,6 +338,10 @@ void Scanner::HandleNumber() {
     buffer_.push_back(current_char_);
     GetChar();
 
+    if (!std::isdigit(current_char_)) {
+        PutBack();
+    }
+
     if (current_char_ == 'x' || current_char_ == 'X') {
         if (std::size(buffer_) == 1 && buffer_.front() == '0') {
             base = 16;
@@ -411,6 +415,7 @@ bool Scanner::HandleDigit() {
         buffer_.push_back(current_char_);
         GetChar();
     }
+    PutBack();
 
     if (current_char_ == 'L' || current_char_ == 'l') {
         GetChar();
@@ -433,6 +438,7 @@ bool Scanner::HandleFraction() {
         buffer_.push_back(current_char_);
         GetChar();
     }
+    PutBack();
 
     if (current_char_ == 'f' || current_char_ == 'F') {
         GetChar();

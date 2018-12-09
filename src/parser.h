@@ -20,12 +20,15 @@ public:
     std::unique_ptr<Block> parse();
 private:
     void ErrorReportAndExit(const std::string &msg);
+    bool HasNext() const;
     Token GetCurrentToken();
     Token GetNextToken();
     Token PeekNextToken();
-    bool Try(TokenValue value);
-    void Expect(TokenValue value);
-    bool HasNext() const;
+
+    bool CurrentTokenIs(TokenValue value);
+    bool NextTokenIs(TokenValue value);
+    void ExpectCurrent(TokenValue value);
+    void ExpectNext(TokenValue value);
 
     std::unique_ptr<Statement> ParseGlobal();
     std::unique_ptr<Statement> ParseDeclaration();
@@ -46,7 +49,7 @@ private:
     std::unique_ptr<Expression> ParseExpression();
     std::unique_ptr<Expression> ParsePrimary();
     std::unique_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
-                                              std::unique_ptr<Expression> rhs);
+                                              std::unique_ptr<Expression> lhs);
     std::unique_ptr<Integer> ParseInteger();
     std::unique_ptr<Double> ParseDouble();
     std::unique_ptr<Expression> ParseIdentifierExpression();
@@ -54,6 +57,8 @@ private:
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};
+
+    inline static Token eof_token_{Token{TokenType::kEof, TokenValue::kUnreserved, -1, "eof"}};
 };
 
 #endif //TINY_C_COMPILER_PARSER_H

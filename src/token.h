@@ -182,7 +182,7 @@ public:
     TokenType GetTokenType() const;
     TokenValue GetTokenValue() const;
     std::string GetTokenName() const;
-    std::int32_t GetTokPrecedence() const;
+    std::int32_t GetTokenPrecedence() const;
 
     bool IsTypeSpecifier() const;
     bool IsIdentifier() const;

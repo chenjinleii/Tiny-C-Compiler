@@ -95,7 +95,7 @@ public:
 class IdentifierOrType : public Expression {
 public:
     IdentifierOrType() = default;
-    explicit IdentifierOrType(const std::string &name, bool is_type) :
+    explicit IdentifierOrType(const std::string &name, bool is_type = false) :
             name_{name}, is_type_{is_type} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kIdentifierOrType; }
@@ -118,7 +118,7 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<IdentifierOrType> function_name_;
-    std::unique_ptr<ExpressionList> args_;
+    std::unique_ptr<ExpressionList> args_{std::make_unique<ExpressionList>()};
 };
 
 class UnaryOpExpression : public Expression {
