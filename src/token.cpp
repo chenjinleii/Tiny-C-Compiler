@@ -12,7 +12,7 @@ Token::Token(TokenType type,
              TokenValue value,
              std::int32_t symbol_precedence,
              const std::string &name) : Token{type, value, name} {
-    symbol_precedence_ = symbol_precedence;
+    precedence_ = symbol_precedence;
 }
 
 Token::Token(TokenType type,
@@ -131,15 +131,27 @@ std::string Token::GetTokenName() const {
 }
 
 std::int32_t Token::GetTokPrecedence() const {
-    return symbol_precedence_;
+    return precedence_;
 }
 
+// TODO 支持更多的类型
 bool Token::IsTypeSpecifier() const {
     return value_ == TokenValue::kIntKey ||
             value_ == TokenValue::kDoubleKey;
-    // TODO 支持更多的类型
 }
 
 bool Token::IsIdentifier() const {
     return type_ == TokenType::kIdentifier;
+}
+
+bool Token::IsOperator() const {
+    return type_ == TokenType::kOperator;
+}
+
+std::int32_t Token::GetInt32Value() const {
+    return int_value_;
+}
+
+double Token::GetDoubleValue() const {
+    return double_value_;
 }

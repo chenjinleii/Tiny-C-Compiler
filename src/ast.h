@@ -18,17 +18,19 @@ class Statement;
 class VariableDeclaration;
 
 enum class ASTNodeType {
+    kASTNode,
     kExpression,
     kStatement,
+
     kDouble,
     kInteger,
     kString,
     kIdentifierOrType,
     kFunctionCall,
-    kUnaryPrefixOpExpression,
-    kUnarySuffixOpExpression,
+    kUnaryOpExpression,
     kBinaryOpExpression,
-    kAssignment,
+    kAssignmentExpression,
+
     kBlock,
     kExpressionStatement,
     kVariableDeclaration,
@@ -43,8 +45,8 @@ enum class ASTNodeType {
 class ASTNode {
 public:
     virtual ~ASTNode() = default;
-    virtual ASTNodeType Kind() const = 0;
-    virtual llvm::Value *CodeGen(CodeGenContext &context) = 0;
+    virtual ASTNodeType Kind() const { return ASTNodeType::kASTNode; }
+    virtual llvm::Value *CodeGen(CodeGenContext &context);
 };
 
 class Expression : public ASTNode {
@@ -119,25 +121,13 @@ public:
     std::unique_ptr<ExpressionList> args_;
 };
 
-class UnaryPrefixOpExpression : public Expression {
+class UnaryOpExpression : public Expression {
 public:
-    UnaryPrefixOpExpression() = default;
-    UnaryPrefixOpExpression(std::unique_ptr<Expression> object, char op) :
+    UnaryOpExpression() = default;
+    UnaryOpExpression(std::unique_ptr<Expression> object, char op) :
             object_{std::move(object)}, op_{op} {}
 
-    ASTNodeType Kind() const override { return ASTNodeType::kUnaryPrefixOpExpression; }
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<Expression> object_;
-    char op_{};
-};
-
-class UnarySuffixOpExpression : public Expression {
-    UnarySuffixOpExpression() = default;
-    UnarySuffixOpExpression(std::unique_ptr<Expression> object, char op) :
-            object_{std::move(object)}, op_{op} {}
-
-    ASTNodeType Kind() const override { return ASTNodeType::kUnarySuffixOpExpression; }
+    ASTNodeType Kind() const override { return ASTNodeType::kUnaryOpExpression; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> object_;
@@ -158,13 +148,13 @@ public:
     char op_{};
 };
 
-class Assignment : public Expression {
+class AssignmentExpression : public Expression {
 public:
-    Assignment() = default;
-    Assignment(std::unique_ptr<Expression> lhs, std::unique_ptr<Expression> rhs) :
+    AssignmentExpression() = default;
+    AssignmentExpression(std::unique_ptr<Expression> lhs, std::unique_ptr<Expression> rhs) :
             lhs_{std::move(lhs)}, rhs_{std::move(lhs)} {}
 
-    ASTNodeType Kind() const override { return ASTNodeType::kAssignment; }
+    ASTNodeType Kind() const override { return ASTNodeType::kAssignmentExpression; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> lhs_;

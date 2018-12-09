@@ -4,6 +4,10 @@
 
 #include "ast.h"
 
+llvm::Value *ASTNode::CodeGen(CodeGenContext &context) {
+    return nullptr;
+}
+
 llvm::Value *Double::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
@@ -24,11 +28,7 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *UnaryPrefixOpExpression::CodeGen(CodeGenContext &context) {
-    return nullptr;
-}
-
-llvm::Value *UnarySuffixOpExpression::CodeGen(CodeGenContext &context) {
+llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
@@ -36,7 +36,7 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *Assignment::CodeGen(CodeGenContext &context) {
+llvm::Value *AssignmentExpression::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 

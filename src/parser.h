@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <cstdint>
 
 class Parser {
 public:
@@ -30,7 +31,7 @@ private:
     std::unique_ptr<Statement> ParseDeclaration();
     std::unique_ptr<IdentifierOrType> ParseTypeSpecifier();
     std::unique_ptr<IdentifierOrType> ParseIdentifier();
-    std::unique_ptr<Expression> ParseExpression();
+
     std::unique_ptr<FunctionDeclaration> ParseFunctionDeclaration();
     std::unique_ptr<Block> ParseBlock();
     std::unique_ptr<VariableDeclaration> ParVarDeclarationNoInit();
@@ -41,6 +42,15 @@ private:
     std::unique_ptr<ForStatement> ParseForStatement();
     std::unique_ptr<ReturnStatement> ParseReturnStatement();
     std::unique_ptr<ExpressionStatement> ParseExpressionStatement();
+
+    std::unique_ptr<Expression> ParseExpression();
+    std::unique_ptr<Expression> ParsePrimary();
+    std::unique_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
+                                              std::unique_ptr<Expression> rhs);
+    std::unique_ptr<Integer> ParseInteger();
+    std::unique_ptr<Double> ParseDouble();
+    std::unique_ptr<Expression> ParseIdentifierExpression();
+    std::unique_ptr<Expression> ParseParenExpr();
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};

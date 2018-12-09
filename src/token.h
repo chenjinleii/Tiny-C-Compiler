@@ -186,11 +186,15 @@ public:
 
     bool IsTypeSpecifier() const;
     bool IsIdentifier() const;
+    bool IsOperator() const;
+
+    std::int32_t GetInt32Value() const;
+    double GetDoubleValue() const;
 private:
     TokenType type_{TokenType::kUnknown};
     TokenValue value_{TokenValue::kUnreserved};
     std::string name_;
-    std::int32_t symbol_precedence_{};
+    std::int32_t precedence_{};
 
     bool bool_value_{};
     char char_value_{};

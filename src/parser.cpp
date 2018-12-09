@@ -263,7 +263,68 @@ std::unique_ptr<ExpressionStatement> Parser::ParseExpressionStatement() {
     return expression_statement;
 }
 
-// TODO 强制类型转换,?:运算符
+// TODO 强制类型转换,?:运算符,一元运算符(除调用运算符)
 std::unique_ptr<Expression> Parser::ParseExpression() {
+    auto lhs{ParsePrimary()};
+    if (!lhs) {
+        return nullptr;
+    }
 
+    return ParseBinOpRHS(0, std::move(lhs));
+}
+
+// TODO 更多类型
+std::unique_ptr<Expression> Parser::ParsePrimary() {
+    switch (GetCurrentToken().GetTokenType()) {
+        case TokenType::kIdentifier:return ParseIdentifierExpression();
+        case TokenType::kInterger:return ParseInteger();
+        case TokenType::kDouble: return ParseDouble();
+        case TokenType::kDelimiter:
+            if (GetCurrentToken().GetTokenValue() == TokenValue::kLeftParen) {
+                return ParseParenExpr();
+            }
+            break;
+        default:ErrorReportAndExit("expression error");
+            break;
+    }
+    return nullptr;
+}
+
+std::unique_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
+                                                  std::unique_ptr<Expression> rhs) {
+
+}
+
+std::unique_ptr<Integer> Parser::ParseInteger() {
+    auto result{std::make_unique<Integer>(GetCurrentToken().GetInt32Value())};
+    GetNextToken();
+    return result;
+}
+
+std::unique_ptr<Double> Parser::ParseDouble() {
+    auto result{std::make_unique<Double>(GetCurrentToken().GetDoubleValue())};
+    GetNextToken();
+    return result;
+}
+
+std::unique_ptr<Expression> Parser::ParseIdentifierExpression() {
+    auto identifier{ParseIdentifier()};
+
+    if (Try(TokenValue::kRightParen)) {
+
+    } else {
+        return std::make_unique<IdentifierOrType>(GetCurrentToken().GetTokenName());
+    }
+}
+
+std::unique_ptr<Expression> Parser::ParseParenExpr() {
+    GetNextToken();
+
+    auto result{ParseExpression()};
+    if (!result) {
+        return nullptr;
+    }
+
+    Expect(TokenValue::kRightParen);
+    return result;
 }
