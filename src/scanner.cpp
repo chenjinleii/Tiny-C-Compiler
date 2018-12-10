@@ -71,7 +71,11 @@ std::vector<Token> Scanner::Scan() {
     std::vector<Token> token_sequence;
 
     while (HasNextChar()) {
-        token_sequence.push_back(GetNextToken());
+        if (auto token{GetNextToken()};token.GetTokenValue() != TokenValue::kNone &&
+                token.GetTokenValue() != TokenValue::kEof) {
+            token_sequence.push_back(token);
+        }
+        buffer_.clear();
     }
 
     return token_sequence;
@@ -80,8 +84,8 @@ std::vector<Token> Scanner::Scan() {
 Token Scanner::GetNextToken() {
     SkipSpace();
 
-    char current_char{GetNextChar()};
-    switch (current_char) {
+    char ch{GetNextChar()};
+    switch (ch) {
         case '#': {
             SkipComment();
             return GetNextToken();
@@ -107,7 +111,7 @@ Token Scanner::GetNextToken() {
                 return MakeToken(TokenValue::kSub, 120, "-");
             }
         }
-        case '+':
+        case '+': {
             if (Try('+')) {
                 return MakeToken(TokenValue::kInc, 150, "++");
             } else if (Try('=')) {
@@ -115,12 +119,132 @@ Token Scanner::GetNextToken() {
             } else {
                 return MakeToken(TokenValue::kAdd, 120, "+");
             }
-
+        }
+        case '<': {
+            if (Try('<')) {
+                if (Try('=')) {
+                    return MakeToken(TokenValue::kShlAssign, 20, "<<=");
+                } else {
+                    return MakeToken(TokenValue::kShl, 110, "<<");
+                }
+            } else if (Try('=')) {
+                return MakeToken(TokenValue::kLessOrEqual, 100, "<=");
+            } else {
+                return MakeToken(TokenValue::kLess, 100, "<");
+            }
+        }
+        case '>': {
+            if (Try('>')) {
+                if (Try('=')) {
+                    return MakeToken(TokenValue::kShrAssign, 20, ">>=");
+                } else {
+                    return MakeToken(TokenValue::kShr, 110, ">>");
+                }
+            } else if (Try('=')) {
+                return MakeToken(TokenValue::kGreaterOrEqual, 100, ">=");
+            } else {
+                return MakeToken(TokenValue::kGreater, 100, ">");
+            }
+        }
+        case '%': {
+            if (Try('=')) {
+                return MakeToken(TokenValue::kModAssign, 20, "%=");
+            } else {
+                return MakeToken(TokenValue::kMod, 130, "%");
+            }
+        }
+        case '=': {
+            if (Try('=')) {
+                return MakeToken(TokenValue::kEqual, 90, "==");
+            } else {
+                return MakeToken(TokenValue::kAssign, 20, "=");
+            }
+        }
+        case '!': {
+            if (Try('=')) {
+                return MakeToken(TokenValue::kNotEqual, 90, "!=");
+            } else {
+                return MakeToken(TokenValue::kLogicNeg, 140, "!");
+            }
+        }
+        case '&': {
+            if (Try('&')) {
+                return MakeToken(TokenValue::kLogicAnd, 50, "&&");
+            } else if (Try('=')) {
+                return MakeToken(TokenValue::kAndAssign, 20, "&=");
+            } else {
+                return MakeToken(TokenValue::kAnd, 80, "&");
+            }
+        }
+        case '|': {
+            if (Try('|')) {
+                return MakeToken(TokenValue::kLogicOr, 40, "||");
+            } else if (Try('=')) {
+                return MakeToken(TokenValue::kOrAssign, 20, "|=");
+            } else {
+                return MakeToken(TokenValue::kOr, 60, "|");
+            }
+        }
+        case '*': {
+            if (Try('=')) {
+                return MakeToken(TokenValue::kMulAssign, 20, "*=");
+            } else {
+                return MakeToken(TokenValue::kMul, 130, "*");
+            }
+        }
+        case '/': {
+            if (Try('=')) {
+                return MakeToken(TokenValue::kDivAssign, 20, "/=");
+            } else {
+                return MakeToken(TokenValue::kDiv, 130, "/");
+            }
+        }
+        case '^': {
+            if (Try('=')) {
+                return MakeToken(TokenValue::kXorAssign, 20, "^=");
+            } else {
+                return MakeToken(TokenValue::kXor, 70, "^");
+            }
+        }
+        case '.': {
+            if (std::isdigit(PeekNextChar())) {
+                buffer_.push_back(ch);
+                return HandleNumber();
+            } else if (auto[next, next_two]{PeekNextTwoChar()};next == '.' && next_two == '.') {
+                return MakeToken(TokenValue::kEllipsis, -1, "...");
+            } else {
+                return MakeToken(TokenValue::kPeriod, 150, ".");
+            }
+        }
+        case '0'...'9': {
+            buffer_.push_back(ch);
+            return HandleNumber();
+        }
+        case '\'':return HandleChar();
+        case '\"':return HandleString();
+        case 'a'...'z':
+        case 'A'...'Z':
+        case '_': {
+            buffer_.push_back(ch);
+            return HandleIdentifierOrKeyword();
+        }
+        case EOF:return MakeToken(TokenValue::kEof, -1, "eof");
+        default: {
+            ErrorReport(location_, "Unknown character.");
+            return MakeToken(TokenValue::kNone, -1, "none");
+        }
     }
 }
 
 Token Scanner::HandleIdentifierOrKeyword() {
-    return Token();
+    char ch{GetNextChar()};
+    while (std::isalnum(ch) || ch == '_') {
+        buffer_.push_back(ch);
+        ch = GetNextChar();
+    }
+    PutBack();
+
+
 }
 
 Token Scanner::HandleNumber() {
@@ -157,7 +281,7 @@ void Scanner::SkipComment() {
 
 char Scanner::GetNextChar() {
     if (HasNextChar()) {
-        char next_char{input_[++index_]};
+        char next_char{input_[index_++]};
         if (next_char == '\n') {
             ++location_.line_;
             location_.column_ = 0;
@@ -172,14 +296,28 @@ char Scanner::GetNextChar() {
 
 char Scanner::PeekNextChar() const {
     if (HasNextChar()) {
-        return input_[index_ + 1];
+        return input_[index_];
     } else {
         return EOF;
     }
 }
 
+std::pair<char, char> Scanner::PeekNextTwoChar() const {
+    std::pair<char, char> ret{EOF, EOF};
+    if (index_ + 1 < std::size(input_)) {
+        ret = {input_[index_], input_[index_ + 1]};
+    }
+    return ret;
+}
+
+void Scanner::PutBack() {
+    if (index_ > 0) {
+        --index_;
+    }
+}
+
 bool Scanner::HasNextChar() const {
-    return index_ + 1 < std::size(input_);
+    return index_ < std::size(input_);
 }
 
 bool Scanner::Try(char ch) {
@@ -219,55 +357,10 @@ Token Scanner::MakeToken(TokenValue value, const std::string &name, const std::s
     return Token{location_, value, name, string_value};
 }
 
-}
+KeywordsDictionary::KeywordsDictionary() {
 
-//keywords_.insert("=", {TokenValue::kAssign, 20});
-//keywords_.insert("+=", {TokenValue::kAddAssign, 20});
-//keywords_.insert("-=", {TokenValue::kSubAssign, 20});
-//keywords_.insert("*=", {TokenValue::kMulAssign, 20});
-//keywords_.insert("/=", {TokenValue::kDivAssign, 20});
-//keywords_.insert("%=", {TokenValue::kModAssign, 20});
-//keywords_.insert("&=", {TokenValue::kAndAssign, 20});
-//keywords_.insert("|=", {TokenValue::kOrAssign, 20});
-//keywords_.insert("^=", {TokenValue::kXorAssign, 20});
-//keywords_.insert("<<=", {TokenValue::kShlAssign, 20});
-//keywords_.insert(">>=", {TokenValue::kShrAssign, 20});
-//
-//keywords_.insert("++", {TokenValue::kInc, 150});
-//keywords_.insert("--", {TokenValue::kDec, 150});
-//
-//keywords_.insert("+", {TokenValue::kAdd, 120});
-//keywords_.insert("-", {TokenValue::kSub, 120});
-//keywords_.insert("*", {TokenValue::kMul, 130});
-//keywords_.insert("/", {TokenValue::kDiv, 130});
-//keywords_.insert("%", {TokenValue::kMod, 130});
-//keywords_.insert("~", {TokenValue::kNeg, 0});
-//keywords_.insert("&", {TokenValue::kAnd, 80});
-//keywords_.insert("|", {TokenValue::kOr, 60});
-//keywords_.insert("^", {TokenValue::kXor, 70});
-//keywords_.insert("<<", {TokenValue::kShl, 110});
-//keywords_.insert(">>", {TokenValue::kShr, 110});
-//
-//keywords_.insert("!", {TokenValue::kLogicNeg, 140});
-//keywords_.insert("&&", {TokenValue::kLogicAnd, 50});
-//keywords_.insert("||", {TokenValue::kLogicOr, 40});
-//
-//keywords_.insert("==", {TokenValue::kEqual, 90});
-//keywords_.insert("!=", {TokenValue::kNotEqual, 90});
-//keywords_.insert("<", {TokenValue::kLess, 100});
-//keywords_.insert(">", {TokenValue::kGreater, 100});
-//keywords_.insert("<=", {TokenValue::kLessOrEqual, 100});
-//keywords_.insert(">=", {TokenValue::kGreaterOrEqual, 100});
-//
-//keywords_.insert("->", {TokenValue::kArrow, 150});
-//keywords_.insert(".", {TokenValue::kPeriod, 150});
-//
-//keywords_.insert(",", {TokenValue::kComma, 10});
-//
-//keywords_.insert("(", {TokenValue::kLeftParen, -1});
-//keywords_.insert(")", {TokenValue::kRightParen, -1});
-//keywords_.insert("[", {TokenValue::kLeftSquare, -1});
-//keywords_.insert("]", {TokenValue::kRightSquare, -1});
-//keywords_.insert("{", {TokenValue::kLeftCurly, -1});
-//keywords_.insert("}", {TokenValue::kRightCurly, -1});
-//keywords_.insert(";", {TokenValue::kSemicolon, -1});
+}
+const std::pair<TokenValue, std::int32_t> &KeywordsDictionary::Find(const std::string &name) {
+    return <#initializer#>;
+}
+}

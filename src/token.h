@@ -109,7 +109,10 @@ enum class TokenValue {
     kRightCurly,       // }
     kSemicolon,        // ;
 
-    kNone
+    kEllipsis,         //...
+
+    kNone,
+    kEof
 };
 
 class SourceLocation {

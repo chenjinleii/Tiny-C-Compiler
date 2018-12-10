@@ -11,8 +11,17 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <utility>
 
 namespace tcc {
+
+class KeywordsDictionary {
+public:
+    KeywordsDictionary();
+    const std::pair<TokenValue, std::int32_t> &Find(const std::string &name);
+private:
+    std::unordered_map<std::string, std::pair<TokenValue, std::int32_t>> keywords_;
+};
 
 class Scanner {
 public:
@@ -34,6 +43,8 @@ private:
 
     char GetNextChar();
     char PeekNextChar() const;
+    std::pair<char, char> PeekNextTwoChar() const;
+    void PutBack();
     bool HasNextChar() const;
     bool Try(char ch);
     bool Test(char ch) const;
@@ -48,7 +59,8 @@ private:
     SourceLocation location_;
     std::string input_;
     std::string::size_type index_{};
-    std::unordered_map<std::string, std::pair<TokenValue, std::int32_t>> keywords_;
+    std::string buffer_;
+    KeywordsDictionary
 };
 
 }
