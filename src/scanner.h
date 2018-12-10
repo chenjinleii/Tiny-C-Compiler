@@ -33,6 +33,8 @@ private:
 
     Token HandleIdentifierOrKeyword();
     Token HandleNumber();
+    std::int32_t HandleOctNumber();
+    std::int32_t HandleHexNumber();
     Token HandleChar();
     Token HandleString();
     char HandleEscape();
@@ -58,11 +60,14 @@ private:
     Token MakeToken(const std::string &string_value);
 
     SourceLocation location_;
+    std::int32_t pre_column_{};
     std::string input_;
     std::string::size_type index_{};
     std::string buffer_;
     KeywordsDictionary keywords_dictionary_;
 };
+
+bool IsOctdigit(char ch);
 
 }
 

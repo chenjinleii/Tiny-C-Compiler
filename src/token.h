@@ -5,6 +5,8 @@
 #ifndef TINY_C_COMPILER_TOKEN_H
 #define TINY_C_COMPILER_TOKEN_H
 
+#include "location.h"
+
 #include <QObject>
 
 #include <string>
@@ -12,15 +14,6 @@
 #include <unordered_map>
 
 namespace tcc {
-
-class SourceLocation {
-public:
-    std::string ToString() const;
-
-    std::string file_name_;
-    std::int32_t row_{1};
-    std::int32_t column_{};
-};
 
 class TokenValues : public QObject {
 Q_OBJECT
@@ -122,7 +115,7 @@ public:
         kLeftCurly,        // {
         kRightCurly,       // }
         kSemicolon,        // ;
-
+        KColon,            // :
         kEllipsis,         //...
 
         kNone,

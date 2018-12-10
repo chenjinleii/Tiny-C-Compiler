@@ -5,7 +5,7 @@
 #ifndef TINY_C_COMPILER_ERROR_H
 #define TINY_C_COMPILER_ERROR_H
 
-#include "token.h"
+#include "location.h"
 
 #include <fmt/core.h>
 

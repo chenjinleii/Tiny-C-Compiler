@@ -10,10 +10,6 @@
 
 namespace tcc {
 
-std::string SourceLocation::ToString() const {
-    return file_name_ + ":" + std::to_string(row_) + ":" + std::to_string(column_) + ":";
-}
-
 std::string TokenValues::ToString(TokenValues::Value value) {
     return QMetaEnum::fromType<TokenValues::Value>().valueToKey(value);
 }
@@ -85,15 +81,23 @@ Token::Token(const SourceLocation &location, const std::string &string_value)
         : location_{location}, value_{TokenValues::kString}, string_value_{string_value} {}
 
 std::string Token::ToString() const {
-    auto sp_count{std::size(location_.ToString())};
-    std::string sp;
-    if (sp_count < 20) {
-        sp.assign(20 - sp_count, ' ');
+    auto sp1_count{std::size(location_.ToString())};
+    std::string sp1;
+    if (sp1_count < 20) {
+        sp1.assign(20 - sp1_count, ' ');
     } else {
-        sp.assign(20, ' ');
+        sp1.assign(20, ' ');
     }
 
-    std::string str(location_.ToString() + sp + "type: " + TokenValues::ToString(value_) + "\t\t");
+    auto sp2_count{std::size(TokenValues::ToString(value_))};
+    std::string sp2;
+    if (sp2_count < 20) {
+        sp2.assign(20 - sp2_count, ' ');
+    } else {
+        sp2.assign(20, ' ');
+    }
+
+    std::string str(location_.ToString() + sp1 + "type: " + TokenValues::ToString(value_) + sp2);
 
     if (IsChar()) {
         str += "value: " + std::to_string(GetCharValue());
@@ -104,7 +108,7 @@ std::string Token::ToString() const {
     } else if (IsString()) {
         str += "value: " + GetStringValue();
     } else if (IsIdentifier()) {
-        str += "name: " + name_;
+        str += "name:  " + name_;
     }
 
     return str;
@@ -168,4 +172,5 @@ double Token::GetDoubleValue() const {
 std::string Token::GetStringValue() const {
     return string_value_;
 }
+
 }

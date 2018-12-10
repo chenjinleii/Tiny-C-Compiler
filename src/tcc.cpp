@@ -7,7 +7,7 @@
 #include "ast.h"
 #include "code_gen.h"
 #include "obj_gen.h"
-
+#include <stdio.h>
 #include <iostream>
 #include <cstdlib>
 #include <filesystem>
@@ -28,69 +28,68 @@ int main(int argc, char *argv[]) {
     std::cerr << "Only support linux system\n";
     std::exit(EXIT_FAILURE);
 #else
-    tcc::Scanner::debug("/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
-//    if (argc == 1) {
-//        ShowHelpInfo();
-//        std::exit(EXIT_SUCCESS);
-//    }
-//
-//    std::unordered_set<std::string> input_files;
-//    std::unordered_set<std::string> args;
-//    std::string program_name("a.out");
-//
-//    for (int i = 1; i < argc; ++i) {
-//        if (argv[i][0] != '-') {
-//            if (FileExists(argv[i])) {
-//                input_files.emplace(argv[i]);
-//            } else {
-//                std::cerr << "error: " << argv[i] << ": This file does not exist.\n";
-//                std::exit(EXIT_FAILURE);
-//            }
-//        } else {
-//            if (argv[i][1] == 'o') {
-//                if (argv[i + 1]) {
-//                    program_name = argv[i + 1];
-//                } else {
-//                    std::cerr << "error: " << "No program name entered.\n";
-//                    std::exit(EXIT_FAILURE);
-//                }
-//            } else {
-//                args.emplace(argv[i]);
-//            }
-//        }
-//    }
-//
-//    if (args.find("-v") != std::end(args)) {
-//        ShowVersionInfo();
-//        std::exit(EXIT_SUCCESS);
-//    }
-//
-//    if (std::size(input_files) == 0) {
-//        std::cerr << "fatal error: no input files.\n";
-//    }
-//
-//    //TODO 支持更多编译参数
-//    for (const auto &arg:args) {
-//        switch (arg[1]) {
-//            default:break;
-//        }
-//    }
-//
-//    std::vector<std::string> files_to_delete;
-//    std::ostringstream obj_files;
-//
-//    for (const auto &input_file:input_files) {
-//        RunTcc(input_file, obj_files, files_to_delete);
-//    }
-//
-//    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
-//    std::system(cmd.c_str());
-//
-//    for (const auto &file:files_to_delete) {
-//        std::filesystem::remove(std::filesystem::path{file});
-//    }
-//    std::cout << "Compiled successfully\n";
-//    std::cout << "The name of the executable is " + program_name << '\n';
+    if (argc == 1) {
+        ShowHelpInfo();
+        std::exit(EXIT_SUCCESS);
+    }
+
+    std::unordered_set<std::string> input_files;
+    std::unordered_set<std::string> args;
+    std::string program_name("a.out");
+
+    for (int i = 1; i < argc; ++i) {
+        if (argv[i][0] != '-') {
+            if (FileExists(argv[i])) {
+                input_files.emplace(argv[i]);
+            } else {
+                std::cerr << "error: " << argv[i] << ": This file does not exist.\n";
+                std::exit(EXIT_FAILURE);
+            }
+        } else {
+            if (argv[i][1] == 'o') {
+                if (argv[i + 1]) {
+                    program_name = argv[i + 1];
+                } else {
+                    std::cerr << "error: " << "No program name entered.\n";
+                    std::exit(EXIT_FAILURE);
+                }
+            } else {
+                args.emplace(argv[i]);
+            }
+        }
+    }
+
+    if (args.find("-v") != std::end(args)) {
+        ShowVersionInfo();
+        std::exit(EXIT_SUCCESS);
+    }
+
+    if (std::size(input_files) == 0) {
+        std::cerr << "fatal error: no input files.\n";
+    }
+
+    //TODO 支持更多编译参数
+    for (const auto &arg:args) {
+        switch (arg[1]) {
+            default:break;
+        }
+    }
+
+    std::vector<std::string> files_to_delete;
+    std::ostringstream obj_files;
+
+    for (const auto &input_file:input_files) {
+        RunTcc(input_file, obj_files, files_to_delete);
+    }
+
+    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
+    std::system(cmd.c_str());
+
+    for (const auto &file:files_to_delete) {
+        std::filesystem::remove(std::filesystem::path{file});
+    }
+    std::cout << "Compiled successfully\n";
+    std::cout << "The name of the executable is " + program_name << '\n';
 #endif
 }
 

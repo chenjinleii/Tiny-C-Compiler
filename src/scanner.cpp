@@ -2,6 +2,8 @@
 // Created by kaiser on 18-12-8.
 //
 
+//TODO 预处理之后位置记录问题
+
 #include "scanner.h"
 #include "error.h"
 
@@ -88,8 +90,8 @@ std::vector<Token> Scanner::Scan() {
     std::vector<Token> token_sequence;
 
     while (HasNextChar()) {
-        if (auto token{GetNextToken()};token.GetTokenValue() != TokenValue::kNone &&
-                token.GetTokenValue() != TokenValue::kEof) {
+        if (auto token{GetNextToken()};!token.TokenValueIs(TokenValues::kNone) &&
+                !token.TokenValueIs(TokenValues::kEof)) {
             token_sequence.push_back(token);
         }
         buffer_.clear();
@@ -115,6 +117,7 @@ Token Scanner::GetNextToken() {
             SkipComment();
             return GetNextToken();
         }
+        case ':':return MakeToken(TokenValue::KColon);
         case '(':return MakeToken(TokenValue::kLeftParen);
         case ')':return MakeToken(TokenValue::kRightParen);
         case '[':return MakeToken(TokenValue::kLeftSquare);
@@ -273,8 +276,77 @@ Token Scanner::HandleIdentifierOrKeyword() {
     return MakeToken(token, buffer_);
 }
 
+// TODO 类型后缀
 Token Scanner::HandleNumber() {
-    return Token();
+    if (buffer_.front() == '.') {
+        auto ch{GetNextChar()};
+        while (std::isdigit(ch)) {
+            buffer_.push_back(ch);
+            ch = GetNextChar();
+        }
+        PutBack();
+        return MakeToken(std::stod(buffer_));
+    }
+
+    if (buffer_.front() == '0') {
+        auto ch{GetNextChar()};
+        if (ch == 'x' || ch == 'X') {
+            return MakeToken(HandleHexNumber());
+        } else if (IsOctdigit(ch)) {
+            buffer_.push_back(ch);
+            return MakeToken(HandleOctNumber());
+        } else if (ch == '.') {
+            do {
+                buffer_.push_back(ch);
+                ch = GetNextChar();
+            } while (std::isdigit(ch));
+            PutBack();
+            return MakeToken(std::stod(buffer_));
+        } else {
+            return MakeToken(0);
+        }
+    }
+
+    std::int32_t dot_count{};
+    auto ch{GetNextChar()};
+    while (std::isdigit(ch) || ch == '.') {
+        if (ch == '.') {
+            ++dot_count;
+        }
+        buffer_.push_back(ch);
+        ch = GetNextChar();
+    }
+
+    PutBack();
+    if (dot_count > 1) {
+        ErrorReport(location_, "No more than one decimal point");
+        return MakeToken(TokenValue::kNone);
+    } else if (dot_count == 1) {
+        return MakeToken(std::stod(buffer_));
+    } else {
+        return MakeToken(std::stoi(buffer_));
+    }
+
+}
+
+std::int32_t Scanner::HandleOctNumber() {
+    auto next{GetNextChar()};
+    while (IsOctdigit(next)) {
+        buffer_.push_back(next);
+        next = GetNextChar();
+    }
+    PutBack();
+    return std::stoi(buffer_, nullptr, 8);
+}
+
+std::int32_t Scanner::HandleHexNumber() {
+    auto next{GetNextChar()};
+    while (std::isxdigit(next)) {
+        buffer_.push_back(next);
+        next = GetNextChar();
+    }
+    PutBack();
+    return std::stoi(buffer_, nullptr, 16);
 }
 
 Token Scanner::HandleChar() {
@@ -284,12 +356,12 @@ Token Scanner::HandleChar() {
         ch = HandleEscape();
     }
     if (ch == EOF) {
-        return MakeToken(TokenValues::kNone);
+        return MakeToken(TokenValues::kEof);
     }
 
-    if (GetNextChar() != '\'') {
+    if (auto next{GetNextChar()};next != '\'') {
         PutBack();
-        ErrorReport(location_, "miss a '");
+        ErrorReport(location_, "miss '");
         return MakeToken(TokenValues::kNone);
     }
 
@@ -309,9 +381,9 @@ Token Scanner::HandleString() {
         buffer_.push_back(ch);
     }
 
-    if (GetNextChar() != '\'') {
+    if (GetNextChar() != '\"') {
         PutBack();
-        ErrorReport(location_, "miss a \"");
+        ErrorReport(location_, "miss \"");
         return MakeToken(TokenValues::kNone);
     }
 
@@ -345,11 +417,30 @@ char Scanner::HandleEscape() {
 char Scanner::HandleOctEscape(char ch) {
     std::string buf;
     buf.push_back(ch);
-    char next = PeekNextChar();
+
+    for (std::int32_t i{0}; i < 2; ++i) {
+        if (char next{GetNextChar()};IsOctdigit(next)) {
+            buf.push_back(next);
+        } else {
+            PutBack();
+            break;
+        }
+    }
+    return static_cast<char>(std::stoi(buf, nullptr, 8));
 }
 
 char Scanner::HandleHexEscape() {
+    std::string buf;
 
+    for (std::int32_t i{0}; i < 2; ++i) {
+        if (char next{GetNextChar()};std::isxdigit(next)) {
+            buf.push_back(next);
+        } else {
+            PutBack();
+            break;
+        }
+    }
+    return static_cast<char>(std::stoi(buf, nullptr, 16));
 }
 
 void Scanner::SkipSpace() {
@@ -369,6 +460,7 @@ char Scanner::GetNextChar() {
         char next_char{input_[index_++]};
         if (next_char == '\n') {
             ++location_.row_;
+            pre_column_ = location_.column_;
             location_.column_ = 0;
         } else {
             ++location_.column_;
@@ -396,8 +488,14 @@ std::pair<char, char> Scanner::PeekNextTwoChar() const {
 }
 
 void Scanner::PutBack() {
-    if (index_ > 0) {
+    if (index_ > 0 && index_ < std::size(input_)) {
         --index_;
+        if (location_.column_ > 0) {
+            --location_.column_;
+        } else {
+            --location_.row_;
+            location_.column_ = pre_column_;
+        }
     }
 }
 
@@ -440,6 +538,10 @@ Token Scanner::MakeToken(double double_value) {
 
 Token Scanner::MakeToken(const std::string &string_value) {
     return Token{location_, string_value};
+}
+
+bool IsOctdigit(char ch) {
+    return ch >= '0' && ch < '8';
 }
 
 }
