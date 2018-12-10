@@ -10,39 +10,39 @@
 
 namespace tcc {
 
-SourceLocation::SourceLocation(const std::string &file_name, std::int32_t line, std::int32_t column)
-        : file_name_{file_name}, line_{line}, column_{column} {}
-
 std::string SourceLocation::ToString() const {
-    return file_name_ + ":" + std::to_string(line_) + ":" + std::to_string(column_) + ":";
+    return file_name_ + ":" + std::to_string(row_) + ":" + std::to_string(column_) + ":";
 }
 
 std::string TokenValues::ToString(TokenValues::Value value) {
     return QMetaEnum::fromType<Value>().valueToKey(value);
 }
 
+Token::Token(const SourceLocation &location, TokenValue value)
+        : location_{location}, value_{value} {
+    if (auto iter{Precedence.find(value)};iter != std::end(Precedence)) {
+        precedence_ = iter->second;
+    }
+}
+
 Token::Token(const SourceLocation &location, TokenValue value, const std::string &name)
         : location_{location}, value_{value}, name_{name} {}
 
-Token::Token(const SourceLocation &location, TokenValue value, std::int32_t precedence, const std::string &name)
-        : Token{location, value, name} { precedence_ = precedence; }
+Token::Token(const SourceLocation &location, char char_value)
+        : location_{location}, value_{TokenValues::kCharacter}, char_value_{char_value} {}
 
-Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, char char_value)
-        : Token{location, value, name} { char_value_ = char_value; }
+Token::Token(const SourceLocation &location, std::int32_t int32_value)
+        : location_{location}, value_{TokenValues::kInteger}, int32_value_{int32_value} {}
 
-Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, int int32_value)
-        : Token{location, value, name} { int32_value_ = int32_value; }
+Token::Token(const SourceLocation &location, double double_value)
+        : location_{location}, value_{TokenValues::kDouble}, double_value_{double_value} {}
 
-Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, double double_value)
-        : Token{location, value, name} { double_value_ = double_value; }
-
-Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, const std::string &string_value)
-        : Token{location, value, name} { string_value_ = string_value; }
+Token::Token(const SourceLocation &location, const std::string &string_value)
+        : location_{location}, value_{TokenValues::kString}, string_value_{string_value} {}
 
 std::string Token::ToString() const {
-    std::string
-            str(location_.ToString() + "name: " + name_ + " type "
-                        + TokenValues::ToString(value_) + ' ');
+    std::string str(location_.ToString() + " type " + TokenValues::ToString(value_) + ' ');
+
     if (IsChar()) {
         str += std::to_string(GetCharValue());
     } else if (IsInt32()) {
@@ -51,6 +51,8 @@ std::string Token::ToString() const {
         str += std::to_string(GetDoubleValue());
     } else if (IsString()) {
         str += GetStringValue();
+    } else if (IsIdentifier()) {
+        str += name_;
     }
 
     return str;

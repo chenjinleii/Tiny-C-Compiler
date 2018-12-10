@@ -13,50 +13,50 @@
 namespace tcc {
 
 KeywordsDictionary::KeywordsDictionary() {
-    keywords_.insert({"auto", {TokenValue::kAutoKeyword, -1}});
-    keywords_.insert({"break", {TokenValue::kBreakKeyword, -1}});
-    keywords_.insert({"case", {TokenValue::kCaseKeyword, -1}});
-    keywords_.insert({"char", {TokenValue::kCharKeyword, -1}});
-    keywords_.insert({"const", {TokenValue::kConstKeyword, -1}});
-    keywords_.insert({"continue", {TokenValue::kContinueKeyword, -1}});
-    keywords_.insert({"default", {TokenValue::kDefaultKeyword, -1}});
-    keywords_.insert({"do", {TokenValue::kDoKeyword, -1}});
-    keywords_.insert({"double", {TokenValue::kDoubleKeyword, -1}});
-    keywords_.insert({"else", {TokenValue::kElseKeyword, -1}});
-    keywords_.insert({"enum", {TokenValue::kEnumKeyword, -1}});
-    keywords_.insert({"extern", {TokenValue::kExternKeyword, -1}});
-    keywords_.insert({"float", {TokenValue::kFloatKeyword, -1}});
-    keywords_.insert({"for", {TokenValue::kForKeyword, -1}});
-    keywords_.insert({"goto", {TokenValue::kGotoKeyword, -1}});
-    keywords_.insert({"if", {TokenValue::kIfKeyword, -1}});
-    keywords_.insert({"inline", {TokenValue::kInlineKeyword, -1}});
-    keywords_.insert({"int", {TokenValue::kIntKeyword, -1}});
-    keywords_.insert({"long", {TokenValue::kLongKeyword, -1}});
-    keywords_.insert({"register", {TokenValue::kRegisterKeyword, -1}});
-    keywords_.insert({"restrict", {TokenValue::kRestrictKeyword, -1}});
-    keywords_.insert({"return", {TokenValue::kReturnKeyword, -1}});
-    keywords_.insert({"short", {TokenValue::kShortKeyword, -1}});
-    keywords_.insert({"signed", {TokenValue::kSignedKeyword, -1}});
-    keywords_.insert({"sizeof", {TokenValue::kSizeofKeyword, -1}});
-    keywords_.insert({"static", {TokenValue::kStaticKeyword, -1}});
-    keywords_.insert({"struct", {TokenValue::kStructKeyword, -1}});
-    keywords_.insert({"switch", {TokenValue::kSwitchKeyword, -1}});
-    keywords_.insert({"typedef", {TokenValue::kTypedefKeyword, -1}});
-    keywords_.insert({"union", {TokenValue::kUnionKeyword, -1}});
-    keywords_.insert({"unsigned", {TokenValue::kUnsignedKeyword, -1}});
-    keywords_.insert({"void", {TokenValue::kVoidKeyword, -1}});
-    keywords_.insert({"volatile", {TokenValue::kVolatileKeyword, -1}});
-    keywords_.insert({"while", {TokenValue::kWhileKeyword, -1}});
-    keywords_.insert({"_Bool", {TokenValue::kBoolKeyword, -1}});
-    keywords_.insert({"_Complex", {TokenValue::kComplexKeyword, -1}});
-    keywords_.insert({"_Imaginary", {TokenValue::kImaginaryKeyword, -1}});
+    keywords_.insert({"auto", TokenValue::kAutoKeyword});
+    keywords_.insert({"break", TokenValue::kBreakKeyword});
+    keywords_.insert({"case", TokenValue::kCaseKeyword});
+    keywords_.insert({"char", TokenValue::kCharKeyword});
+    keywords_.insert({"const", TokenValue::kConstKeyword});
+    keywords_.insert({"continue", TokenValue::kContinueKeyword});
+    keywords_.insert({"default", TokenValue::kDefaultKeyword});
+    keywords_.insert({"do", TokenValue::kDoKeyword});
+    keywords_.insert({"double", TokenValue::kDoubleKeyword});
+    keywords_.insert({"else", TokenValue::kElseKeyword});
+    keywords_.insert({"enum", TokenValue::kEnumKeyword});
+    keywords_.insert({"extern", TokenValue::kExternKeyword});
+    keywords_.insert({"float", TokenValue::kFloatKeyword});
+    keywords_.insert({"for", TokenValue::kForKeyword});
+    keywords_.insert({"goto", TokenValue::kGotoKeyword});
+    keywords_.insert({"if", TokenValue::kIfKeyword});
+    keywords_.insert({"inline", TokenValue::kInlineKeyword});
+    keywords_.insert({"int", TokenValue::kIntKeyword});
+    keywords_.insert({"long", TokenValue::kLongKeyword});
+    keywords_.insert({"register", TokenValue::kRegisterKeyword});
+    keywords_.insert({"restrict", TokenValue::kRestrictKeyword});
+    keywords_.insert({"return", TokenValue::kReturnKeyword});
+    keywords_.insert({"short", TokenValue::kShortKeyword});
+    keywords_.insert({"signed", TokenValue::kSignedKeyword});
+    keywords_.insert({"sizeof", TokenValue::kSizeofKeyword});
+    keywords_.insert({"static", TokenValue::kStaticKeyword});
+    keywords_.insert({"struct", TokenValue::kStructKeyword});
+    keywords_.insert({"switch", TokenValue::kSwitchKeyword});
+    keywords_.insert({"typedef", TokenValue::kTypedefKeyword});
+    keywords_.insert({"union", TokenValue::kUnionKeyword});
+    keywords_.insert({"unsigned", TokenValue::kUnsignedKeyword});
+    keywords_.insert({"void", TokenValue::kVoidKeyword});
+    keywords_.insert({"volatile", TokenValue::kVolatileKeyword});
+    keywords_.insert({"while", TokenValue::kWhileKeyword});
+    keywords_.insert({"_Bool", TokenValue::kBoolKeyword});
+    keywords_.insert({"_Complex", TokenValue::kComplexKeyword});
+    keywords_.insert({"_Imaginary", TokenValue::kImaginaryKeyword});
 }
 
-std::pair<TokenValue, std::int32_t> KeywordsDictionary::Find(const std::string &name) {
+TokenValue KeywordsDictionary::Find(const std::string &name) {
     if (auto iter{keywords_.find(name)};iter != std::end(keywords_)) {
-        return {iter->second.first, iter->second.second};
+        return iter->second;
     } else {
-        return {TokenValues::kIdentifier, -1};
+        return TokenValues::kIdentifier;
     }
 }
 
@@ -100,120 +100,120 @@ Token Scanner::GetNextToken() {
             SkipComment();
             return GetNextToken();
         }
-        case '(':return MakeToken(TokenValue::kLeftParen, -1, "(");
-        case ')':return MakeToken(TokenValue::kRightParen, -1, ")");
-        case '[':return MakeToken(TokenValue::kLeftSquare, -1, "[");
-        case ']':return MakeToken(TokenValue::kRightSquare, -1, "]");
-        case '{':return MakeToken(TokenValue::kLeftCurly, -1, "{");
-        case '}':return MakeToken(TokenValue::kRightCurly, -1, "}");
-        case '?':return MakeToken(TokenValue::kQuestionMark, -1, "?");
-        case ',':return MakeToken(TokenValue::kComma, -1, ",");
-        case '~':return MakeToken(TokenValue::kNeg, 0, "~");
-        case ';':return MakeToken(TokenValue::kSemicolon, -1, ";");
+        case '(':return MakeToken(TokenValue::kLeftParen);
+        case ')':return MakeToken(TokenValue::kRightParen);
+        case '[':return MakeToken(TokenValue::kLeftSquare);
+        case ']':return MakeToken(TokenValue::kRightSquare);
+        case '{':return MakeToken(TokenValue::kLeftCurly);
+        case '}':return MakeToken(TokenValue::kRightCurly);
+        case '?':return MakeToken(TokenValue::kQuestionMark);
+        case ',':return MakeToken(TokenValue::kComma);
+        case '~':return MakeToken(TokenValue::kNeg);
+        case ';':return MakeToken(TokenValue::kSemicolon);
         case '-': {
             if (Try('>')) {
-                return MakeToken(TokenValue::kArrow, 150, "->");
+                return MakeToken(TokenValue::kArrow);
             } else if (Try('-')) {
-                return MakeToken(TokenValue::kDec, 150, "--");
+                return MakeToken(TokenValue::kDec);
             } else if (Try('=')) {
-                return MakeToken(TokenValue::kSubAssign, 20, "-=");
+                return MakeToken(TokenValue::kSubAssign);
             } else {
-                return MakeToken(TokenValue::kSub, 120, "-");
+                return MakeToken(TokenValue::kSub);
             }
         }
         case '+': {
             if (Try('+')) {
-                return MakeToken(TokenValue::kInc, 150, "++");
+                return MakeToken(TokenValue::kInc);
             } else if (Try('=')) {
-                return MakeToken(TokenValue::kAddAssign, 20, "+=");
+                return MakeToken(TokenValue::kAddAssign);
             } else {
-                return MakeToken(TokenValue::kAdd, 120, "+");
+                return MakeToken(TokenValue::kAdd);
             }
         }
         case '<': {
             if (Try('<')) {
                 if (Try('=')) {
-                    return MakeToken(TokenValue::kShlAssign, 20, "<<=");
+                    return MakeToken(TokenValue::kShlAssign);
                 } else {
-                    return MakeToken(TokenValue::kShl, 110, "<<");
+                    return MakeToken(TokenValue::kShl);
                 }
             } else if (Try('=')) {
-                return MakeToken(TokenValue::kLessOrEqual, 100, "<=");
+                return MakeToken(TokenValue::kLessOrEqual);
             } else {
-                return MakeToken(TokenValue::kLess, 100, "<");
+                return MakeToken(TokenValue::kLess);
             }
         }
         case '>': {
             if (Try('>')) {
                 if (Try('=')) {
-                    return MakeToken(TokenValue::kShrAssign, 20, ">>=");
+                    return MakeToken(TokenValue::kShrAssign);
                 } else {
-                    return MakeToken(TokenValue::kShr, 110, ">>");
+                    return MakeToken(TokenValue::kShr);
                 }
             } else if (Try('=')) {
-                return MakeToken(TokenValue::kGreaterOrEqual, 100, ">=");
+                return MakeToken(TokenValue::kGreaterOrEqual);
             } else {
-                return MakeToken(TokenValue::kGreater, 100, ">");
+                return MakeToken(TokenValue::kGreater);
             }
         }
         case '%': {
             if (Try('=')) {
-                return MakeToken(TokenValue::kModAssign, 20, "%=");
+                return MakeToken(TokenValue::kModAssign);
             } else {
-                return MakeToken(TokenValue::kMod, 130, "%");
+                return MakeToken(TokenValue::kMod);
             }
         }
         case '=': {
             if (Try('=')) {
-                return MakeToken(TokenValue::kEqual, 90, "==");
+                return MakeToken(TokenValue::kEqual);
             } else {
-                return MakeToken(TokenValue::kAssign, 20, "=");
+                return MakeToken(TokenValue::kAssign);
             }
         }
         case '!': {
             if (Try('=')) {
-                return MakeToken(TokenValue::kNotEqual, 90, "!=");
+                return MakeToken(TokenValue::kNotEqual);
             } else {
-                return MakeToken(TokenValue::kLogicNeg, 140, "!");
+                return MakeToken(TokenValue::kLogicNeg);
             }
         }
         case '&': {
             if (Try('&')) {
-                return MakeToken(TokenValue::kLogicAnd, 50, "&&");
+                return MakeToken(TokenValue::kLogicAnd);
             } else if (Try('=')) {
-                return MakeToken(TokenValue::kAndAssign, 20, "&=");
+                return MakeToken(TokenValue::kAndAssign);
             } else {
-                return MakeToken(TokenValue::kAnd, 80, "&");
+                return MakeToken(TokenValue::kAnd);
             }
         }
         case '|': {
             if (Try('|')) {
-                return MakeToken(TokenValue::kLogicOr, 40, "||");
+                return MakeToken(TokenValue::kLogicOr);
             } else if (Try('=')) {
-                return MakeToken(TokenValue::kOrAssign, 20, "|=");
+                return MakeToken(TokenValue::kOrAssign);
             } else {
-                return MakeToken(TokenValue::kOr, 60, "|");
+                return MakeToken(TokenValue::kOr);
             }
         }
         case '*': {
             if (Try('=')) {
-                return MakeToken(TokenValue::kMulAssign, 20, "*=");
+                return MakeToken(TokenValue::kMulAssign);
             } else {
-                return MakeToken(TokenValue::kMul, 130, "*");
+                return MakeToken(TokenValue::kMul);
             }
         }
         case '/': {
             if (Try('=')) {
-                return MakeToken(TokenValue::kDivAssign, 20, "/=");
+                return MakeToken(TokenValue::kDivAssign);
             } else {
-                return MakeToken(TokenValue::kDiv, 130, "/");
+                return MakeToken(TokenValue::kDiv);
             }
         }
         case '^': {
             if (Try('=')) {
-                return MakeToken(TokenValue::kXorAssign, 20, "^=");
+                return MakeToken(TokenValue::kXorAssign);
             } else {
-                return MakeToken(TokenValue::kXor, 70, "^");
+                return MakeToken(TokenValue::kXor);
             }
         }
         case '.': {
@@ -221,9 +221,9 @@ Token Scanner::GetNextToken() {
                 buffer_.push_back(ch);
                 return HandleNumber();
             } else if (auto[next, next_two]{PeekNextTwoChar()};next == '.' && next_two == '.') {
-                return MakeToken(TokenValue::kEllipsis, -1, "...");
+                return MakeToken(TokenValue::kEllipsis);
             } else {
-                return MakeToken(TokenValue::kPeriod, 150, ".");
+                return MakeToken(TokenValue::kPeriod);
             }
         }
         case '0'...'9': {
@@ -238,10 +238,10 @@ Token Scanner::GetNextToken() {
             buffer_.push_back(ch);
             return HandleIdentifierOrKeyword();
         }
-        case EOF:return MakeToken(TokenValue::kEof, -1, "eof");
+        case EOF:return MakeToken(TokenValue::kEof);
         default: {
             ErrorReport(location_, "Unknown character.");
-            return MakeToken(TokenValue::kNone, -1, "none");
+            return MakeToken(TokenValue::kNone);
         }
     }
 }
@@ -255,7 +255,7 @@ Token Scanner::HandleIdentifierOrKeyword() {
     PutBack();
 
     auto token{keywords_.Find(buffer_)};
-    return MakeToken(token.first, token.second, buffer_);
+    return MakeToken(token, buffer_);
 }
 
 Token Scanner::HandleNumber() {
@@ -263,38 +263,52 @@ Token Scanner::HandleNumber() {
 }
 
 Token Scanner::HandleChar() {
-    return Token();
+    char ch{GetNextChar()};
+
+    if (ch == '\\') {
+        ch = HandleEscape();
+    }
+
+    if (GetNextChar() != '\'') {
+        return MakeToken(TokenValues::kNone);
+    }
+
+    return MakeToken(ch);
 }
 
 Token Scanner::HandleString() {
     return Token();
 }
 
-Token Scanner::HandleEscape() {
-    return Token();
+char Scanner::HandleEscape() {
+
 }
 
-Token Scanner::HandleOctEscape() {
-    return Token();
+char Scanner::HandleOctEscape() {
+
 }
 
-Token Scanner::HandleHexEscape() {
-    return Token();
+char Scanner::HandleHexEscape() {
+
 }
 
 void Scanner::SkipSpace() {
-
+    while (std::isspace(PeekNextChar())) {
+        GetNextChar();
+    }
 }
 
 void Scanner::SkipComment() {
-
+    while (HasNextChar() && PeekNextChar() != '\n') {
+        GetNextChar();
+    }
 }
 
 char Scanner::GetNextChar() {
     if (HasNextChar()) {
         char next_char{input_[index_++]};
         if (next_char == '\n') {
-            ++location_.line_;
+            ++location_.row_;
             location_.column_ = 0;
         } else {
             ++location_.column_;
@@ -340,28 +354,32 @@ bool Scanner::Try(char ch) {
     }
 }
 
+bool Scanner::Test(char ch) const {
+    return PeekNextChar() == ch;
+}
+
+Token Scanner::MakeToken(TokenValue value) {
+    return Token{location_, value};
+}
+
 Token Scanner::MakeToken(TokenValue value, const std::string &name) {
     return Token{location_, value, name};
 }
 
-Token Scanner::MakeToken(TokenValue value, std::int32_t precedence, const std::string &name) {
-    return Token{location_, value, precedence, name};
+Token Scanner::MakeToken(char char_value) {
+    return Token{location_, char_value};
 }
 
-Token Scanner::MakeToken(TokenValue value, const std::string &name, char char_value) {
-    return Token{location_, value, name, char_value};
+Token Scanner::MakeToken(std::int32_t int32_value) {
+    return Token{location_, int32_value};
 }
 
-Token Scanner::MakeToken(TokenValue value, const std::string &name, std::int32_t int32_value) {
-    return Token{location_, value, name, int32_value};
+Token Scanner::MakeToken(double double_value) {
+    return Token{location_, double_value};
 }
 
-Token Scanner::MakeToken(TokenValue value, const std::string &name, double double_value) {
-    return Token{location_, value, name, double_value};
-}
-
-Token Scanner::MakeToken(TokenValue value, const std::string &name, const std::string &string_value) {
-    return Token{location_, value, name, string_value};
+Token Scanner::MakeToken(const std::string &string_value) {
+    return Token{location_, string_value};
 }
 
 }

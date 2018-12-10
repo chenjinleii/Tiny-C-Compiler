@@ -11,16 +11,15 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
-#include <utility>
 
 namespace tcc {
 
 class KeywordsDictionary {
 public:
     KeywordsDictionary();
-    std::pair<TokenValue, std::int32_t> Find(const std::string &name);
+    TokenValue Find(const std::string &name);
 private:
-    std::unordered_map<std::string, std::pair<TokenValue, std::int32_t>> keywords_;
+    std::unordered_map<std::string, TokenValue> keywords_;
 };
 
 class Scanner {
@@ -34,9 +33,9 @@ private:
     Token HandleNumber();
     Token HandleChar();
     Token HandleString();
-    Token HandleEscape();
-    Token HandleOctEscape();
-    Token HandleHexEscape();
+    char HandleEscape();
+    char HandleOctEscape();
+    char HandleHexEscape();
 
     void SkipSpace();
     void SkipComment();
@@ -47,13 +46,14 @@ private:
     void PutBack();
     bool HasNextChar() const;
     bool Try(char ch);
+    bool Test(char ch) const;
 
+    Token MakeToken(TokenValue value);
     Token MakeToken(TokenValue value, const std::string &name);
-    Token MakeToken(TokenValue value, std::int32_t precedence, const std::string &name);
-    Token MakeToken(TokenValue value, const std::string &name, char char_value);
-    Token MakeToken(TokenValue value, const std::string &name, std::int32_t int32_value);
-    Token MakeToken(TokenValue value, const std::string &name, double double_value);
-    Token MakeToken(TokenValue value, const std::string &name, const std::string &string_value);
+    Token MakeToken(char char_value);
+    Token MakeToken(std::int32_t int32_value);
+    Token MakeToken(double double_value);
+    Token MakeToken(const std::string &string_value);
 
     SourceLocation location_;
     std::string input_;
