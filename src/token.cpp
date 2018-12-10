@@ -4,6 +4,8 @@
 
 #include "token.h"
 
+#include <QMetaEnum>
+
 #include <iostream>
 
 namespace tcc {
@@ -13,6 +15,10 @@ SourceLocation::SourceLocation(const std::string &file_name, std::int32_t line, 
 
 std::string SourceLocation::ToString() const {
     return file_name_ + ":" + std::to_string(line_) + ":" + std::to_string(column_) + ":";
+}
+
+std::string TokenValues::ToString(TokenValues::Value value) {
+    return QMetaEnum::fromType<Value>().valueToKey(value);
 }
 
 Token::Token(const SourceLocation &location, TokenValue value, const std::string &name)
@@ -32,6 +38,23 @@ Token::Token(const SourceLocation &location, TokenValue value, const std::string
 
 Token::Token(const SourceLocation &location, TokenValue value, const std::string &name, const std::string &string_value)
         : Token{location, value, name} { string_value_ = string_value; }
+
+std::string Token::ToString() const {
+    std::string
+            str(location_.ToString() + "name: " + name_ + " type "
+                        + TokenValues::ToString(value_) + ' ');
+    if (IsChar()) {
+        str += std::to_string(GetCharValue());
+    } else if (IsInt32()) {
+        str += std::to_string(GetInt32Value());
+    } else if (IsDouble()) {
+        str += std::to_string(GetDoubleValue());
+    } else if (IsString()) {
+        str += GetStringValue();
+    }
+
+    return str;
+}
 
 bool Token::IsChar() const {
     return value_ == TokenValue::kCharacter;

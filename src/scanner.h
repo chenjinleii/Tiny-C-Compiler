@@ -18,7 +18,7 @@ namespace tcc {
 class KeywordsDictionary {
 public:
     KeywordsDictionary();
-    const std::pair<TokenValue, std::int32_t> &Find(const std::string &name);
+    std::pair<TokenValue, std::int32_t> Find(const std::string &name);
 private:
     std::unordered_map<std::string, std::pair<TokenValue, std::int32_t>> keywords_;
 };
@@ -47,7 +47,6 @@ private:
     void PutBack();
     bool HasNextChar() const;
     bool Try(char ch);
-    bool Test(char ch) const;
 
     Token MakeToken(TokenValue value, const std::string &name);
     Token MakeToken(TokenValue value, std::int32_t precedence, const std::string &name);
@@ -60,7 +59,7 @@ private:
     std::string input_;
     std::string::size_type index_{};
     std::string buffer_;
-    KeywordsDictionary
+    KeywordsDictionary keywords_;
 };
 
 }

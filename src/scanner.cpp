@@ -12,22 +12,7 @@
 
 namespace tcc {
 
-Scanner::Scanner(const std::string &file_name) {
-    std::ifstream ifs{file_name};
-    if (!ifs) {
-        ErrorReportAndExit("When trying to open file " + file_name + ", occurred error.");
-    }
-
-    std::ostringstream ost;
-    std::string line;
-    while (std::getline(ifs, line)) {
-        ost << line << '\n';
-    }
-
-    input_ = ost.str();
-    auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
-    input_.erase(iter.base(), std::end(input_));
-
+KeywordsDictionary::KeywordsDictionary() {
     keywords_.insert({"auto", {TokenValue::kAutoKeyword, -1}});
     keywords_.insert({"break", {TokenValue::kBreakKeyword, -1}});
     keywords_.insert({"case", {TokenValue::kCaseKeyword, -1}});
@@ -65,6 +50,31 @@ Scanner::Scanner(const std::string &file_name) {
     keywords_.insert({"_Bool", {TokenValue::kBoolKeyword, -1}});
     keywords_.insert({"_Complex", {TokenValue::kComplexKeyword, -1}});
     keywords_.insert({"_Imaginary", {TokenValue::kImaginaryKeyword, -1}});
+}
+
+std::pair<TokenValue, std::int32_t> KeywordsDictionary::Find(const std::string &name) {
+    if (auto iter{keywords_.find(name)};iter != std::end(keywords_)) {
+        return {iter->second.first, iter->second.second};
+    } else {
+        return {TokenValues::kIdentifier, -1};
+    }
+}
+
+Scanner::Scanner(const std::string &file_name) {
+    std::ifstream ifs{file_name};
+    if (!ifs) {
+        ErrorReportAndExit("When trying to open file " + file_name + ", occurred error.");
+    }
+
+    std::ostringstream ost;
+    std::string line;
+    while (std::getline(ifs, line)) {
+        ost << line << '\n';
+    }
+
+    input_ = ost.str();
+    auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
+    input_.erase(iter.base(), std::end(input_));
 }
 
 std::vector<Token> Scanner::Scan() {
@@ -244,7 +254,8 @@ Token Scanner::HandleIdentifierOrKeyword() {
     }
     PutBack();
 
-
+    auto token{keywords_.Find(buffer_)};
+    return MakeToken(token.first, token.second, buffer_);
 }
 
 Token Scanner::HandleNumber() {
@@ -329,10 +340,6 @@ bool Scanner::Try(char ch) {
     }
 }
 
-bool Scanner::Test(char ch) const {
-    return PeekNextChar() == ch;
-}
-
 Token Scanner::MakeToken(TokenValue value, const std::string &name) {
     return Token{location_, value, name};
 }
@@ -357,10 +364,4 @@ Token Scanner::MakeToken(TokenValue value, const std::string &name, const std::s
     return Token{location_, value, name, string_value};
 }
 
-KeywordsDictionary::KeywordsDictionary() {
-
-}
-const std::pair<TokenValue, std::int32_t> &KeywordsDictionary::Find(const std::string &name) {
-    return <#initializer#>;
-}
 }
