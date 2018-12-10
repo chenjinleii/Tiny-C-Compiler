@@ -7,7 +7,7 @@
 #include "ast.h"
 #include "code_gen.h"
 #include "obj_gen.h"
-#include <stdio.h>
+
 #include <iostream>
 #include <cstdlib>
 #include <filesystem>
@@ -121,15 +121,15 @@ void RunTcc(const std::string &input_file,
 
     tcc::Scanner scanner{processed_file};
 
-    //tcc::Parser parse{scanner.Scan()};
-    //auto program_block{parse.parse()};
+    tcc::Parser parse{scanner.Scan()};
+    auto program_block{parse.parse()};
 
-//    tcc::CodeGenContext context;
-//    context.GenerateCode(*program_block);
-//
-//    std::string obj_file(RemoveExtension(input_file) + ".o");
-//    files_to_delete.push_back(obj_file);
-//    obj_files << ' ' << obj_file;
-//
-//    tcc::ObjGen(context, obj_file);
+    tcc::CodeGenContext context;
+    context.GenerateCode(*program_block);
+
+    std::string obj_file(RemoveExtension(input_file) + ".o");
+    files_to_delete.push_back(obj_file);
+    obj_files << ' ' << obj_file;
+
+    tcc::ObjGen(context, obj_file);
 }

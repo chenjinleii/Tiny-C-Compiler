@@ -67,7 +67,7 @@ private:
     KeywordsDictionary keywords_dictionary_;
 };
 
-bool IsOctdigit(char ch);
+bool IsOctDigit(char ch);
 
 }
 

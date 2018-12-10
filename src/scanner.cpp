@@ -258,7 +258,7 @@ Token Scanner::GetNextToken() {
         }
         case EOF:return MakeToken(TokenValue::kEof);
         default: {
-            ErrorReport(location_, "Unknown character.");
+            ErrorReportAndExit(location_, "Unknown character.");
             return MakeToken(TokenValue::kNone);
         }
     }
@@ -292,7 +292,7 @@ Token Scanner::HandleNumber() {
         auto ch{GetNextChar()};
         if (ch == 'x' || ch == 'X') {
             return MakeToken(HandleHexNumber());
-        } else if (IsOctdigit(ch)) {
+        } else if (IsOctDigit(ch)) {
             buffer_.push_back(ch);
             return MakeToken(HandleOctNumber());
         } else if (ch == '.') {
@@ -319,7 +319,7 @@ Token Scanner::HandleNumber() {
 
     PutBack();
     if (dot_count > 1) {
-        ErrorReport(location_, "No more than one decimal point");
+        ErrorReportAndExit(location_, "No more than one decimal point");
         return MakeToken(TokenValue::kNone);
     } else if (dot_count == 1) {
         return MakeToken(std::stod(buffer_));
@@ -331,7 +331,7 @@ Token Scanner::HandleNumber() {
 
 std::int32_t Scanner::HandleOctNumber() {
     auto next{GetNextChar()};
-    while (IsOctdigit(next)) {
+    while (IsOctDigit(next)) {
         buffer_.push_back(next);
         next = GetNextChar();
     }
@@ -360,8 +360,7 @@ Token Scanner::HandleChar() {
     }
 
     if (auto next{GetNextChar()};next != '\'') {
-        PutBack();
-        ErrorReport(location_, "miss '");
+        ErrorReportAndExit(location_, "miss '");
         return MakeToken(TokenValues::kNone);
     }
 
@@ -382,8 +381,7 @@ Token Scanner::HandleString() {
     }
 
     if (GetNextChar() != '\"') {
-        PutBack();
-        ErrorReport(location_, "miss \"");
+        ErrorReportAndExit(location_, "miss \"");
         return MakeToken(TokenValues::kNone);
     }
 
@@ -408,7 +406,7 @@ char Scanner::HandleEscape() {
         case 'x':return HandleHexEscape();
         case '0' ... '7':return HandleOctEscape(ch);
         default: {
-            ErrorReport(location_, "unrecognized escape character '%c'", ch);
+            ErrorReportAndExit(location_, "unrecognized escape character '%c'", ch);
             return EOF;
         }
     }
@@ -419,7 +417,7 @@ char Scanner::HandleOctEscape(char ch) {
     buf.push_back(ch);
 
     for (std::int32_t i{0}; i < 2; ++i) {
-        if (char next{GetNextChar()};IsOctdigit(next)) {
+        if (char next{GetNextChar()};IsOctDigit(next)) {
             buf.push_back(next);
         } else {
             PutBack();
@@ -540,7 +538,7 @@ Token Scanner::MakeToken(const std::string &string_value) {
     return Token{location_, string_value};
 }
 
-bool IsOctdigit(char ch) {
+bool IsOctDigit(char ch) {
     return ch >= '0' && ch < '8';
 }
 

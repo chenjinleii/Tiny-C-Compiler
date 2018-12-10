@@ -6,21 +6,27 @@
 #define TINY_C_COMPILER_ERROR_H
 
 #include "location.h"
+#include "token.h"
 
 #include <fmt/core.h>
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 
 namespace tcc {
 
 void ErrorReportAndExit(const std::string &msg);
-void ErrorReport(const SourceLocation &location, const std::string &msg);
+
+void ErrorReportAndExit(const SourceLocation &location, const std::string &msg);
+
+void ErrorReportAndExit(TokenValue expect, TokenValue actual);
 
 template<typename... Args>
-void ErrorReport(const SourceLocation &location, const std::string &format_str, const Args &... args) {
+void ErrorReportAndExit(const SourceLocation &location, const std::string &format_str, const Args &... args) {
     std::cerr << "At: " << location.ToString() << '\n';
     fmt::print(format_str, args...);
+    std::exit(EXIT_FAILURE);
 }
 
 }
