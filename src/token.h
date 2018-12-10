@@ -135,42 +135,12 @@ public:
 
 using TokenValue=TokenValues::Value;
 
-inline std::unordered_map<TokenValue, std::int32_t> Precedence{
-        {TokenValues::kNeg, 0},
-        {TokenValues::kArrow, 150},
-        {TokenValues::kDec, 150},
-        {TokenValues::kSubAssign, 20},
-        {TokenValues::kSub, 120},
-        {TokenValues::kInc, 150},
-        {TokenValues::kAddAssign, 20},
-        {TokenValues::kAdd, 120},
-        {TokenValues::kShlAssign, 20},
-        {TokenValues::kShl, 110},
-        {TokenValues::kLessOrEqual, 100},
-        {TokenValues::kLess, 100},
-        {TokenValues::kShrAssign, 20},
-        {TokenValues::kShr, 110},
-        {TokenValues::kGreaterOrEqual, 100},
-        {TokenValues::kGreater, 100},
-        {TokenValues::kModAssign, 20},
-        {TokenValues::kMod, 130},
-        {TokenValues::kEqual, 90},
-        {TokenValues::kAssign, 20},
-        {TokenValues::kNotEqual, 90},
-        {TokenValues::kLogicNeg, 140},
-        {TokenValues::kLogicAnd, 50},
-        {TokenValues::kAndAssign, 20},
-        {TokenValues::kAnd, 80},
-        {TokenValues::kLogicOr, 40},
-        {TokenValues::kOrAssign, 20},
-        {TokenValues::kOr, 60},
-        {TokenValues::kMulAssign, 20},
-        {TokenValues::kMul, 130},
-        {TokenValues::kDivAssign, 20},
-        {TokenValues::kDiv, 130},
-        {TokenValues::kXorAssign, 20},
-        {TokenValues::kXor, 70},
-        {TokenValues::kPeriod, 150}
+class PrecedenceDictionary {
+public:
+    PrecedenceDictionary();
+    std::int32_t Find(TokenValue value);
+private:
+    std::unordered_map<TokenValue, std::int32_t> precedence_;
 };
 
 // TODO 更多内置类型
@@ -194,6 +164,7 @@ public:
     bool IsTypeSpecifier() const;
     bool IsIdentifier() const;
 
+    bool TokenValueIs(TokenValue value) const;
     TokenValue GetTokenValue() const;
     std::string GetTokenName() const;
     std::int32_t GetTokenPrecedence() const;
@@ -212,6 +183,7 @@ private:
     std::int32_t int32_value_{};
     double double_value_{};
     std::string string_value_;
+    PrecedenceDictionary precedence_dictionary_;
 };
 
 }

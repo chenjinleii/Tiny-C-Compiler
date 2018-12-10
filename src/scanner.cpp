@@ -75,6 +75,13 @@ Scanner::Scanner(const std::string &file_name) {
     input_ = ost.str();
     auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
     input_.erase(iter.base(), std::end(input_));
+
+    auto index{file_name.rfind('/')};
+    if (index != std::string::npos) {
+        location_.file_name_ = file_name.substr(index + 1);
+    } else {
+        location_.file_name_ = file_name;
+    }
 }
 
 std::vector<Token> Scanner::Scan() {
@@ -89,6 +96,14 @@ std::vector<Token> Scanner::Scan() {
     }
 
     return token_sequence;
+}
+
+void Scanner::debug(const std::string &file_name, std::ostream &os) {
+    Scanner scanner{file_name};
+
+    for (const auto &token:scanner.Scan()) {
+        os << token.ToString() << '\n';
+    }
 }
 
 Token Scanner::GetNextToken() {
@@ -254,7 +269,7 @@ Token Scanner::HandleIdentifierOrKeyword() {
     }
     PutBack();
 
-    auto token{keywords_.Find(buffer_)};
+    auto token{keywords_dictionary_.Find(buffer_)};
     return MakeToken(token, buffer_);
 }
 
@@ -268,24 +283,69 @@ Token Scanner::HandleChar() {
     if (ch == '\\') {
         ch = HandleEscape();
     }
+    if (ch == EOF) {
+        return MakeToken(TokenValues::kNone);
+    }
 
     if (GetNextChar() != '\'') {
+        PutBack();
+        ErrorReport(location_, "miss a '");
         return MakeToken(TokenValues::kNone);
     }
 
     return MakeToken(ch);
 }
 
+//TODO 连接相邻字符串
 Token Scanner::HandleString() {
-    return Token();
+    while (HasNextChar() && !Test('\"') && !Test('\n')) {
+        char ch{GetNextChar()};
+        if (ch == '\\') {
+            ch = HandleEscape();
+            if (ch == EOF) {
+                return MakeToken(TokenValues::kNone);
+            }
+        }
+        buffer_.push_back(ch);
+    }
+
+    if (GetNextChar() != '\'') {
+        PutBack();
+        ErrorReport(location_, "miss a \"");
+        return MakeToken(TokenValues::kNone);
+    }
+
+    return MakeToken(buffer_);
 }
 
 char Scanner::HandleEscape() {
-
+    auto ch{GetNextChar()};
+    switch (ch) {
+        case '\\':
+        case '\'':
+        case '\"':
+        case '\?':return ch;
+        case 'a':return '\a';
+        case 'b':return '\b';
+        case 'f':return '\f';
+        case 'n':return '\n';
+        case 'r':return '\r';
+        case 't':return '\t';
+        case 'v':return '\v';
+        case 'X':
+        case 'x':return HandleHexEscape();
+        case '0' ... '7':return HandleOctEscape(ch);
+        default: {
+            ErrorReport(location_, "unrecognized escape character '%c'", ch);
+            return EOF;
+        }
+    }
 }
 
-char Scanner::HandleOctEscape() {
-
+char Scanner::HandleOctEscape(char ch) {
+    std::string buf;
+    buf.push_back(ch);
+    char next = PeekNextChar();
 }
 
 char Scanner::HandleHexEscape() {

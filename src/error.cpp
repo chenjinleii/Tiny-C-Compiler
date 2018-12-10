@@ -4,7 +4,6 @@
 
 #include "error.h"
 
-#include <iostream>
 #include <cstdlib>
 
 namespace tcc {

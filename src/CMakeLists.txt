@@ -9,6 +9,7 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5Widgets REQUIRED CONFIG)
 find_package(LLVM REQUIRED CONFIG)
+find_package(fmt)
 
 add_definitions(${LLVM_DEFINITIONS})
 
@@ -23,5 +24,6 @@ llvm_map_components_to_libnames(llvm_libs
 
 target_link_libraries(${PROGRAM_NAME}
                       Qt5::Core
+                      fmt::fmt
                       ${llvm_libs}
                       stdc++fs)

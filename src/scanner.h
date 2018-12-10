@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 namespace tcc {
 
@@ -26,6 +27,7 @@ class Scanner {
 public:
     explicit Scanner(const std::string &file_name);
     std::vector<Token> Scan();
+    static void debug(const std::string &file_name, std::ostream &os = std::cout);
 private:
     Token GetNextToken();
 
@@ -34,7 +36,7 @@ private:
     Token HandleChar();
     Token HandleString();
     char HandleEscape();
-    char HandleOctEscape();
+    char HandleOctEscape(char ch);
     char HandleHexEscape();
 
     void SkipSpace();
@@ -59,7 +61,7 @@ private:
     std::string input_;
     std::string::size_type index_{};
     std::string buffer_;
-    KeywordsDictionary keywords_;
+    KeywordsDictionary keywords_dictionary_;
 };
 
 }

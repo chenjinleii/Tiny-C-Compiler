@@ -15,14 +15,58 @@ std::string SourceLocation::ToString() const {
 }
 
 std::string TokenValues::ToString(TokenValues::Value value) {
-    return QMetaEnum::fromType<Value>().valueToKey(value);
+    return QMetaEnum::fromType<TokenValues::Value>().valueToKey(value);
+}
+
+PrecedenceDictionary::PrecedenceDictionary() {
+    precedence_.insert({TokenValues::kNeg, 0});
+    precedence_.insert({TokenValues::kArrow, 150});
+    precedence_.insert({TokenValues::kDec, 150});
+    precedence_.insert({TokenValues::kSubAssign, 20});
+    precedence_.insert({TokenValues::kSub, 120});
+    precedence_.insert({TokenValues::kInc, 150});
+    precedence_.insert({TokenValues::kAddAssign, 20});
+    precedence_.insert({TokenValues::kAdd, 120});
+    precedence_.insert({TokenValues::kShlAssign, 20});
+    precedence_.insert({TokenValues::kShl, 110});
+    precedence_.insert({TokenValues::kLessOrEqual, 100});
+    precedence_.insert({TokenValues::kLess, 100});
+    precedence_.insert({TokenValues::kShrAssign, 20});
+    precedence_.insert({TokenValues::kShr, 110});
+    precedence_.insert({TokenValues::kGreaterOrEqual, 100});
+    precedence_.insert({TokenValues::kGreater, 100});
+    precedence_.insert({TokenValues::kModAssign, 20});
+    precedence_.insert({TokenValues::kMod, 130});
+    precedence_.insert({TokenValues::kEqual, 90});
+    precedence_.insert({TokenValues::kAssign, 20});
+    precedence_.insert({TokenValues::kNotEqual, 90});
+    precedence_.insert({TokenValues::kLogicNeg, 140});
+    precedence_.insert({TokenValues::kLogicAnd, 50});
+    precedence_.insert({TokenValues::kAndAssign, 20});
+    precedence_.insert({TokenValues::kAnd, 80});
+    precedence_.insert({TokenValues::kLogicOr, 40});
+    precedence_.insert({TokenValues::kOrAssign, 20});
+    precedence_.insert({TokenValues::kOr, 60});
+    precedence_.insert({TokenValues::kMulAssign, 20});
+    precedence_.insert({TokenValues::kMul, 130});
+    precedence_.insert({TokenValues::kDivAssign, 20});
+    precedence_.insert({TokenValues::kDiv, 130});
+    precedence_.insert({TokenValues::kXorAssign, 20});
+    precedence_.insert({TokenValues::kXor, 70});
+    precedence_.insert({TokenValues::kPeriod, 150});
+}
+
+std::int32_t PrecedenceDictionary::Find(TokenValue value) {
+    if (auto iter{precedence_.find(value)};iter != std::end(precedence_)) {
+        return iter->second;
+    } else {
+        return -1;
+    }
 }
 
 Token::Token(const SourceLocation &location, TokenValue value)
         : location_{location}, value_{value} {
-    if (auto iter{Precedence.find(value)};iter != std::end(Precedence)) {
-        precedence_ = iter->second;
-    }
+    precedence_ = precedence_dictionary_.Find(value);
 }
 
 Token::Token(const SourceLocation &location, TokenValue value, const std::string &name)
@@ -41,18 +85,26 @@ Token::Token(const SourceLocation &location, const std::string &string_value)
         : location_{location}, value_{TokenValues::kString}, string_value_{string_value} {}
 
 std::string Token::ToString() const {
-    std::string str(location_.ToString() + " type " + TokenValues::ToString(value_) + ' ');
+    auto sp_count{std::size(location_.ToString())};
+    std::string sp;
+    if (sp_count < 20) {
+        sp.assign(20 - sp_count, ' ');
+    } else {
+        sp.assign(20, ' ');
+    }
+
+    std::string str(location_.ToString() + sp + "type: " + TokenValues::ToString(value_) + "\t\t");
 
     if (IsChar()) {
-        str += std::to_string(GetCharValue());
+        str += "value: " + std::to_string(GetCharValue());
     } else if (IsInt32()) {
-        str += std::to_string(GetInt32Value());
+        str += "value: " + std::to_string(GetInt32Value());
     } else if (IsDouble()) {
-        str += std::to_string(GetDoubleValue());
+        str += "value: " + std::to_string(GetDoubleValue());
     } else if (IsString()) {
-        str += GetStringValue();
+        str += "value: " + GetStringValue();
     } else if (IsIdentifier()) {
-        str += name_;
+        str += "name: " + name_;
     }
 
     return str;
@@ -85,6 +137,10 @@ bool Token::IsIdentifier() const {
     return value_ == TokenValue::kIdentifier;
 }
 
+bool Token::TokenValueIs(TokenValue value) const {
+    return value_ == value;
+}
+
 TokenValue Token::GetTokenValue() const {
     return value_;
 }
@@ -112,5 +168,4 @@ double Token::GetDoubleValue() const {
 std::string Token::GetStringValue() const {
     return string_value_;
 }
-
 }
