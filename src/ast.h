@@ -2,7 +2,7 @@
 // Created by kaiser on 18-12-8.
 //
 
-//TODO enum switch以及其他内置类型
+//TODO enum struct array point switch以及其他内置类型
 
 #ifndef TINY_C_COMPILER_AST_H
 #define TINY_C_COMPILER_AST_H
@@ -21,12 +21,10 @@ namespace tcc {
 class CodeGenContext;
 class Expression;
 class Statement;
-class Identifier;
 class VariableDeclaration;
 
 using ExpressionList=std::vector<std::unique_ptr<Expression>>;
 using StatementList=std::vector<std::unique_ptr<Statement>>;
-using IdentifierList=std::vector<std::unique_ptr<Identifier>>;
 using VariableDeclarationList=std::vector<std::unique_ptr<VariableDeclaration>>;
 
 enum class ASTNodeType {
@@ -43,6 +41,7 @@ enum class ASTNodeType {
     kInteger,
     kString,
     kIdentifier,
+    kChar,
     kFunctionCall,
     kCastExpression,
     kUnaryOpExpression,
@@ -59,11 +58,6 @@ enum class ASTNodeType {
     kWhileStatement,
     kForStatement,
     kReturnStatement,
-
-    kStructDeclaration,
-    kStructMemberAccess,
-    kStructMemberAssignment,
-    kEnumDeclaration
 };
 
 class ASTNode {
@@ -91,8 +85,6 @@ public:
     explicit Type(const std::string &type) : type_{type} {}
 
     virtual bool IsPrimitive() const { return false; }
-    virtual bool IsPointer() const { return false; }
-    virtual bool IsArray() const { return false; }
     virtual ASTNodeType Kind() const override { return ASTNodeType::kType; }
 
     std::string type_;
@@ -105,31 +97,6 @@ public:
 
     bool IsPrimitive() const override { return true; }
     ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
-};
-
-class PointerType : public Type {
-public:
-    PointerType() = default;
-    explicit PointerType(std::unique_ptr<Type> point_to_type) :
-            point_to_type_{std::move(point_to_type)} {}
-
-    bool IsPointer() const override { return true; }
-    ASTNodeType Kind() const override { return ASTNodeType::kPointerType; }
-
-    std::unique_ptr<Type> point_to_type_;
-};
-
-class ArrayType : public Type {
-public:
-    ArrayType() = default;
-    ArrayType(std::unique_ptr<Type> array_type, std::size_t size) :
-            array_type_{std::move(array_type)}, size_{size} {}
-
-    bool IsArray() const override { return true; }
-    ASTNodeType Kind() const override { return ASTNodeType::kArrayType; }
-
-    std::unique_ptr<Type> array_type_;
-    std::size_t size_{};
 };
 
 class Double : public Expression {
@@ -152,6 +119,17 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::int32_t value_{};
+};
+
+class Char : public Expression {
+public:
+    Char() = default;
+    explicit Char(char value) : value_{value} {}
+
+    ASTNodeType Kind() const override { return ASTNodeType::kChar; }
+    llvm::Value *CodeGen(CodeGenContext &context) override;
+
+    char value_{};
 };
 
 class String : public Expression {
@@ -392,63 +370,6 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> expression_;
-};
-
-class StructDeclaration : public Statement {
-public:
-    StructDeclaration() = default;
-    StructDeclaration(std::unique_ptr<Identifier> name,
-                      std::unique_ptr<VariableDeclarationList> members) :
-            name_{std::move(name)}, members_{std::move(members)} {}
-
-    ASTNodeType Kind() const override { return ASTNodeType::kStructDeclaration; }
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<Identifier> name_;
-    std::unique_ptr<VariableDeclarationList> members_{std::make_unique<VariableDeclarationList>()};
-};
-
-class StructMemberAccess : public Expression {
-public:
-    StructMemberAccess() = default;
-
-    StructMemberAccess(std::unique_ptr<Identifier> name,
-                       std::unique_ptr<Identifier> member) :
-            name_{std::move(name)}, member_{std::move(member)} {}
-
-    ASTNodeType Kind() const override { return ASTNodeType::kStructMemberAccess; }
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<Identifier> name_;
-    std::unique_ptr<Identifier> member_;
-};
-
-class StructMemberAssignment : public Expression {
-public:
-    StructMemberAssignment() = default;
-    StructMemberAssignment(std::unique_ptr<StructMemberAccess> member,
-                           std::unique_ptr<Expression> expression) :
-            member_{std::move(member)}, expression_{std::move(expression)} {}
-
-    ASTNodeType Kind() const override { return ASTNodeType::kStructMemberAssignment; }
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<StructMemberAccess> member_;
-    std::unique_ptr<Expression> expression_;
-};
-
-class EnumDeclaration : public Statement {
-public:
-    EnumDeclaration() = default;
-    EnumDeclaration(std::unique_ptr<Identifier> name,
-         std::unique_ptr<IdentifierList>) :
-            name_{std::move(name)}, member_{std::move(member_)} {}
-
-    ASTNodeType Kind() const override { return ASTNodeType::kEnumDeclaration; }
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<Identifier> name_;
-    std::unique_ptr<IdentifierList> member_;
 };
 
 }

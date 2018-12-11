@@ -86,34 +86,6 @@ std::unique_ptr<Statement> Parser::ParseGlobal() {
     return result;
 }
 
-/*
- * declaration:
- *      declaration-specifiers init-declarator-list;
- *
- * declaration-specifiers:
- *      storage-class-specifier declaration-specifiers
- *      type-specifier declaration-specifiers
- *      type-qualifier declaration-specifiers
- *      function-specifier declaration-specifiers
- *
- * init-declarator-list:
- *      init-declarator
- *      init-declarator-list, init-declarator
- *
- * init-declarator:
- *      declarator
- *      declarator = initializer
- */
-
-/*
- * 上述为C99的声明文法,有点复杂,先实现一个简化版本的
- *
- *
- *
- *
- */
-
-
 std::unique_ptr<Statement> Parser::ParseDeclaration() {
     auto var_declaration_no_init{ParVarDeclarationNoInit()};
 

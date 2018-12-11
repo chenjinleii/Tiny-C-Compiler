@@ -18,6 +18,10 @@ llvm::Value *Integer::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
+llvm::Value *Char::CodeGen(CodeGenContext &context) {
+    return ASTNode::CodeGen(context);
+}
+
 llvm::Value *String::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
@@ -80,22 +84,6 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
-}
-
-llvm::Value *StructDeclaration::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
-}
-
-llvm::Value *StructMemberAccess::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
-}
-
-llvm::Value *StructMemberAssignment::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
-}
-
-llvm::Value *EnumDeclaration::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
 }
 
 }

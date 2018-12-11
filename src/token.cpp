@@ -69,16 +69,16 @@ Token::Token(const SourceLocation &location, TokenValue value, const std::string
         : location_{location}, value_{value}, name_{name} {}
 
 Token::Token(const SourceLocation &location, char char_value)
-        : location_{location}, value_{TokenValues::kCharacter}, char_value_{char_value} {}
+        : location_{location}, value_{TokenValues::kCharConstant}, char_value_{char_value} {}
 
 Token::Token(const SourceLocation &location, std::int32_t int32_value)
-        : location_{location}, value_{TokenValues::kInteger}, int32_value_{int32_value} {}
+        : location_{location}, value_{TokenValues::kIntConstant}, int32_value_{int32_value} {}
 
 Token::Token(const SourceLocation &location, double double_value)
-        : location_{location}, value_{TokenValues::kDouble}, double_value_{double_value} {}
+        : location_{location}, value_{TokenValues::kDoubleConstant}, double_value_{double_value} {}
 
 Token::Token(const SourceLocation &location, const std::string &string_value)
-        : location_{location}, value_{TokenValues::kString}, string_value_{string_value} {}
+        : location_{location}, value_{TokenValues::kStringLiteral}, string_value_{string_value} {}
 
 std::string Token::ToString() const {
     auto sp1_count{std::size(location_.ToString())};
@@ -115,19 +115,19 @@ std::string Token::ToString() const {
 }
 
 bool Token::IsChar() const {
-    return value_ == TokenValue::kCharacter;
+    return value_ == TokenValue::kCharConstant;
 }
 
 bool Token::IsInt32() const {
-    return value_ == TokenValue::kInteger;
+    return value_ == TokenValue::kIntConstant;
 }
 
 bool Token::IsDouble() const {
-    return value_ == TokenValue::kDouble;
+    return value_ == TokenValue::kDoubleConstant;
 }
 
 bool Token::IsString() const {
-    return value_ == TokenValue::kString;
+    return value_ == TokenValue::kStringLiteral;
 }
 
 bool Token::IsTypeSpecifier() const {

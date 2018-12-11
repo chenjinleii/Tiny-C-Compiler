@@ -19,10 +19,10 @@ class TokenValues : public QObject {
 Q_OBJECT
 public:
     enum Value {
-        kCharacter,
-        kInteger,
-        kDouble,
-        kString,
+        kCharConstant,
+        kIntConstant,
+        kDoubleConstant,
+        kStringLiteral,
 
         kIdentifier,
 
