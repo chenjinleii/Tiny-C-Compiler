@@ -8,6 +8,7 @@
 #define TINY_C_COMPILER_AST_H
 
 #include "location.h"
+#include "token.h"
 
 #include <llvm/IR/Value.h>
 
@@ -21,11 +22,9 @@ namespace tcc {
 class CodeGenContext;
 class Expression;
 class Statement;
-class VariableDeclaration;
 
 using ExpressionList=std::vector<std::unique_ptr<Expression>>;
 using StatementList=std::vector<std::unique_ptr<Statement>>;
-using VariableDeclarationList=std::vector<std::unique_ptr<VariableDeclaration>>;
 
 enum class ASTNodeType {
     kASTNode,
@@ -35,16 +34,17 @@ enum class ASTNodeType {
 
     kPrimitiveType,
     kPointerType,
-    kArrayType,
 
-    kDouble,
-    kInteger,
-    kString,
+    kCharConstant,
+    kIntConstant,
+    kDoubleConstant,
+    kStringLiteral,
+
     kIdentifier,
-    kChar,
     kFunctionCall,
     kCastExpression,
     kUnaryOpExpression,
+    kPostfixExpression,
     kBinaryOpExpression,
     kTernaryOpExpression,
     kAssignmentExpression,
@@ -58,6 +58,7 @@ enum class ASTNodeType {
     kWhileStatement,
     kForStatement,
     kReturnStatement,
+    kEmptyStatement
 };
 
 class ASTNode {
@@ -81,63 +82,73 @@ public:
 
 class Type : public ASTNode {
 public:
-    Type() = default;
-    explicit Type(const std::string &type) : type_{type} {}
-
     virtual bool IsPrimitive() const { return false; }
+    virtual bool IsPoint() const { return false; }
     virtual ASTNodeType Kind() const override { return ASTNodeType::kType; }
-
-    std::string type_;
 };
 
 class PrimitiveType : public Type {
 public:
     PrimitiveType() = default;
-    explicit PrimitiveType(const std::string &type) : Type{type} {}
+    explicit PrimitiveType(TokenValue type) : type_{type} {}
 
     bool IsPrimitive() const override { return true; }
     ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
+
+    TokenValue type_{TokenValue::kNone};
 };
 
-class Double : public Expression {
+class PointerType : public Type {
 public:
-    Double() = default;
-    explicit Double(double value) : value_{value} {}
+    PointerType() = default;
+    explicit PointerType(std::unique_ptr<Type> point_to) :
+            point_to_{std::move(point_to)} {}
 
-    ASTNodeType Kind() const override { return ASTNodeType::kDouble; }
+    bool IsPoint() const override { return true; }
+    ASTNodeType Kind() const override { return ASTNodeType::kPointerType; }
+
+    std::unique_ptr<Type> point_to_;
+};
+
+class DoubleConstant : public Expression {
+public:
+    DoubleConstant() = default;
+    explicit DoubleConstant(double value) : value_{value} {}
+
+    ASTNodeType Kind() const override { return ASTNodeType::kDoubleConstant; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     double value_{};
 };
 
-class Integer : public Expression {
+class IntConstant : public Expression {
 public:
-    Integer() = default;
-    explicit Integer(std::int32_t value) : value_{value} {}
+    IntConstant() = default;
+    explicit IntConstant(std::int32_t value) : value_{value} {}
 
-    ASTNodeType Kind() const override { return ASTNodeType::kInteger; }
+    ASTNodeType Kind() const override { return ASTNodeType::kIntConstant; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::int32_t value_{};
 };
 
-class Char : public Expression {
+class CharConstant : public Expression {
 public:
-    Char() = default;
-    explicit Char(char value) : value_{value} {}
+    CharConstant() = default;
+    explicit CharConstant(char value) : value_{value} {}
 
-    ASTNodeType Kind() const override { return ASTNodeType::kChar; }
+    ASTNodeType Kind() const override { return ASTNodeType::kCharConstant; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     char value_{};
 };
 
-class String : public Expression {
+class StringLiteral : public Expression {
 public:
-    String() = default;
-    explicit String(const std::string &value) : value_{value} {}
+    StringLiteral() = default;
+    explicit StringLiteral(const std::string &value) : value_{value} {}
 
-    ASTNodeType Kind() const override { return ASTNodeType::kString; }
+    ASTNodeType Kind() const override { return ASTNodeType::kStringLiteral; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::string value_;
@@ -185,28 +196,41 @@ public:
 class UnaryOpExpression : public Expression {
 public:
     UnaryOpExpression() = default;
-    UnaryOpExpression(std::unique_ptr<Expression> object, char op) :
+    UnaryOpExpression(std::unique_ptr<Expression> object, TokenValue op) :
             object_{std::move(object)}, op_{op} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kUnaryOpExpression; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> object_;
-    char op_{};
+    TokenValue op_{};
+};
+
+class PostfixExpression : public Expression {
+public:
+    PostfixExpression() = default;
+    PostfixExpression(std::unique_ptr<Expression> object, TokenValue op) :
+            object_{std::move(object)}, op_{op} {}
+
+    ASTNodeType Kind() const override { return ASTNodeType::kPostfixExpression; }
+    llvm::Value *CodeGen(CodeGenContext &context) override;
+
+    std::unique_ptr<Expression> object_;
+    TokenValue op_{};
 };
 
 class BinaryOpExpression : public Expression {
 public:
     BinaryOpExpression() = default;
     BinaryOpExpression(std::unique_ptr<Expression> lhs, std::unique_ptr<Expression> rhs,
-                       char op) : lhs_{std::move(lhs)}, rhs_{std::move(rhs)}, op_{op} {}
+                       TokenValue op) : lhs_{std::move(lhs)}, rhs_{std::move(rhs)}, op_{op} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kBinaryOpExpression; }
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> lhs_;
     std::unique_ptr<Expression> rhs_;
-    char op_{};
+    TokenValue op_{};
 };
 
 class TernaryOpExpression : public Expression {
@@ -279,6 +303,20 @@ public:
     std::unique_ptr<Expression> initialization_expression_;
 };
 
+class VariableDeclarationList : public Statement {
+public:
+    VariableDeclarationList() = default;
+    VariableDeclarationList(std::unique_ptr<std::vector<VariableDeclaration>> var_declarations) :
+            var_declarations_{std::move(var_declarations)} {}
+
+    ASTNodeType Kind() const override { return ASTNodeType::kVariableDeclaration; }
+    llvm::Value *CodeGen(CodeGenContext &context) override;
+
+    std::unique_ptr<std::vector<VariableDeclaration>> var_declarations_{
+            std::make_unique<std::vector<VariableDeclaration>>()
+    };
+};
+
 class FunctionDeclaration : public Statement {
 public:
     FunctionDeclaration() = default;
@@ -286,11 +324,10 @@ public:
                         std::unique_ptr<Identifier> function_name,
                         std::unique_ptr<VariableDeclarationList> args,
                         bool has_body,
-                        std::unique_ptr<Block> body,
-                        bool is_extern = true)
+                        std::unique_ptr<Block> body)
             : return_type_{std::move(return_type)}, function_name_{std::move(function_name)},
               args_{std::move(args)}, has_body_{has_body},
-              body_{std::move(body)}, is_extern_{is_extern} {}
+              body_{std::move(body)} {}
 
     ASTNodeType Kind() const override {
         if (has_body_) {
@@ -307,7 +344,6 @@ public:
     std::unique_ptr<VariableDeclarationList> args_{std::unique_ptr<VariableDeclarationList>()};
     bool has_body_{false};
     std::unique_ptr<Block> body_;
-    bool is_extern_{true};
 };
 
 class IfStatement : public Statement {
@@ -370,6 +406,12 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::unique_ptr<Expression> expression_;
+};
+
+class EmptyStatement : public Statement {
+public:
+    ASTNodeType Kind() const override { return ASTNodeType::kEmptyStatement; }
+    llvm::Value *CodeGen(CodeGenContext &context) override;
 };
 
 }

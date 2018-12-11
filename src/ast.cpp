@@ -10,19 +10,19 @@ llvm::Value *ASTNode::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *Double::CodeGen(CodeGenContext &context) {
+llvm::Value *DoubleConstant::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *Integer::CodeGen(CodeGenContext &context) {
+llvm::Value *IntConstant::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *Char::CodeGen(CodeGenContext &context) {
+llvm::Value *CharConstant::CodeGen(CodeGenContext &context) {
     return ASTNode::CodeGen(context);
 }
 
-llvm::Value *String::CodeGen(CodeGenContext &context) {
+llvm::Value *StringLiteral::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
@@ -40,6 +40,10 @@ llvm::Value *CastExpression::CodeGen(CodeGenContext &context) {
 
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
     return nullptr;
+}
+
+llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
+    return ASTNode::CodeGen(context);
 }
 
 llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
@@ -84,6 +88,14 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
+}
+
+llvm::Value *EmptyStatement::CodeGen(CodeGenContext &context) {
+    return ASTNode::CodeGen(context);
+}
+
+llvm::Value *VariableDeclarationList::CodeGen(CodeGenContext &context) {
+    return ASTNode::CodeGen(context);
 }
 
 }

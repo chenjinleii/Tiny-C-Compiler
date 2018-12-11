@@ -70,11 +70,14 @@ std::unique_ptr<Statement> Parser::ParseGlobal() {
     std::unique_ptr<Statement> result;
 
     if (Test(TokenValue::kEnumKeyword)) {
-        //result=;
-        //TODO enum
+        // result=
+        // TODO enum
     } else if (Test(TokenValue::kStructKeyword)) {
-        //result=;
-        //TODO struct
+        // result=
+        // TODO struct
+    } else if (Test(TokenValue::kUnionKeyword)) {
+        // result=
+        // TODO union
     } else {
         result = ParseDeclaration();
     }
@@ -87,26 +90,29 @@ std::unique_ptr<Statement> Parser::ParseGlobal() {
 }
 
 std::unique_ptr<Statement> Parser::ParseDeclaration() {
-    auto var_declaration_no_init{ParVarDeclarationNoInit()};
+    declaration_stack_.push(ParseTypeSpecifier());
+    auto declarations{std::make_unique<VariableDeclarationList>()};
 
-    if (CurrentTokenIs(TokenValue::kLeftParen)) {
-        auto function{ParseFunctionDeclaration()};
-        function->return_type_ = std::move(var_declaration_no_init->type_);
-        function->function_name_ = std::move(var_declaration_no_init->variable_name_);
-        return function;
-    } else if (CurrentTokenIs(TokenValue::kEqual)) {
-        auto initialization_expression{ParseExpression()};
-        var_declaration_no_init->initialization_expression_ = std::move(initialization_expression);
-        return var_declaration_no_init;
-    } else {
-        return var_declaration_no_init;
-    }
+
+//    auto var_declaration_no_init{ParVarDeclarationNoInit()};
+//
+//    if (CurrentTokenIs(TokenValue::kLeftParen)) {
+//        auto function{ParseFunctionDeclaration()};
+//        function->return_type_ = std::move(var_declaration_no_init->type_);
+//        function->function_name_ = std::move(var_declaration_no_init->variable_name_);
+//        return function;
+//    } else if (CurrentTokenIs(TokenValue::kEqual)) {
+//        auto initialization_expression{ParseExpression()};
+//        var_declaration_no_init->initialization_expression_ = std::move(initialization_expression);
+//        return var_declaration_no_init;
+//    } else {
+//        return var_declaration_no_init;
+//    }
 }
 
-std::unique_ptr<Identifier> Parser::ParseTypeSpecifier() {
-    if (GetCurrentToken().IsTypeSpecifier()) {
-        auto result{std::make_unique<Identifier>(GetCurrentToken().GetTokenName(), true)};
-        GetNextToken();
+std::unique_ptr<PrimitiveType> Parser::ParseTypeSpecifier() {
+    if (PeekNextToken().IsTypeSpecifier()) {
+        auto result{std::make_unique<PrimitiveType>(GetNextToken().GetTokenValue())};
         return result;
     } else {
         return nullptr;
@@ -295,8 +301,8 @@ std::unique_ptr<Expression> Parser::ParseExpression() {
 std::unique_ptr<Expression> Parser::ParsePrimary() {
     switch (GetCurrentToken().GetTokenType()) {
         case TokenType::kIdentifier:return ParseIdentifierExpression();
-        case TokenType::kInterger:return ParseInteger();
-        case TokenType::kDouble: return ParseDouble();
+        case TokenType::kInterger:return ParseIntConstant();
+        case TokenType::kDouble: return ParseDoubleConstant();
         case TokenType::kDelimiter:
             if (CurrentTokenIs(TokenValue::kLeftParen)) {
                 return ParseParenExpr();
@@ -336,14 +342,14 @@ std::unique_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
     }
 }
 
-std::unique_ptr<Integer> Parser::ParseInteger() {
-    auto result{std::make_unique<Integer>(GetCurrentToken().GetInt32Value())};
+std::unique_ptr<IntConstant> Parser::ParseIntConstant() {
+    auto result{std::make_unique<IntConstant>(GetCurrentToken().GetInt32Value())};
     GetNextToken();
     return result;
 }
 
-std::unique_ptr<Double> Parser::ParseDouble() {
-    auto result{std::make_unique<Double>(GetCurrentToken().GetDoubleValue())};
+std::unique_ptr<DoubleConstant> Parser::ParseDoubleConstant() {
+    auto result{std::make_unique<DoubleConstant>(GetCurrentToken().GetDoubleValue())};
     GetNextToken();
     return result;
 }

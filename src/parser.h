@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <stack>
 
 namespace tcc {
 
@@ -28,9 +29,11 @@ private:
     bool Test(TokenValue value);
     void Expect(TokenValue value);
 
+    std::stack<std::unique_ptr<ASTNode>> declaration_stack_;
+
     std::unique_ptr<Statement> ParseGlobal();
     std::unique_ptr<Statement> ParseDeclaration();
-    std::unique_ptr<Identifier> ParseTypeSpecifier();
+    std::unique_ptr<PrimitiveType> ParseTypeSpecifier();
     std::unique_ptr<Identifier> ParseIdentifier();
 
     std::unique_ptr<FunctionDeclaration> ParseFunctionDeclaration();
@@ -44,17 +47,23 @@ private:
     std::unique_ptr<ReturnStatement> ParseReturnStatement();
     std::unique_ptr<ExpressionStatement> ParseExpressionStatement();
 
-    std::unique_ptr<EnumDeclaration> ParseEnumDeclaration();
-    std::unique_ptr<StructDeclaration> ParseStructDeclaration();
-
     std::unique_ptr<Expression> ParseExpression();
     std::unique_ptr<Expression> ParsePrimary();
     std::unique_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
                                               std::unique_ptr<Expression> lhs);
-    std::unique_ptr<Integer> ParseInteger();
-    std::unique_ptr<Double> ParseDouble();
+
+    std::unique_ptr<CharConstant> ParseCharConstant();
+    std::unique_ptr<IntConstant> ParseIntConstant();
+    std::unique_ptr<DoubleConstant> ParseDoubleConstant();
+    std::unique_ptr<StringLiteral> ParseStringLiteral();
+
     std::unique_ptr<Expression> ParseIdentifierExpression();
     std::unique_ptr<Expression> ParseParenExpr();
+    std::unique_ptr<CastExpression> ParseCastExpression();
+    std::unique_ptr<UnaryOpExpression> ParseUnaryOpExpression();
+    std::unique_ptr<PostfixExpression> ParsePostfixExpression();
+    std::unique_ptr<TernaryOpExpression> ParseTernaryOpExpression();
+    std::unique_ptr<AssignmentExpression> ParseAssignmentExpression();
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};

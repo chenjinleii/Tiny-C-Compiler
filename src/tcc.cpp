@@ -64,8 +64,12 @@ int main(int argc, char *argv[]) {
         std::exit(EXIT_SUCCESS);
     }
 
-    if (std::size(input_files) == 0) {
+    if (auto size{std::size(input_files)};size == 0) {
         std::cerr << "fatal error: no input files.\n";
+        std::exit(EXIT_FAILURE);
+    } else if (size > 1) {
+        std::cerr << "Do not support multiple files at this time.\n";
+        std::exit(EXIT_FAILURE);
     }
 
     //TODO 支持更多编译参数
@@ -88,8 +92,16 @@ int main(int argc, char *argv[]) {
     for (const auto &file:files_to_delete) {
         std::filesystem::remove(std::filesystem::path{file});
     }
-    std::cout << "Compiled successfully\n";
-    std::cout << "The name of the executable is " + program_name << '\n';
+
+    if (FileExists(program_name)) {
+        std::cout << "Compiled successfully\n";
+        std::cout << "The name of the executable is " + program_name << '\n';
+        std::exit(EXIT_SUCCESS);
+    } else {
+        std::cerr << "Compile failed\n";
+        std::exit(EXIT_FAILURE);
+    }
+
 #endif
 }
 

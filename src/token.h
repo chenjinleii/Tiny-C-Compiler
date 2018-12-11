@@ -116,7 +116,7 @@ public:
         kRightCurly,       // }
         kSemicolon,        // ;
         KColon,            // :
-        kEllipsis,         //...
+        kEllipsis,         // ...
 
         kNone,
         kEof
