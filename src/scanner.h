@@ -18,7 +18,7 @@ namespace tcc {
 class KeywordsDictionary {
 public:
     KeywordsDictionary();
-    TokenValue Find(const std::string &name);
+    TokenValue Find(const std::string &name) const;
 private:
     std::unordered_map<std::string, TokenValue> keywords_;
 };

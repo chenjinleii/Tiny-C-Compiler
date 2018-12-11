@@ -52,7 +52,7 @@ PrecedenceDictionary::PrecedenceDictionary() {
     precedence_.insert({TokenValues::kPeriod, 150});
 }
 
-std::int32_t PrecedenceDictionary::Find(TokenValue value) {
+std::int32_t PrecedenceDictionary::Find(TokenValue value) const {
     if (auto iter{precedence_.find(value)};iter != std::end(precedence_)) {
         return iter->second;
     } else {
@@ -141,6 +141,36 @@ bool Token::IsIdentifier() const {
     return value_ == TokenValue::kIdentifier;
 }
 
+bool Token::IsOperator() const {
+    return precedence_dictionary_.Find(value_) != -1;
+}
+
+bool Token::IsPrefixOperator() const {
+    return value_ == TokenValue::kComma ||
+            value_ == TokenValue::kArrow ||
+            value_ == TokenValue::kAdd ||
+            value_ == TokenValue::kSub ||
+            value_ == TokenValue::kMul ||
+            value_ == TokenValue::kDiv ||
+            value_ == TokenValue::kNotEqual ||
+            value_ == TokenValue::kEqual ||
+            value_ == TokenValue::kGreater ||
+            value_ == TokenValue::kGreaterOrEqual ||
+            value_ == TokenValue::kLess ||
+            value_ == TokenValue::kLessOrEqual ||
+            value_ == TokenValue::kMod ||
+            value_ == TokenValue::kLogicAnd ||
+            value_ == TokenValue::kAnd ||
+            value_ == TokenValue::kLogicOr ||
+            value_ == TokenValue::kOr;
+}
+
+bool Token::IsPostfixOperator() const {
+    return value_ == TokenValue::kInc ||
+            value_ == TokenValue::kDec ||
+            value_ == TokenValues::kRightParen;
+}
+
 bool Token::TokenValueIs(TokenValue value) const {
     return value_ == value;
 }
@@ -171,6 +201,10 @@ double Token::GetDoubleValue() const {
 
 std::string Token::GetStringValue() const {
     return string_value_;
+}
+
+SourceLocation Token::GetTokenLocation() const {
+    return location_;
 }
 
 }

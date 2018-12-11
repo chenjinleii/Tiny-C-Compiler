@@ -34,10 +34,6 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *CastExpression::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
-}
-
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
@@ -54,11 +50,7 @@ llvm::Value *TernaryOpExpression::CodeGen(CodeGenContext &context) {
     return ASTNode::CodeGen(context);
 }
 
-llvm::Value *AssignmentExpression::CodeGen(CodeGenContext &context) {
-    return nullptr;
-}
-
-llvm::Value *Block::CodeGen(CodeGenContext &context) {
+llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
@@ -66,7 +58,7 @@ llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
-llvm::Value *VariableDeclaration::CodeGen(CodeGenContext &context) {
+llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
     return nullptr;
 }
 
@@ -91,10 +83,6 @@ llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
 }
 
 llvm::Value *EmptyStatement::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
-}
-
-llvm::Value *VariableDeclarationList::CodeGen(CodeGenContext &context) {
     return ASTNode::CodeGen(context);
 }
 

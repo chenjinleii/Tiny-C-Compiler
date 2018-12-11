@@ -54,7 +54,7 @@ KeywordsDictionary::KeywordsDictionary() {
     keywords_.insert({"_Imaginary", TokenValue::kImaginaryKeyword});
 }
 
-TokenValue KeywordsDictionary::Find(const std::string &name) {
+TokenValue KeywordsDictionary::Find(const std::string &name) const {
     if (auto iter{keywords_.find(name)};iter != std::end(keywords_)) {
         return iter->second;
     } else {

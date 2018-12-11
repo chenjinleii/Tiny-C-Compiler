@@ -20,7 +20,7 @@ void ErrorReportAndExit(const std::string &msg);
 
 void ErrorReportAndExit(const SourceLocation &location, const std::string &msg);
 
-void ErrorReportAndExit(TokenValue expect, TokenValue actual);
+void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, TokenValue actual);
 
 template<typename... Args>
 void ErrorReportAndExit(const SourceLocation &location, const std::string &format_str, const Args &... args) {

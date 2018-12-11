@@ -6,7 +6,7 @@
 
 namespace tcc {
 
-void CodeGenContext::GenerateCode(Block &root) {
+void CodeGenContext::GenerateCode(CompoundStatement &root) {
 
 }
 

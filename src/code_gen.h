@@ -34,7 +34,7 @@ public:
     SymbolTable global_vars_;
     //TypeSystem typeSystem;
 
-    void GenerateCode(Block &root);
+    void GenerateCode(CompoundStatement &root);
 
 private:
     //std::vector<CodeGenBlock*> blockStack;

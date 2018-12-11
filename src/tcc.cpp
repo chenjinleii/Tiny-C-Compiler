@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <memory>
 #include <sstream>
+#include <fstream>
 
 void ShowHelpInfo();
 bool FileExists(const std::string &input_file);
@@ -86,21 +87,21 @@ int main(int argc, char *argv[]) {
         RunTcc(input_file, obj_files, files_to_delete);
     }
 
-    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
-    std::system(cmd.c_str());
-
-    for (const auto &file:files_to_delete) {
-        std::filesystem::remove(std::filesystem::path{file});
-    }
-
-    if (FileExists(program_name)) {
-        std::cout << "Compiled successfully\n";
-        std::cout << "The name of the executable is " + program_name << '\n';
-        std::exit(EXIT_SUCCESS);
-    } else {
-        std::cerr << "Compile failed\n";
-        std::exit(EXIT_FAILURE);
-    }
+//    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
+//    std::system(cmd.c_str());
+//
+//    for (const auto &file:files_to_delete) {
+//        std::filesystem::remove(std::filesystem::path{file});
+//    }
+//
+//    if (FileExists(program_name)) {
+//        std::cout << "Compiled successfully\n";
+//        std::cout << "The name of the executable is " + program_name << '\n';
+//        std::exit(EXIT_SUCCESS);
+//    } else {
+//        std::cerr << "Compile failed\n";
+//        std::exit(EXIT_FAILURE);
+//    }
 
 #endif
 }
@@ -136,12 +137,21 @@ void RunTcc(const std::string &input_file,
     tcc::Parser parse{scanner.Scan()};
     auto program_block{parse.parse()};
 
-    tcc::CodeGenContext context;
-    context.GenerateCode(*program_block);
+    auto root = program_block->jsonGen();
+    std::string jsonFile = "visualization/A_tree.json";
+    std::ofstream astJson(jsonFile);
+    if (astJson.is_open()) {
+        astJson << root;
+        astJson.close();
+        std::cout << "json write to " << jsonFile << std::endl;
+    }
 
-    std::string obj_file(RemoveExtension(input_file) + ".o");
-    files_to_delete.push_back(obj_file);
-    obj_files << ' ' << obj_file;
-
-    tcc::ObjGen(context, obj_file);
+//    tcc::CodeGenContext context;
+//    context.GenerateCode(*program_block);
+//
+//    std::string obj_file(RemoveExtension(input_file) + ".o");
+//    files_to_delete.push_back(obj_file);
+//    obj_files << ' ' << obj_file;
+//
+//    tcc::ObjGen(context, obj_file);
 }

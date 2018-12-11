@@ -131,7 +131,7 @@ using TokenValue=TokenValues::Value;
 class PrecedenceDictionary {
 public:
     PrecedenceDictionary();
-    std::int32_t Find(TokenValue value);
+    std::int32_t Find(TokenValue value) const;
 private:
     std::unordered_map<TokenValue, std::int32_t> precedence_;
 };
@@ -156,8 +156,12 @@ public:
 
     bool IsTypeSpecifier() const;
     bool IsIdentifier() const;
+    bool IsOperator() const;
+    bool IsPrefixOperator() const;
+    bool IsPostfixOperator() const;
 
     bool TokenValueIs(TokenValue value) const;
+    SourceLocation GetTokenLocation() const;
     TokenValue GetTokenValue() const;
     std::string GetTokenName() const;
     std::int32_t GetTokenPrecedence() const;

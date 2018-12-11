@@ -12,7 +12,6 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-#include <stack>
 
 namespace tcc {
 
@@ -20,7 +19,7 @@ class Parser {
 public:
     explicit Parser(const std::vector<Token> &token_sequence) :
             token_sequence_{token_sequence} {}
-    std::unique_ptr<Block> parse();
+    std::shared_ptr<CompoundStatement> parse();
 private:
     Token GetNextToken();
     Token PeekNextToken() const;
@@ -29,44 +28,47 @@ private:
     bool Test(TokenValue value);
     void Expect(TokenValue value);
 
-    std::stack<std::unique_ptr<ASTNode>> declaration_stack_;
+    std::shared_ptr<Statement> ParseGlobal();
+    std::shared_ptr<Statement> ParseDeclaration();
+    std::shared_ptr<PrimitiveType> ParseTypeSpecifier();
+    std::shared_ptr<Identifier> ParseIdentifier();
+    std::shared_ptr<FunctionDeclaration> ParseFunctionDeclaration();
 
-    std::unique_ptr<Statement> ParseGlobal();
-    std::unique_ptr<Statement> ParseDeclaration();
-    std::unique_ptr<PrimitiveType> ParseTypeSpecifier();
-    std::unique_ptr<Identifier> ParseIdentifier();
+    std::shared_ptr<CompoundStatement> ParseCompound();
+    std::shared_ptr<Declaration> ParVarDeclarationNoInit();
+    std::shared_ptr<Declaration> ParVarDeclarationWithInit();
+    std::shared_ptr<Statement> ParseStatement();
+    std::shared_ptr<IfStatement> ParseIfStatement();
+    std::shared_ptr<WhileStatement> ParseWhileStatement();
+    std::shared_ptr<ForStatement> ParseForStatement();
+    std::shared_ptr<ReturnStatement> ParseReturnStatement();
+    std::shared_ptr<ExpressionStatement> ParseExpressionStatement();
 
-    std::unique_ptr<FunctionDeclaration> ParseFunctionDeclaration();
-    std::unique_ptr<Block> ParseBlock();
-    std::unique_ptr<VariableDeclaration> ParVarDeclarationNoInit();
-    std::unique_ptr<VariableDeclaration> ParVarDeclarationWithInit();
-    std::unique_ptr<Statement> ParseStatement();
-    std::unique_ptr<IfStatement> ParseIfStatement();
-    std::unique_ptr<WhileStatement> ParseWhileStatement();
-    std::unique_ptr<ForStatement> ParseForStatement();
-    std::unique_ptr<ReturnStatement> ParseReturnStatement();
-    std::unique_ptr<ExpressionStatement> ParseExpressionStatement();
+    std::shared_ptr<Expression> ParseExpression();
+    std::shared_ptr<Expression> ParsePrimary();
+    std::shared_ptr<CharConstant> ParseCharConstant();
+    std::shared_ptr<IntConstant> ParseIntConstant();
+    std::shared_ptr<DoubleConstant> ParseDoubleConstant();
+    std::shared_ptr<StringLiteral> ParseStringLiteral();
 
-    std::unique_ptr<Expression> ParseExpression();
-    std::unique_ptr<Expression> ParsePrimary();
-    std::unique_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
-                                              std::unique_ptr<Expression> lhs);
+    std::shared_ptr<Expression> ParseUnaryOpExpression();
+    std::shared_ptr<Expression> ParsePostfixExpression();
+    std::shared_ptr<Expression> ParseTernaryOpExpression(std::shared_ptr<Expression> condition);
+    std::shared_ptr<Expression> HackExpression(std::shared_ptr<BinaryOpExpression> biop);
+    std::shared_ptr<IntConstant> ParseSizeof();
 
-    std::unique_ptr<CharConstant> ParseCharConstant();
-    std::unique_ptr<IntConstant> ParseIntConstant();
-    std::unique_ptr<DoubleConstant> ParseDoubleConstant();
-    std::unique_ptr<StringLiteral> ParseStringLiteral();
-
-    std::unique_ptr<Expression> ParseIdentifierExpression();
-    std::unique_ptr<Expression> ParseParenExpr();
-    std::unique_ptr<CastExpression> ParseCastExpression();
-    std::unique_ptr<UnaryOpExpression> ParseUnaryOpExpression();
-    std::unique_ptr<PostfixExpression> ParsePostfixExpression();
-    std::unique_ptr<TernaryOpExpression> ParseTernaryOpExpression();
-    std::unique_ptr<AssignmentExpression> ParseAssignmentExpression();
+    std::shared_ptr<Expression> ParseBinOpRHS(int ExprPrec,
+                                              std::shared_ptr<Expression> LHS);
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};
+
+    template<typename T, typename... Args>
+    std::shared_ptr<T> MakeASTNode(Args... args) {
+        auto t{std::make_unique<T>(args...)};
+        t->location_ = PeekNextToken().GetTokenLocation();
+        return std::move(t);
+    }
 };
 
 }
