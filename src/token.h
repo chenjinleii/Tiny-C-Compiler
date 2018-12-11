@@ -156,9 +156,6 @@ public:
 
     bool IsTypeSpecifier() const;
     bool IsIdentifier() const;
-    bool IsOperator() const;
-    bool IsPrefixOperator() const;
-    bool IsPostfixOperator() const;
 
     bool TokenValueIs(TokenValue value) const;
     SourceLocation GetTokenLocation() const;

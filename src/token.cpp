@@ -15,40 +15,36 @@ std::string TokenValues::ToString(TokenValues::Value value) {
 }
 
 PrecedenceDictionary::PrecedenceDictionary() {
-    precedence_.insert({TokenValues::kNeg, 0});
-    precedence_.insert({TokenValues::kArrow, 150});
-    precedence_.insert({TokenValues::kDec, 150});
+    precedence_.insert({TokenValues::kAssign, 20});
     precedence_.insert({TokenValues::kSubAssign, 20});
-    precedence_.insert({TokenValues::kSub, 120});
-    precedence_.insert({TokenValues::kInc, 150});
     precedence_.insert({TokenValues::kAddAssign, 20});
-    precedence_.insert({TokenValues::kAdd, 120});
     precedence_.insert({TokenValues::kShlAssign, 20});
-    precedence_.insert({TokenValues::kShl, 110});
+    precedence_.insert({TokenValues::kShrAssign, 20});
+    precedence_.insert({TokenValues::kModAssign, 20});
+    precedence_.insert({TokenValues::kXorAssign, 20});
+    precedence_.insert({TokenValues::kMulAssign, 20});
+    precedence_.insert({TokenValues::kOrAssign, 20});
+    precedence_.insert({TokenValues::kAndAssign, 20});
+    precedence_.insert({TokenValues::kDivAssign, 20});
+    precedence_.insert({TokenValues::kLogicOr, 40});
+    precedence_.insert({TokenValues::kLogicAnd, 50});
+    precedence_.insert({TokenValues::kOr, 60});
+    precedence_.insert({TokenValues::kXor, 70});
+    precedence_.insert({TokenValues::kAnd, 80});
+    precedence_.insert({TokenValues::kEqual, 90});
+    precedence_.insert({TokenValues::kNotEqual, 90});
     precedence_.insert({TokenValues::kLessOrEqual, 100});
     precedence_.insert({TokenValues::kLess, 100});
-    precedence_.insert({TokenValues::kShrAssign, 20});
-    precedence_.insert({TokenValues::kShr, 110});
     precedence_.insert({TokenValues::kGreaterOrEqual, 100});
     precedence_.insert({TokenValues::kGreater, 100});
-    precedence_.insert({TokenValues::kModAssign, 20});
+    precedence_.insert({TokenValues::kShl, 110});
+    precedence_.insert({TokenValues::kShr, 110});
+    precedence_.insert({TokenValues::kSub, 120});
+    precedence_.insert({TokenValues::kAdd, 120});
     precedence_.insert({TokenValues::kMod, 130});
-    precedence_.insert({TokenValues::kEqual, 90});
-    precedence_.insert({TokenValues::kAssign, 20});
-    precedence_.insert({TokenValues::kNotEqual, 90});
-    precedence_.insert({TokenValues::kLogicNeg, 140});
-    precedence_.insert({TokenValues::kLogicAnd, 50});
-    precedence_.insert({TokenValues::kAndAssign, 20});
-    precedence_.insert({TokenValues::kAnd, 80});
-    precedence_.insert({TokenValues::kLogicOr, 40});
-    precedence_.insert({TokenValues::kOrAssign, 20});
-    precedence_.insert({TokenValues::kOr, 60});
-    precedence_.insert({TokenValues::kMulAssign, 20});
     precedence_.insert({TokenValues::kMul, 130});
-    precedence_.insert({TokenValues::kDivAssign, 20});
     precedence_.insert({TokenValues::kDiv, 130});
-    precedence_.insert({TokenValues::kXorAssign, 20});
-    precedence_.insert({TokenValues::kXor, 70});
+    precedence_.insert({TokenValues::kArrow, 150});
     precedence_.insert({TokenValues::kPeriod, 150});
 }
 
@@ -139,36 +135,6 @@ bool Token::IsTypeSpecifier() const {
 
 bool Token::IsIdentifier() const {
     return value_ == TokenValue::kIdentifier;
-}
-
-bool Token::IsOperator() const {
-    return precedence_dictionary_.Find(value_) != -1;
-}
-
-bool Token::IsPrefixOperator() const {
-    return value_ == TokenValue::kComma ||
-            value_ == TokenValue::kArrow ||
-            value_ == TokenValue::kAdd ||
-            value_ == TokenValue::kSub ||
-            value_ == TokenValue::kMul ||
-            value_ == TokenValue::kDiv ||
-            value_ == TokenValue::kNotEqual ||
-            value_ == TokenValue::kEqual ||
-            value_ == TokenValue::kGreater ||
-            value_ == TokenValue::kGreaterOrEqual ||
-            value_ == TokenValue::kLess ||
-            value_ == TokenValue::kLessOrEqual ||
-            value_ == TokenValue::kMod ||
-            value_ == TokenValue::kLogicAnd ||
-            value_ == TokenValue::kAnd ||
-            value_ == TokenValue::kLogicOr ||
-            value_ == TokenValue::kOr;
-}
-
-bool Token::IsPostfixOperator() const {
-    return value_ == TokenValue::kInc ||
-            value_ == TokenValue::kDec ||
-            value_ == TokenValues::kRightParen;
 }
 
 bool Token::TokenValueIs(TokenValue value) const {

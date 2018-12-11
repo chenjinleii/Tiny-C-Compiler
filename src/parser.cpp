@@ -2,8 +2,6 @@
 // Created by kaiser on 18-12-8.
 //
 
-// TODO 多个字符的运算符 字符和字符串 一元运算符 函数调用 位置记录
-
 #include "location.h"
 #include "error.h"
 #include "parser.h"
@@ -13,18 +11,18 @@
 
 namespace tcc {
 
-std::shared_ptr<CompoundStatement> Parser::parse() {
-    auto program_block{MakeASTNode<CompoundStatement>()};
+std::shared_ptr<CompoundStatement> Parser::Parse() {
+    auto root{MakeASTNode<CompoundStatement>()};
 
     if (std::size(token_sequence_) == 0) {
         ErrorReportAndExit("no token");
     }
 
     while (HasNextToken()) {
-        program_block->statements_->push_back(ParseGlobal());
+        root->AddStatement(ParseGlobal());
     }
 
-    return program_block;
+    return root;
 }
 
 Token Parser::GetNextToken() {
@@ -70,26 +68,27 @@ void Parser::Expect(TokenValue value) {
 
 std::shared_ptr<Statement> Parser::ParseGlobal() {
     auto result{ParseDeclaration()};
+    if (result->Kind() != ASTNodeType::kFunctionDefinition) {
+        Expect(TokenValue::kSemicolon);
+    }
+
     return result;
 }
 
 std::shared_ptr<Statement> Parser::ParseDeclaration() {
-    auto var_declaration_no_init{ParVarDeclarationNoInit()};
+    auto declaration_no_init{ParDeclarationWithoutInit()};
 
     if (Try(TokenValue::kLeftParen)) {
         auto function{ParseFunctionDeclaration()};
-        function->return_type_ = std::move(var_declaration_no_init->type_);
-        function->function_name_ = std::move(var_declaration_no_init->variable_name_);
-        Expect(TokenValue::kSemicolon);
+        function->return_type_ = std::move(declaration_no_init->type_);
+        function->function_name_ = std::move(declaration_no_init->variable_name_);
         return function;
     } else if (Try(TokenValue::kEqual)) {
         auto initialization_expression{ParseExpression()};
-        var_declaration_no_init->initialization_expression_ = std::move(initialization_expression);
-        Expect(TokenValue::kSemicolon);
-        return var_declaration_no_init;
+        declaration_no_init->initialization_expression_ = std::move(initialization_expression);
+        return declaration_no_init;
     } else {
-        Expect(TokenValue::kSemicolon);
-        return var_declaration_no_init;
+        return declaration_no_init;
     }
 }
 
@@ -115,7 +114,7 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     auto function{MakeASTNode<FunctionDeclaration>()};
 
     while (!Test(TokenValue::kRightParen)) {
-        function->args_->push_back(ParVarDeclarationNoInit());
+        function->args_->push_back(ParDeclarationWithoutInit());
         Expect(TokenValue::kComma);
     }
 
@@ -140,7 +139,7 @@ std::shared_ptr<CompoundStatement> Parser::ParseCompound() {
     return compound;
 }
 
-std::shared_ptr<Declaration> Parser::ParVarDeclarationNoInit() {
+std::shared_ptr<Declaration> Parser::ParDeclarationWithoutInit() {
     auto type{ParseTypeSpecifier()};
     if (!type) {
         ErrorReportAndExit("expect a type specifier");
@@ -150,13 +149,13 @@ std::shared_ptr<Declaration> Parser::ParVarDeclarationNoInit() {
     if (!identifier) {
         ErrorReportAndExit("expect a identifier");
     }
-    return MakeASTNode<Declaration>(std::move(type), std::move(identifier), nullptr);
+    return MakeASTNode<Declaration>(std::move(type), std::move(identifier));
 }
 
-std::shared_ptr<Declaration> Parser::ParVarDeclarationWithInit() {
-    auto var_declaration_no_init{ParVarDeclarationNoInit()};
+std::shared_ptr<Declaration> Parser::ParDeclarationWithInit() {
+    auto var_declaration_no_init{ParDeclarationWithoutInit()};
 
-    if (Try(TokenValue::kEqual)) {
+    if (Try(TokenValue::kAssign)) {
         var_declaration_no_init->initialization_expression_ = ParseExpression();
     }
     Expect(TokenValue::kSemicolon);
@@ -174,7 +173,7 @@ std::shared_ptr<Statement> Parser::ParseStatement() {
     } else if (Try(TokenValue::kReturnKeyword)) {
         return ParseReturnStatement();
     } else if (PeekNextToken().IsTypeSpecifier()) {
-        return ParVarDeclarationWithInit();
+        return ParDeclarationWithInit();
     } else if (Try(TokenValue::kLeftCurly)) {
         auto compound{ParseCompound()};
         Expect(TokenValue::kRightCurly);
@@ -251,7 +250,7 @@ std::shared_ptr<ReturnStatement> Parser::ParseReturnStatement() {
 }
 
 std::shared_ptr<ExpressionStatement> Parser::ParseExpressionStatement() {
-    auto expression_statement{std::make_unique<ExpressionStatement>()};
+    auto expression_statement{std::make_shared<ExpressionStatement>()};
 
     expression_statement->expression_ = ParseExpression();
     Expect(TokenValue::kSemicolon);
@@ -260,88 +259,19 @@ std::shared_ptr<ExpressionStatement> Parser::ParseExpressionStatement() {
 }
 
 std::shared_ptr<Expression> Parser::ParseExpression() {
-//    auto result{ParseUnaryOpExpression()};
-//
-//    while (HasNextToken()) {
-//        auto next{PeekNextToken()};
-//        if (!next.IsOperator()) {
-//            break;
-//        }
-//        if (next.GetTokenPrecedence() > precedence) {
-//            if (next.TokenValueIs(TokenValue::kQuestionMark)) {
-//                result = ParseTernaryOpExpression(std::move(result));
-//            } else {
-//                GetNextToken();
-//                result = std::move(HackExpression(std::move(MakeASTNode<BinaryOpExpression>
-//                                                                    (std::move(result),
-//                                                                     std::move(ParseExpression(next.GetTokenPrecedence()
-//                                                                                                       + next.IsPrefixOperator())),
-//                                                                     next.GetTokenValue()))));
-//            }
-//        } else {
-//            break;
-//        }
-//    }
-//    return std::move(result);
-
-    auto LHS = ParsePrimary();
-    if (!LHS) {
+    auto lhs{ParsePrimary()};
+    if (!lhs) {
         return nullptr;
     }
 
-    return ParseBinOpRHS(0, std::move(LHS));
+    return ParseBinOpRHS(0, std::move(lhs));
 }
-
-//std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
-//    if (Test(TokenValue::kAdd) || Test(TokenValue::kSub) ||
-//            Test(TokenValue::kInc) || Test(TokenValue::kDec) || Test(TokenValue::kNeg)) {
-//        auto next{GetNextToken()};
-//        return std::move(MakeASTNode<UnaryOpExpression>(ParseUnaryOpExpression(), next.GetTokenValue()));
-//    } else if (Try(TokenValue::kSizeofKeyword)) {
-//        return ParseSizeof();
-//    }
-//    return ParsePostfixExpression();
-//}
-//
-//std::shared_ptr<Expression> Parser::ParsePostfixExpression() {
-//    auto postfix{ParsePrimary()};
-//
-//    if (Try(TokenValue::kLeftParen)) {
-//        auto function_call{MakeASTNode<FunctionCall>()};
-//        function_call->function_name_ = std::make_unique<Identifier>(postfix->name_);
-//
-//        if (!PeekNextToken().TokenValueIs(TokenValue::kRightParen)) {
-//            while (true) {
-//                if (auto arg{ParseExpression()}) {
-//                    function_call->args_->push_back(std::move(arg));
-//                } else {
-//                    return nullptr;
-//                }
-//
-//                if (Test(TokenValue::kRightParen)) {
-//                    break;
-//                }
-//
-//                if (!Test(TokenValue::kComma)) {
-//                    ErrorReportAndExit("expect ) or ,");
-//                }
-//                GetNextToken();
-//            }
-//        }
-//    } else {
-//        auto result{MakeASTNode<PostfixExpression>()};
-//        result->object_ = std::move(postfix);
-//        result->op_ = GetNextToken().GetTokenValue();
-//    }
-//
-//    return postfix;
-//};
 
 std::shared_ptr<Expression> Parser::ParsePrimary() {
     if (Test(TokenValue::kIdentifier)) {
-        return ParseIdentifier();
+        return ParseIdentifierExpression();
     } else if (Test(TokenValue::kIntConstant)) {
-        return ParseIntConstant();
+        return ParseInt32Constant();
     } else if (Test(TokenValue::kCharConstant)) {
         return ParseCharConstant();
     } else if (Test(TokenValue::kDoubleConstant)) {
@@ -349,100 +279,90 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
     } else if (Test(TokenValue::kStringLiteral)) {
         return ParseStringLiteral();
     } else if (Try(TokenValue::kLeftParen)) {
-        auto expr{ParseExpression()};
-        Expect(TokenValue::kRightParen);
-        return expr;
+        return ParseParenExpression();
+    } else if (Test(TokenValue::kAdd) || Test(TokenValue::kSub) ||
+            Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
+            Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
+        return ParseUnaryOpExpression();
+    } else if (Try(TokenValue::kSizeofKeyword)) {
+        return ParseSizeof();
     } else {
+        ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                           "unknown token when expecting an expression");
         return nullptr;
     }
 }
 
-//std::shared_ptr<Expression> Parser::ParseTernaryOpExpression(std::shared_ptr<Expression> condition) {
-//    GetNextToken();
-//    auto ternary{MakeASTNode<TernaryOpExpression>()};
-//    ternary->condition_ = std::move(condition);
-//    ternary->lhs_ = ParseExpression();
-//    Expect(TokenValue::KColon);
-//    ternary->rhs_ = ParseExpression();
-//    return ternary;
-//}
-//
-//std::shared_ptr<Expression> Parser::HackExpression(std::shared_ptr<BinaryOpExpression> biop) {
-////    auto op{GetNextToken().GetTokenValue()};
-////    if (op == TokenValue::kAddAssign || op == TokenValue::kSubAssign ||
-////            op == TokenValue::kMulAssign || op == TokenValue::kDivAssign ||
-////            op == TokenValue::kModAssign || op == TokenValue::kShlAssign ||
-////            op == TokenValue::kShrAssign) {
-////        auto t = e->getToken();
-////        op.pop_back();
-////        t.tok = op;
-////        Token t2 = t;
-////        t2.tok = "=";
-////        auto e2 = makeNode<BinaryExpression>(t2);
-////        auto e3 = makeNode<BinaryExpression>(t);
-////        e3->add(e->first());
-////        e3->add(e->second());
-////        e2->add(e->first());
-////        e2->add(e3);
-////        return e2;
-////    } else {
-////        //const folding
-////        if (e->rhs()->kind() == Number().kind() && e->lhs()->kind() == Number().kind()) {
-////            Token::Type ty;
-////            double result;
-////            double a, b;
-////            if (e->rhs()->getToken().type == Token::Type::Int &&
-////                    e->lhs()->getToken().type == Token::Type::Int) {
-////                ty = Token::Type::Int;
-////            } else {
-////                ty = Token::Type::Float;
-////            }
-////            a = ((Number *) e->lhs())->getFloat();
-////            b = ((Number *) e->rhs())->getFloat();
-////            auto op = e->tok();
-////            if (op == "+") { result = a + b; }
-////            else if (op == "-") { result = a - b; }
-////            else if (op == "*") { result = a * b; }
-////            else if (op == "/") { result = a / b; }
-////            else if (op == "%") { result = a / b; }
-////            else { return e; }
-////            if (ty == Token::Type::Int) {
-////                return (BinaryExpression *) makeNode<Number>(
-////                        Token(ty, format("{}", (int) result), e->getToken().line,
-////                              e->getToken().col));
-////            } else {
-////                return (BinaryExpression *) makeNode<Number>(
-////                        Token(ty, format("{}", result), e->getToken().line,
-////                              e->getToken().col));
-////            }
-////
-////        } else {
-////            return e;
-////        }
-////    }
-//}
+std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
+    auto op{GetNextToken()};
 
-//std::shared_ptr<IntConstant> Parser::ParseSizeof() {
-//    Expect(TokenValue::kLeftParen);
-//    auto type{ParseTypeSpecifier()};
-//    if (!type) {
-//        ErrorReportAndExit("expect a type name");
-//    }
-//    Expect(TokenValue::kRightParen);
-//    if (type->type_ == TokenValue::kIntKeyword) {
-//        return MakeASTNode<IntConstant>(4);
-//    } else if (type->type_ == TokenValue::kDoubleKeyword) {
-//        return MakeASTNode<IntConstant>(8);
-//    } else if (type->type_ == TokenValue::kCharKeyword) {
-//        return MakeASTNode<IntConstant>(1);
-//    } else {
-//        ErrorReportAndExit("Unknown type");
-//        return nullptr;
-//    }
-//}
+    if (PeekNextToken().IsIdentifier()) {
+        return MakeASTNode<UnaryOpExpression>(ParseIdentifier(), op.GetTokenValue());
+    } else if (PeekNextToken().IsChar()) {
+        if (op.TokenValueIs(TokenValue::kAdd)) {
+            return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ + 1);
+        } else if (op.TokenValueIs(TokenValue::kSub)) {
+            return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ - 1);
+        } else if (op.TokenValueIs(TokenValue::kNeg)) {
+            return MakeASTNode<Int32Constant>(~(ParseCharConstant()->value_));
+        } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
+            return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ ? 1 : 0);
+        } else {
+            ErrorReportAndExit("Cannot apply inc, dec to constants");
+            return nullptr;
+        }
+    } else if (PeekNextToken().IsInt32()) {
+        if (op.TokenValueIs(TokenValue::kAdd)) {
+            return MakeASTNode<Int32Constant>(ParseInt32Constant()->value_ + 1);
+        } else if (op.TokenValueIs(TokenValue::kSub)) {
+            return MakeASTNode<Int32Constant>(ParseInt32Constant()->value_ - 1);
+        } else if (op.TokenValueIs(TokenValue::kNeg)) {
+            return MakeASTNode<Int32Constant>(~(ParseInt32Constant()->value_));
+        } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
+            return MakeASTNode<Int32Constant>(ParseInt32Constant()->value_ ? 1 : 0);
+        } else {
+            ErrorReportAndExit("Cannot apply inc, dec to constants");
+            return nullptr;
+        }
+    } else if (PeekNextToken().IsDouble()) {
+        if (op.TokenValueIs(TokenValue::kAdd)) {
+            return MakeASTNode<Int32Constant>(ParseDoubleConstant()->value_ + 1);
+        } else if (op.TokenValueIs(TokenValue::kSub)) {
+            return MakeASTNode<Int32Constant>(ParseDoubleConstant()->value_ - 1);
+        } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
+            return MakeASTNode<Int32Constant>(ParseInt32Constant()->value_ ? 1 : 0);
+        } else {
+            ErrorReportAndExit("Cannot apply inc, dec to constants");
+            return nullptr;
+        }
+    } else {
+        ErrorReportAndExit("Cannot apply");
+        return nullptr;
+    }
+}
 
-std::shared_ptr<IntConstant> Parser::ParseIntConstant() {
-    auto result{MakeASTNode<IntConstant>(GetNextToken().GetInt32Value())};
+// 强制要求有括号
+std::shared_ptr<Int32Constant> Parser::ParseSizeof() {
+    Expect(TokenValue::kLeftParen);
+    auto type{ParseTypeSpecifier()};
+    if (!type) {
+        ErrorReportAndExit("expect a type name");
+    }
+    Expect(TokenValue::kRightParen);
+    if (type->type_ == TokenValue::kIntKeyword) {
+        return MakeASTNode<Int32Constant>(4);
+    } else if (type->type_ == TokenValue::kDoubleKeyword) {
+        return MakeASTNode<Int32Constant>(8);
+    } else if (type->type_ == TokenValue::kCharKeyword) {
+        return MakeASTNode<Int32Constant>(1);
+    } else {
+        ErrorReportAndExit("Unknown type");
+        return nullptr;
+    }
+}
+
+std::shared_ptr<Int32Constant> Parser::ParseInt32Constant() {
+    auto result{MakeASTNode<Int32Constant>(GetNextToken().GetInt32Value())};
     return result;
 }
 
@@ -461,126 +381,77 @@ std::shared_ptr<StringLiteral> Parser::ParseStringLiteral() {
     return result;
 }
 
-std::shared_ptr<Expression> Parser::ParseBinOpRHS(int ExprPrec, std::shared_ptr<Expression> LHS) {
+// precedence 表示该函数允许吃的最小运算符优先级
+std::shared_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
+                                                  std::shared_ptr<Expression> lhs) {
     while (true) {
-        int TokPrec = token_sequence_[index_ - 1].GetTokenPrecedence();
-
-        // If this is a binop that binds at least as tightly as the current binop,
-        // consume it, otherwise we are done.
-        if (TokPrec < ExprPrec) {
-            return LHS;
+        int TokPrec = PeekNextToken().GetTokenPrecedence();
+        if (TokPrec < precedence) {
+            return lhs;
         }
 
-        // Okay, we know this is a binop.
-        auto BinOp = token_sequence_[index_ - 1].GetTokenValue();
-        GetNextToken(); // eat binop
-
-        // Parse the primary expression after the binary operator.
-        auto RHS = ParsePrimary();
-        if (!RHS) {
+        auto BinOp = GetNextToken().GetTokenValue();
+        auto rhs = ParsePrimary();
+        if (!rhs) {
             return nullptr;
         }
 
-        // If BinOp binds less tightly with RHS than the operator after RHS, let
-        // the pending operator take RHS as its LHS.
-        int NextPrec = token_sequence_[index_ - 1].GetTokenPrecedence();
+        int NextPrec = PeekNextToken().GetTokenPrecedence();
         if (TokPrec < NextPrec) {
-            RHS = ParseBinOpRHS(TokPrec + 1, std::move(RHS));
-            if (!RHS) {
+            rhs = ParseBinOpRHS(TokPrec + 1, std::move(rhs));
+            if (!rhs) {
                 return nullptr;
             }
         }
 
-        // Merge LHS/RHS.
-        LHS = std::make_shared<BinaryOpExpression>(BinOp, std::move(LHS),
-                                                   std::move(RHS));
+        lhs = std::make_shared<BinaryOpExpression>(std::move(lhs),
+                                                   std::move(rhs), BinOp);
     }
 }
 
-std::unique_ptr<Expression> Parser::ParseIdentifierExpression() {
+std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
     auto identifier{ParseIdentifier()};
 
-    if (CurrentTokenIs(TokenValue::kRightParen)) {
-        auto function_call{std::make_unique<FunctionCall>()};
+    if (Try(TokenValue::kLeftParen)) {
+        auto function_call{MakeASTNode<FunctionCall>()};
         function_call->function_name_ = std::move(identifier);
-        if (!CurrentTokenIs(TokenValue::kRightParen)) {
+        if (!Test(TokenValue::kRightParen)) {
             while (true) {
                 if (auto arg{ParseExpression()}) {
-                    function_call->args_->push_back(std::move(arg));
+                    function_call->AddArg(std::move(arg));
                 } else {
                     return nullptr;
                 }
 
-                if (CurrentTokenIs(TokenValue::kRightParen)) {
+                if (Test(TokenValue::kRightParen)) {
                     break;
                 }
 
-                if (!CurrentTokenIs(TokenValue::kComma)) {
+                if (!Test(TokenValue::kComma)) {
                     ErrorReportAndExit("expect ) or ,");
                 }
                 GetNextToken();
             }
         }
+        Expect(TokenValue::kRightParen);
         return function_call;
+    } else if (Try(TokenValue::kInc)) {
+        return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kInc);
+    } else if (Try(TokenValue::kDec)) {
+        return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kDec);
     } else {
-        return std::make_unique<Identifier>(GetCurrentToken().GetTokenName());
+        return std::move(identifier);
     }
 }
 
-std::unique_ptr<Expression> Parser::ParseParenExpr() {
-    GetNextToken();
-
-    auto result{ParseExpression()};
-    if (!result) {
+std::shared_ptr<Expression> Parser::ParseParenExpression() {
+    auto expr{ParseExpression()};
+    if (!expr) {
         return nullptr;
     }
 
-    ExpectCurrent(TokenValue::kRightParen);
-    return result;
-}
-
-std::unique_ptr<Expression> Parser::ParsePrimary() {
-    switch (GetCurrentToken().GetTokenType()) {
-        case TokenType::kIdentifier:return ParseIdentifierExpression();
-        case TokenType::kInterger:return ParseIntConstant();
-        case TokenType::kDouble: return ParseDoubleConstant();
-        case TokenType::kDelimiter:
-            if (CurrentTokenIs(TokenValue::kLeftParen)) {
-                return ParseParenExpr();
-            }
-            break;
-        default:ErrorReportAndExit("expression error");
-            break;
-    }
-    return nullptr;
-}
-
-std::unique_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
-                                                  std::unique_ptr<Expression> lhs) {
-    while (true) {
-        std::int32_t token_precedence{GetCurrentToken().GetTokenPrecedence()};
-
-        if (token_precedence < precedence) {
-            return lhs;
-        }
-
-        char binop{GetCurrentToken().GetTokenName()[0]};
-        GetNextToken();
-
-        auto rhs{ParsePrimary()};
-        if (!rhs) {
-            return nullptr;
-        }
-
-        std::int32_t next_precedence{GetCurrentToken().GetTokenPrecedence()};
-        if (token_precedence < next_precedence) {
-            rhs = ParseBinOpRHS(token_precedence + 1, std::move(rhs));
-            if (!rhs) {
-                return nullptr;
-            }
-        }
-        lhs = std::make_unique<BinaryOpExpression>(std::move(lhs), std::move(rhs), binop);
-    }
+    Expect(TokenValue::kRightParen);
+    return expr;
 }
 
 }

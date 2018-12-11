@@ -19,7 +19,7 @@ class Parser {
 public:
     explicit Parser(const std::vector<Token> &token_sequence) :
             token_sequence_{token_sequence} {}
-    std::shared_ptr<CompoundStatement> parse();
+    std::shared_ptr<CompoundStatement> Parse();
 private:
     Token GetNextToken();
     Token PeekNextToken() const;
@@ -35,8 +35,8 @@ private:
     std::shared_ptr<FunctionDeclaration> ParseFunctionDeclaration();
 
     std::shared_ptr<CompoundStatement> ParseCompound();
-    std::shared_ptr<Declaration> ParVarDeclarationNoInit();
-    std::shared_ptr<Declaration> ParVarDeclarationWithInit();
+    std::shared_ptr<Declaration> ParDeclarationWithoutInit();
+    std::shared_ptr<Declaration> ParDeclarationWithInit();
     std::shared_ptr<Statement> ParseStatement();
     std::shared_ptr<IfStatement> ParseIfStatement();
     std::shared_ptr<WhileStatement> ParseWhileStatement();
@@ -47,25 +47,22 @@ private:
     std::shared_ptr<Expression> ParseExpression();
     std::shared_ptr<Expression> ParsePrimary();
     std::shared_ptr<CharConstant> ParseCharConstant();
-    std::shared_ptr<IntConstant> ParseIntConstant();
+    std::shared_ptr<Int32Constant> ParseInt32Constant();
     std::shared_ptr<DoubleConstant> ParseDoubleConstant();
     std::shared_ptr<StringLiteral> ParseStringLiteral();
-
     std::shared_ptr<Expression> ParseUnaryOpExpression();
-    std::shared_ptr<Expression> ParsePostfixExpression();
-    std::shared_ptr<Expression> ParseTernaryOpExpression(std::shared_ptr<Expression> condition);
-    std::shared_ptr<Expression> HackExpression(std::shared_ptr<BinaryOpExpression> biop);
-    std::shared_ptr<IntConstant> ParseSizeof();
-
-    std::shared_ptr<Expression> ParseBinOpRHS(int ExprPrec,
-                                              std::shared_ptr<Expression> LHS);
+    std::shared_ptr<Int32Constant> ParseSizeof();
+    std::shared_ptr<Expression> ParseParenExpression();
+    std::shared_ptr<Expression> ParseIdentifierExpression();
+    std::shared_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
+                                              std::shared_ptr<Expression> lhs);
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};
 
     template<typename T, typename... Args>
     std::shared_ptr<T> MakeASTNode(Args... args) {
-        auto t{std::make_unique<T>(args...)};
+        auto t{std::make_shared<T>(args...)};
         t->location_ = PeekNextToken().GetTokenLocation();
         return std::move(t);
     }

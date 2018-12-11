@@ -135,16 +135,19 @@ void RunTcc(const std::string &input_file,
     tcc::Scanner scanner{processed_file};
 
     tcc::Parser parse{scanner.Scan()};
-    auto program_block{parse.parse()};
+    auto program_block{parse.Parse()};
 
-    auto root = program_block->jsonGen();
-    std::string jsonFile = "visualization/A_tree.json";
-    std::ofstream astJson(jsonFile);
-    if (astJson.is_open()) {
-        astJson << root;
-        astJson.close();
-        std::cout << "json write to " << jsonFile << std::endl;
+    auto root = program_block->JsonGen();
+
+    std::string json_file("../../visualization/A_tree.json");
+    std::ofstream ast{json_file};
+
+    if (!ast) {
+        std::cerr << "can not open thie file: " + json_file << '\n';
+        std::exit(EXIT_FAILURE);
     }
+    ast << root;
+    std::cout << "json write to " << json_file << std::endl;
 
 //    tcc::CodeGenContext context;
 //    context.GenerateCode(*program_block);
