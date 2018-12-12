@@ -97,6 +97,9 @@ Json::Value ForStatement::JsonGen() const {
     if (increment_) {
         root["children"].append(increment_->JsonGen());
     }
+    if (block_) {
+        root["children"].append(block_->JsonGen());
+    }
 
     return root;
 }
