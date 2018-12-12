@@ -75,7 +75,7 @@ public:
     virtual ~ASTNode() = default;
     virtual ASTNodeType Kind() const { return ASTNodeType::kASTNode; }
     virtual Json::Value JsonGen() const { return Json::Value(); }
-    virtual llvm::Value *CodeGen(CodeGenContext &context);
+    virtual llvm::Value *CodeGen(CodeGenContext &);
 
     SourceLocation location_;
 };
@@ -84,8 +84,8 @@ class Type : public ASTNode {
 public:
     virtual bool IsPrimitive() const { return false; }
     virtual bool IsPoint() const { return false; }
-    virtual ASTNodeType Kind() const override { return ASTNodeType::kType; }
-    virtual Json::Value JsonGen() const override;
+    ASTNodeType Kind() const override { return ASTNodeType::kType; }
+    Json::Value JsonGen() const override;
 };
 
 class PrimitiveType : public Type {
@@ -95,15 +95,15 @@ public:
 
     bool IsPrimitive() const override { return true; }
     ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
-    virtual Json::Value JsonGen() const override;
+    Json::Value JsonGen() const override;
 
     TokenValue type_{TokenValue::kNone};
 };
 
 class Statement : public ASTNode {
 public:
-    virtual ASTNodeType Kind() const override { return ASTNodeType::kStatement; }
-    virtual Json::Value JsonGen() const override;
+    ASTNodeType Kind() const override { return ASTNodeType::kStatement; }
+    Json::Value JsonGen() const override;
 };
 
 class CompoundStatement : public Statement {
@@ -228,8 +228,8 @@ public:
 
 class Expression : public ASTNode {
 public:
-    virtual ASTNodeType Kind() const override { return ASTNodeType::kExpression; }
-    virtual Json::Value JsonGen() const override;
+    ASTNodeType Kind() const override { return ASTNodeType::kExpression; }
+    Json::Value JsonGen() const override;
 };
 
 class UnaryOpExpression : public Expression {
@@ -305,7 +305,7 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Identifier> function_name_;
-    std::shared_ptr<ExpressionList> args_{std::make_shared<ExpressionList>()};
+    std::shared_ptr<ExpressionList> args_;
 };
 
 class FunctionDeclaration : public Statement {
@@ -321,13 +321,14 @@ public:
               body_{std::move(body)} {}
 
     ASTNodeType Kind() const override;
+    void AddArg(std::shared_ptr<Declaration> arg) { args_->push_back(arg); }
 
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Type> return_type_;
     std::shared_ptr<Identifier> function_name_;
-    std::shared_ptr<DeclarationList> args_{std::shared_ptr<DeclarationList>()};
+    std::shared_ptr<DeclarationList> args_;
     bool has_body_{false};
     std::shared_ptr<CompoundStatement> body_;
 };

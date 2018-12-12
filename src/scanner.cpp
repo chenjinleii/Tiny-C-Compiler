@@ -100,12 +100,15 @@ std::vector<Token> Scanner::Scan() {
     return token_sequence;
 }
 
-void Scanner::debug(const std::string &file_name, std::ostream &os) {
+std::vector<Token> Scanner::debug(const std::string &file_name, std::ostream &os) {
     Scanner scanner{file_name};
-
-    for (const auto &token:scanner.Scan()) {
+    auto token_sequence{scanner.Scan()};
+    for (const auto &token:token_sequence) {
         os << token.ToString() << '\n';
     }
+    std::cout << "token Successfully written\n";
+
+    return token_sequence;
 }
 
 Token Scanner::GetNextToken() {
@@ -303,6 +306,7 @@ Token Scanner::HandleNumber() {
             PutBack();
             return MakeToken(std::stod(buffer_));
         } else {
+            PutBack();
             return MakeToken(0);
         }
     }
@@ -486,7 +490,7 @@ std::pair<char, char> Scanner::PeekNextTwoChar() const {
 }
 
 void Scanner::PutBack() {
-    if (index_ > 0 && index_ < std::size(input_)) {
+    if (index_ > 0) {
         --index_;
         if (location_.column_ > 0) {
             --location_.column_;

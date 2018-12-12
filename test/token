@@ -1,0 +1,201 @@
+test.c:1:3:         type: kIntKeyword         
+test.c:1:5:         type: kIdentifier         name:  a
+test.c:1:7:         type: kAssign             
+test.c:1:10:        type: kIntConstant        value: 10
+test.c:1:11:        type: kSemicolon          
+test.c:3:6:         type: kExternKeyword      
+test.c:3:11:        type: kVoidKeyword        
+test.c:3:16:        type: kIdentifier         name:  shit
+test.c:3:17:        type: kLeftParen          
+test.c:3:23:        type: kDoubleKeyword      
+test.c:3:25:        type: kIdentifier         name:  x
+test.c:3:26:        type: kComma              
+test.c:3:30:        type: kIntKeyword         
+test.c:3:32:        type: kIdentifier         name:  u
+test.c:3:33:        type: kRightParen         
+test.c:3:34:        type: kSemicolon          
+test.c:5:3:         type: kIntKeyword         
+test.c:5:8:         type: kIdentifier         name:  fcuk
+test.c:5:9:         type: kLeftParen          
+test.c:5:12:        type: kIntKeyword         
+test.c:5:14:        type: kIdentifier         name:  a
+test.c:5:15:        type: kComma              
+test.c:5:19:        type: kIntKeyword         
+test.c:5:21:        type: kIdentifier         name:  b
+test.c:5:22:        type: kRightParen         
+test.c:5:24:        type: kLeftCurly          
+test.c:6:10:        type: kReturnKeyword      
+test.c:6:12:        type: kIdentifier         name:  a
+test.c:6:14:        type: kAdd                
+test.c:6:16:        type: kIdentifier         name:  b
+test.c:6:17:        type: kSemicolon          
+test.c:7:1:         type: kRightCurly         
+test.c:9:3:         type: kIntKeyword         
+test.c:9:8:         type: kIdentifier         name:  main
+test.c:9:9:         type: kLeftParen          
+test.c:9:10:        type: kRightParen         
+test.c:9:12:        type: kLeftCurly          
+test.c:10:10:       type: kDoubleKeyword      
+test.c:10:12:       type: kIdentifier         name:  x
+test.c:10:13:       type: kSemicolon          
+test.c:11:10:       type: kDoubleKeyword      
+test.c:11:12:       type: kIdentifier         name:  y
+test.c:11:13:       type: kSemicolon          
+test.c:13:8:        type: kIdentifier         name:  fcuk
+test.c:13:9:        type: kLeftParen          
+test.c:13:10:       type: kIntConstant        value: 1
+test.c:13:11:       type: kComma              
+test.c:13:13:       type: kIntConstant        value: 2
+test.c:13:14:       type: kRightParen         
+test.c:13:15:       type: kSemicolon          
+test.c:15:7:        type: kForKeyword         
+test.c:15:9:        type: kLeftParen          
+test.c:15:10:       type: kIdentifier         name:  y
+test.c:15:12:       type: kAssign             
+test.c:15:16:       type: kDoubleConstant     value: 1.500000
+test.c:15:17:       type: kSemicolon          
+test.c:15:19:       type: kIdentifier         name:  y
+test.c:15:21:       type: kGreater            
+test.c:15:23:       type: kSub                
+test.c:15:26:       type: kDoubleConstant     value: 1.500000
+test.c:15:27:       type: kSemicolon          
+test.c:15:29:       type: kIdentifier         name:  y
+test.c:15:32:       type: kSubAssign          
+test.c:15:36:       type: kDoubleConstant     value: 0.100000
+test.c:15:37:       type: kRightParen         
+test.c:15:39:       type: kLeftCurly          
+test.c:16:14:       type: kDoubleKeyword      
+test.c:16:16:       type: kIdentifier         name:  x
+test.c:16:17:       type: kSemicolon          
+test.c:17:11:       type: kForKeyword         
+test.c:17:13:       type: kLeftParen          
+test.c:17:14:       type: kIdentifier         name:  x
+test.c:17:16:       type: kAssign             
+test.c:17:18:       type: kSub                
+test.c:17:21:       type: kDoubleConstant     value: 1.500000
+test.c:17:22:       type: kSemicolon          
+test.c:17:24:       type: kIdentifier         name:  x
+test.c:17:26:       type: kLess               
+test.c:17:30:       type: kDoubleConstant     value: 1.500000
+test.c:17:31:       type: kSemicolon          
+test.c:17:33:       type: kIdentifier         name:  x
+test.c:17:36:       type: kAddAssign          
+test.c:17:41:       type: kDoubleConstant     value: 0.050000
+test.c:17:42:       type: kRightParen         
+test.c:17:44:       type: kLeftCurly          
+test.c:18:18:       type: kDoubleKeyword      
+test.c:18:20:       type: kIdentifier         name:  a
+test.c:18:22:       type: kAssign             
+test.c:18:24:       type: kIdentifier         name:  x
+test.c:18:26:       type: kMul                
+test.c:18:28:       type: kIdentifier         name:  x
+test.c:18:30:       type: kAdd                
+test.c:18:32:       type: kIdentifier         name:  y
+test.c:18:34:       type: kMul                
+test.c:18:36:       type: kIdentifier         name:  y
+test.c:18:38:       type: kSub                
+test.c:18:40:       type: kIntConstant        value: 1
+test.c:18:41:       type: kSemicolon          
+test.c:19:18:       type: kDoubleKeyword      
+test.c:19:20:       type: kIdentifier         name:  x
+test.c:19:21:       type: kSemicolon          
+test.c:20:14:       type: kIfKeyword          
+test.c:20:16:       type: kLeftParen          
+test.c:20:17:       type: kIdentifier         name:  a
+test.c:20:19:       type: kMul                
+test.c:20:21:       type: kIdentifier         name:  a
+test.c:20:23:       type: kMul                
+test.c:20:25:       type: kIdentifier         name:  a
+test.c:20:27:       type: kSub                
+test.c:20:29:       type: kIdentifier         name:  x
+test.c:20:31:       type: kMul                
+test.c:20:33:       type: kIdentifier         name:  x
+test.c:20:35:       type: kMul                
+test.c:20:37:       type: kIdentifier         name:  y
+test.c:20:39:       type: kMul                
+test.c:20:41:       type: kIdentifier         name:  y
+test.c:20:43:       type: kMul                
+test.c:20:45:       type: kIdentifier         name:  y
+test.c:20:48:       type: kLessOrEqual        
+test.c:20:52:       type: kDoubleConstant     value: 0.000000
+test.c:20:53:       type: kRightParen         
+test.c:20:55:       type: kLeftCurly          
+test.c:21:23:       type: kIdentifier         name:  putchar
+test.c:21:24:       type: kLeftParen          
+test.c:21:27:       type: kCharConstant       value: 42
+test.c:21:28:       type: kRightParen         
+test.c:21:29:       type: kSemicolon          
+test.c:22:13:       type: kRightCurly         
+test.c:22:18:       type: kElseKeyword        
+test.c:22:20:       type: kLeftCurly          
+test.c:23:23:       type: kIdentifier         name:  putchar
+test.c:23:24:       type: kLeftParen          
+test.c:23:27:       type: kCharConstant       value: 32
+test.c:23:28:       type: kRightParen         
+test.c:23:29:       type: kSemicolon          
+test.c:24:13:       type: kRightCurly         
+test.c:25:9:        type: kRightCurly         
+test.c:26:14:       type: kDoubleKeyword      
+test.c:26:16:       type: kIdentifier         name:  x
+test.c:26:17:       type: kSemicolon          
+test.c:27:13:       type: kWhileKeyword       
+test.c:27:15:       type: kLeftParen          
+test.c:27:16:       type: kIdentifier         name:  x
+test.c:27:17:       type: kRightParen         
+test.c:27:19:       type: kLeftCurly          
+test.c:28:19:       type: kIdentifier         name:  putchar
+test.c:28:20:       type: kLeftParen          
+test.c:28:24:       type: kCharConstant       value: 10
+test.c:28:25:       type: kRightParen         
+test.c:28:26:       type: kSemicolon          
+test.c:29:18:       type: kDoubleKeyword      
+test.c:29:20:       type: kIdentifier         name:  x
+test.c:29:21:       type: kSemicolon          
+test.c:30:18:       type: kReturnKeyword      
+test.c:30:20:       type: kIdentifier         name:  x
+test.c:30:22:       type: kMul                
+test.c:30:24:       type: kIntConstant        value: 2
+test.c:30:26:       type: kSub                
+test.c:30:28:       type: kIntConstant        value: 1
+test.c:30:29:       type: kSemicolon          
+test.c:31:9:        type: kRightCurly         
+test.c:32:15:       type: kIdentifier         name:  putchar
+test.c:32:16:       type: kLeftParen          
+test.c:32:20:       type: kCharConstant       value: 10
+test.c:32:21:       type: kRightParen         
+test.c:32:22:       type: kSemicolon          
+test.c:33:14:       type: kDoubleKeyword      
+test.c:33:16:       type: kIdentifier         name:  x
+test.c:33:17:       type: kSemicolon          
+test.c:34:5:        type: kRightCurly         
+test.c:35:8:        type: kIdentifier         name:  shit
+test.c:35:9:        type: kLeftParen          
+test.c:35:12:       type: kDoubleConstant     value: 1.600000
+test.c:35:13:       type: kComma              
+test.c:35:15:       type: kIntConstant        value: 9
+test.c:35:16:       type: kRightParen         
+test.c:35:17:       type: kSemicolon          
+test.c:36:10:       type: kReturnKeyword      
+test.c:36:12:       type: kIntConstant        value: 0
+test.c:36:13:       type: kSemicolon          
+test.c:37:1:        type: kRightCurly         
+test.c:39:3:        type: kIntKeyword         
+test.c:39:8:        type: kIdentifier         name:  fcuk
+test.c:39:9:        type: kLeftParen          
+test.c:39:12:       type: kIntKeyword         
+test.c:39:14:       type: kIdentifier         name:  a
+test.c:39:15:       type: kComma              
+test.c:39:19:       type: kIntKeyword         
+test.c:39:21:       type: kIdentifier         name:  b
+test.c:39:22:       type: kRightParen         
+test.c:39:24:       type: kLeftCurly          
+test.c:40:10:       type: kReturnKeyword      
+test.c:40:12:       type: kIntConstant        value: 1
+test.c:40:14:       type: kAdd                
+test.c:40:16:       type: kIntConstant        value: 2
+test.c:40:18:       type: kAdd                
+test.c:40:20:       type: kIdentifier         name:  a
+test.c:40:22:       type: kMul                
+test.c:40:24:       type: kIdentifier         name:  b
+test.c:40:25:       type: kSemicolon          
+test.c:41:1:        type: kRightCurly         

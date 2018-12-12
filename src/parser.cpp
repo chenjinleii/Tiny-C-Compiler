@@ -67,7 +67,13 @@ void Parser::Expect(TokenValue value) {
 }
 
 std::shared_ptr<Statement> Parser::ParseGlobal() {
-    auto result{ParseDeclaration()};
+    auto result{MakeASTNode<Statement>()};
+    if (Try(TokenValue::kExternKeyword)) {
+        result = ParseExtern();
+    } else {
+        result = ParseDeclaration();
+    }
+
     if (result->Kind() != ASTNodeType::kFunctionDefinition) {
         Expect(TokenValue::kSemicolon);
     }
@@ -83,7 +89,7 @@ std::shared_ptr<Statement> Parser::ParseDeclaration() {
         function->return_type_ = std::move(declaration_no_init->type_);
         function->function_name_ = std::move(declaration_no_init->variable_name_);
         return function;
-    } else if (Try(TokenValue::kEqual)) {
+    } else if (Try(TokenValue::kAssign)) {
         auto initialization_expression{ParseExpression()};
         declaration_no_init->initialization_expression_ = std::move(initialization_expression);
         return declaration_no_init;
@@ -113,9 +119,14 @@ std::shared_ptr<Identifier> Parser::ParseIdentifier() {
 std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     auto function{MakeASTNode<FunctionDeclaration>()};
 
+    function->args_ = std::make_shared<DeclarationList>();
     while (!Test(TokenValue::kRightParen)) {
         function->args_->push_back(ParDeclarationWithoutInit());
-        Expect(TokenValue::kComma);
+        if (!Test(TokenValue::kRightParen)) {
+            Expect(TokenValue::kComma);
+        } else {
+            break;
+        }
     }
 
     Expect(TokenValue::kRightParen);
@@ -128,6 +139,39 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     } else {
         return function;
     }
+}
+
+// TODO extern变量
+std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
+    auto function{MakeASTNode<FunctionDeclaration>()};
+
+    auto return_type{ParseTypeSpecifier()};
+    if (!return_type) {
+        ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "expect a type specifier");
+    }
+    function->return_type_ = return_type;
+
+    auto function_name{ParseIdentifier()};
+    if (!function_name) {
+        ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "expect a identifier");
+    }
+    function->function_name_ = function_name;
+
+    Expect(TokenValue::kLeftParen);
+
+    function->args_ = std::make_shared<DeclarationList>();
+    while (!Test(TokenValue::kRightParen)) {
+        function->AddArg(ParDeclarationWithoutInit());
+        if (!Test(TokenValue::kRightParen)) {
+            Expect(TokenValue::kComma);
+        } else {
+            break;
+        }
+    }
+
+    Expect(TokenValue::kRightParen);
+
+    return function;
 }
 
 // 强制要求大括号
@@ -149,7 +193,7 @@ std::shared_ptr<Declaration> Parser::ParDeclarationWithoutInit() {
     if (!identifier) {
         ErrorReportAndExit("expect a identifier");
     }
-    return MakeASTNode<Declaration>(std::move(type), std::move(identifier));
+    return MakeASTNode<Declaration>(type, identifier);
 }
 
 std::shared_ptr<Declaration> Parser::ParDeclarationWithInit() {
@@ -237,16 +281,13 @@ std::shared_ptr<ForStatement> Parser::ParseForStatement() {
     return for_statement;
 }
 
+// TODO 处理 return;
 std::shared_ptr<ReturnStatement> Parser::ParseReturnStatement() {
     auto return_statement{MakeASTNode<ReturnStatement>()};
 
-    if (Try(TokenValue::kSemicolon)) {
-        return return_statement;
-    } else {
-        return_statement->expression_ = ParseExpression();
-        Expect(TokenValue::kSemicolon);
-        return return_statement;
-    }
+    return_statement->expression_ = ParseExpression();
+    Expect(TokenValue::kSemicolon);
+    return return_statement;
 }
 
 std::shared_ptr<ExpressionStatement> Parser::ParseExpressionStatement() {
@@ -287,8 +328,6 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
     } else if (Try(TokenValue::kSizeofKeyword)) {
         return ParseSizeof();
     } else {
-        ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
-                           "unknown token when expecting an expression");
         return nullptr;
     }
 }
@@ -361,52 +400,14 @@ std::shared_ptr<Int32Constant> Parser::ParseSizeof() {
     }
 }
 
-std::shared_ptr<Int32Constant> Parser::ParseInt32Constant() {
-    auto result{MakeASTNode<Int32Constant>(GetNextToken().GetInt32Value())};
-    return result;
-}
-
-std::shared_ptr<DoubleConstant> Parser::ParseDoubleConstant() {
-    auto result{MakeASTNode<DoubleConstant>(GetNextToken().GetDoubleValue())};
-    return result;
-}
-
-std::shared_ptr<CharConstant> Parser::ParseCharConstant() {
-    auto result{MakeASTNode<CharConstant>(GetNextToken().GetCharValue())};
-    return result;
-}
-
-std::shared_ptr<StringLiteral> Parser::ParseStringLiteral() {
-    auto result{MakeASTNode<StringLiteral>(GetNextToken().GetStringValue())};
-    return result;
-}
-
-// precedence 表示该函数允许吃的最小运算符优先级
-std::shared_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
-                                                  std::shared_ptr<Expression> lhs) {
-    while (true) {
-        int TokPrec = PeekNextToken().GetTokenPrecedence();
-        if (TokPrec < precedence) {
-            return lhs;
-        }
-
-        auto BinOp = GetNextToken().GetTokenValue();
-        auto rhs = ParsePrimary();
-        if (!rhs) {
-            return nullptr;
-        }
-
-        int NextPrec = PeekNextToken().GetTokenPrecedence();
-        if (TokPrec < NextPrec) {
-            rhs = ParseBinOpRHS(TokPrec + 1, std::move(rhs));
-            if (!rhs) {
-                return nullptr;
-            }
-        }
-
-        lhs = std::make_shared<BinaryOpExpression>(std::move(lhs),
-                                                   std::move(rhs), BinOp);
+std::shared_ptr<Expression> Parser::ParseParenExpression() {
+    auto expr{ParseExpression()};
+    if (!expr) {
+        return nullptr;
     }
+
+    Expect(TokenValue::kRightParen);
+    return expr;
 }
 
 std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
@@ -415,6 +416,7 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
     if (Try(TokenValue::kLeftParen)) {
         auto function_call{MakeASTNode<FunctionCall>()};
         function_call->function_name_ = std::move(identifier);
+        function_call->args_ = std::make_shared<ExpressionList>();
         if (!Test(TokenValue::kRightParen)) {
             while (true) {
                 if (auto arg{ParseExpression()}) {
@@ -440,18 +442,56 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
     } else if (Try(TokenValue::kDec)) {
         return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kDec);
     } else {
-        return std::move(identifier);
+        return identifier;
     }
 }
 
-std::shared_ptr<Expression> Parser::ParseParenExpression() {
-    auto expr{ParseExpression()};
-    if (!expr) {
-        return nullptr;
-    }
+// precedence 表示该函数允许吃的最小运算符优先级
+std::shared_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
+                                                  std::shared_ptr<Expression> lhs) {
+    while (true) {
+        std::int32_t curr_precedence = PeekNextToken().GetTokenPrecedence();
+        if (curr_precedence < precedence) {
+            return lhs;
+        }
 
-    Expect(TokenValue::kRightParen);
-    return expr;
+        auto op = GetNextToken().GetTokenValue();
+        auto rhs = ParsePrimary();
+        if (!rhs) {
+            return nullptr;
+        }
+
+        int next_precedence = PeekNextToken().GetTokenPrecedence();
+        if (curr_precedence < next_precedence) {
+            rhs = ParseBinOpRHS(curr_precedence + 1, std::move(rhs));
+            if (!rhs) {
+                return nullptr;
+            }
+        }
+
+        lhs = std::make_shared<BinaryOpExpression>(std::move(lhs),
+                                                   std::move(rhs), op);
+    }
+}
+
+std::shared_ptr<CharConstant> Parser::ParseCharConstant() {
+    auto result{MakeASTNode<CharConstant>(GetNextToken().GetCharValue())};
+    return result;
+}
+
+std::shared_ptr<Int32Constant> Parser::ParseInt32Constant() {
+    auto result{MakeASTNode<Int32Constant>(GetNextToken().GetInt32Value())};
+    return result;
+}
+
+std::shared_ptr<DoubleConstant> Parser::ParseDoubleConstant() {
+    auto result{MakeASTNode<DoubleConstant>(GetNextToken().GetDoubleValue())};
+    return result;
+}
+
+std::shared_ptr<StringLiteral> Parser::ParseStringLiteral() {
+    auto result{MakeASTNode<StringLiteral>(GetNextToken().GetStringValue())};
+    return result;
 }
 
 }

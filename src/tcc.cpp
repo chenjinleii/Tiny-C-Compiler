@@ -23,6 +23,7 @@ void ShowVersionInfo();
 std::string RemoveExtension(const std::string &file_name);
 void RunTcc(const std::string &input_file,
             std::ostringstream &obj_files, std::vector<std::string> &files_to_delete);
+void RunTest();
 
 int main(int argc, char *argv[]) {
 #ifndef __linux
@@ -63,6 +64,9 @@ int main(int argc, char *argv[]) {
     if (args.find("-v") != std::end(args)) {
         ShowVersionInfo();
         std::exit(EXIT_SUCCESS);
+    } else if (args.find("-test") != std::end(args)) {
+        RunTest();
+        std::exit(EXIT_SUCCESS);
     }
 
     if (auto size{std::size(input_files)};size == 0) {
@@ -87,21 +91,21 @@ int main(int argc, char *argv[]) {
         RunTcc(input_file, obj_files, files_to_delete);
     }
 
-//    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
-//    std::system(cmd.c_str());
-//
-//    for (const auto &file:files_to_delete) {
-//        std::filesystem::remove(std::filesystem::path{file});
-//    }
-//
-//    if (FileExists(program_name)) {
-//        std::cout << "Compiled successfully\n";
-//        std::cout << "The name of the executable is " + program_name << '\n';
-//        std::exit(EXIT_SUCCESS);
-//    } else {
-//        std::cerr << "Compile failed\n";
-//        std::exit(EXIT_FAILURE);
-//    }
+    std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
+    std::system(cmd.c_str());
+
+    for (const auto &file:files_to_delete) {
+        std::filesystem::remove(std::filesystem::path{file});
+    }
+
+    if (FileExists(program_name)) {
+        std::cout << "Compiled successfully\n";
+        std::cout << "The name of the executable is " + program_name << '\n';
+        std::exit(EXIT_SUCCESS);
+    } else {
+        std::cerr << "Compile failed\n";
+        std::exit(EXIT_FAILURE);
+    }
 
 #endif
 }
@@ -135,26 +139,38 @@ void RunTcc(const std::string &input_file,
     tcc::Scanner scanner{processed_file};
 
     tcc::Parser parse{scanner.Scan()};
-    auto program_block{parse.Parse()};
+    auto root{parse.Parse()};
 
-    auto root = program_block->JsonGen();
+    tcc::CodeGenContext context;
+    context.GenerateCode(*root);
 
-    std::string json_file("../../visualization/A_tree.json");
-    std::ofstream ast{json_file};
+    std::string obj_file(RemoveExtension(input_file) + ".o");
+    files_to_delete.push_back(obj_file);
+    obj_files << ' ' << obj_file;
 
-    if (!ast) {
-        std::cerr << "can not open thie file: " + json_file << '\n';
+    tcc::ObjGen(context, obj_file);
+}
+
+void RunTest() {
+    std::cout << "Test mode\n";
+
+    std::string input_file("/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
+    std::ofstream ofs{"../test/token"};
+
+    if (!ofs) {
+        std::cerr << "can not open token file\n";
         std::exit(EXIT_FAILURE);
     }
-    ast << root;
-    std::cout << "json write to " << json_file << std::endl;
 
-//    tcc::CodeGenContext context;
-//    context.GenerateCode(*program_block);
-//
-//    std::string obj_file(RemoveExtension(input_file) + ".o");
-//    files_to_delete.push_back(obj_file);
-//    obj_files << ' ' << obj_file;
-//
-//    tcc::ObjGen(context, obj_file);
+    tcc::Parser parse{tcc::Scanner::debug(input_file, ofs)};
+    auto root = parse.Parse()->JsonGen();
+
+    std::ofstream ast{"../test/ast.json"};
+    if (!ast) {
+        std::cerr << "can not open json file:" << '\n';
+        std::exit(EXIT_FAILURE);
+    }
+
+    ast << root;
+    std::cout << "ast Successfully written\n";
 }

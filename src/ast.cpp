@@ -3,6 +3,7 @@
 //
 
 #include "ast.h"
+#include <cassert>
 
 namespace tcc {
 
@@ -10,7 +11,7 @@ std::string ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
     return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type);
 }
 
-llvm::Value *ASTNode::CodeGen(CodeGenContext &context) {
+llvm::Value *ASTNode::CodeGen(CodeGenContext &) {
     return nullptr;
 }
 
@@ -36,31 +37,40 @@ Json::Value Statement::JsonGen() const {
 Json::Value CompoundStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
-    for (const auto &it : *statements_) {
-        root["children"].append(it->JsonGen());
+
+    if (statements_) {
+        for (const auto &it : *statements_) {
+            assert(it != nullptr);
+            root["children"].append(it->JsonGen());
+        }
     }
+
     return root;
 }
 
 llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value ExpressionStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
+    assert(expression_ != nullptr);
     root["children"].append(expression_->JsonGen());
     return root;
 }
 
 llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value IfStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
+
+    assert(condition_ != nullptr);
     root["children"].append(condition_->JsonGen());
+
     root["children"].append(then_block_->JsonGen());
     if (else_block_) {
         root["children"].append(else_block_->JsonGen());
@@ -69,19 +79,20 @@ Json::Value IfStatement::JsonGen() const {
 }
 
 llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value WhileStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
+    assert(condition_ != nullptr);
     root["children"].append(condition_->JsonGen());
     root["children"].append(block_->JsonGen());
     return root;
 }
 
 llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value ForStatement::JsonGen() const {
@@ -105,32 +116,31 @@ Json::Value ForStatement::JsonGen() const {
 }
 
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value ReturnStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
-    if (expression_) {
-        root["children"].append(expression_->JsonGen());
-    }
+    assert(expression_ != nullptr);
+    root["children"].append(expression_->JsonGen());
 
     return root;
 }
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value Declaration::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
-    if (type_) {
-        root["children"].append(type_->JsonGen());
-    }
-    if (variable_name_) {
-        root["children"].append(variable_name_->JsonGen());
-    }
+
+    assert(type_ != nullptr);
+    root["children"].append(type_->JsonGen());
+
+    assert(variable_name_ != nullptr);
+    root["children"].append(variable_name_->JsonGen());
 
     if (initialization_expression_) {
         root["children"].append(initialization_expression_->JsonGen());
@@ -139,7 +149,7 @@ Json::Value Declaration::JsonGen() const {
 }
 
 llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value Expression::JsonGen() const {
@@ -153,13 +163,14 @@ Json::Value UnaryOpExpression::JsonGen() const {
     root["name"] = ASTNodeTypes::ToString(Kind()) + " "
             + TokenValues::ToString(op_);
 
+    assert(object_ != nullptr);
     root["children"].append(object_->JsonGen());
 
     return root;
 }
 
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value PostfixExpression::JsonGen() const {
@@ -167,6 +178,7 @@ Json::Value PostfixExpression::JsonGen() const {
     root["name"] = ASTNodeTypes::ToString(Kind()) + " "
             + TokenValues::ToString(op_);
 
+    assert(object_ != nullptr);
     root["children"].append(object_->JsonGen());
 
     return root;
@@ -181,14 +193,16 @@ Json::Value BinaryOpExpression::JsonGen() const {
     root["name"] = ASTNodeTypes::ToString(Kind()) + " "
             + TokenValues::ToString(op_);
 
+    assert(lhs_ != nullptr);
     root["children"].append(lhs_->JsonGen());
+    assert(rhs_ != nullptr);
     root["children"].append(rhs_->JsonGen());
 
     return root;
 }
 
 llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value Identifier::JsonGen() const {
@@ -198,21 +212,26 @@ Json::Value Identifier::JsonGen() const {
 }
 
 llvm::Value *Identifier::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value FunctionCall::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
     root["children"].append(function_name_->JsonGen());
-    for (const auto &it : *args_) {
-        root["children"].append(it->JsonGen());
+
+    if (args_) {
+        for (const auto &it : *args_) {
+            assert(it != nullptr);
+            root["children"].append(it->JsonGen());
+        }
     }
+
     return root;
 }
 
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 ASTNodeType FunctionDeclaration::Kind() const {
@@ -231,6 +250,7 @@ Json::Value FunctionDeclaration::JsonGen() const {
 
     if (args_) {
         for (auto &it : *args_) {
+            assert(it != nullptr);
             root["children"].append(it->JsonGen());
         }
     }
@@ -243,7 +263,7 @@ Json::Value FunctionDeclaration::JsonGen() const {
 }
 
 llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value CharConstant::JsonGen() const {
@@ -265,7 +285,7 @@ Json::Value Int32Constant::JsonGen() const {
 }
 
 llvm::Value *Int32Constant::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value DoubleConstant::JsonGen() const {
@@ -276,7 +296,7 @@ Json::Value DoubleConstant::JsonGen() const {
 }
 
 llvm::Value *DoubleConstant::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 Json::Value StringLiteral::JsonGen() const {
@@ -287,7 +307,7 @@ Json::Value StringLiteral::JsonGen() const {
 }
 
 llvm::Value *StringLiteral::CodeGen(CodeGenContext &context) {
-    return nullptr;
+    return ASTNode::CodeGen(context);
 }
 
 }

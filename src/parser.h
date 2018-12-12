@@ -33,6 +33,7 @@ private:
     std::shared_ptr<PrimitiveType> ParseTypeSpecifier();
     std::shared_ptr<Identifier> ParseIdentifier();
     std::shared_ptr<FunctionDeclaration> ParseFunctionDeclaration();
+    std::shared_ptr<FunctionDeclaration> ParseExtern();
 
     std::shared_ptr<CompoundStatement> ParseCompound();
     std::shared_ptr<Declaration> ParDeclarationWithoutInit();
@@ -46,16 +47,16 @@ private:
 
     std::shared_ptr<Expression> ParseExpression();
     std::shared_ptr<Expression> ParsePrimary();
-    std::shared_ptr<CharConstant> ParseCharConstant();
-    std::shared_ptr<Int32Constant> ParseInt32Constant();
-    std::shared_ptr<DoubleConstant> ParseDoubleConstant();
-    std::shared_ptr<StringLiteral> ParseStringLiteral();
     std::shared_ptr<Expression> ParseUnaryOpExpression();
     std::shared_ptr<Int32Constant> ParseSizeof();
     std::shared_ptr<Expression> ParseParenExpression();
     std::shared_ptr<Expression> ParseIdentifierExpression();
     std::shared_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
                                               std::shared_ptr<Expression> lhs);
+    std::shared_ptr<CharConstant> ParseCharConstant();
+    std::shared_ptr<Int32Constant> ParseInt32Constant();
+    std::shared_ptr<DoubleConstant> ParseDoubleConstant();
+    std::shared_ptr<StringLiteral> ParseStringLiteral();
 
     std::vector<Token> token_sequence_;
     std::vector<Token>::size_type index_{};
