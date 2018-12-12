@@ -5,9 +5,10 @@
 #include "code_gen.h"
 
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/GVN.h>
 #include <boost/range/adaptor/reversed.hpp>
 
 namespace tcc {
@@ -23,10 +24,6 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
     PushBlock(block);
     root.CodeGen(*this);
     PopBlock();
-
-    llvm::legacy::PassManager pass;
-    pass.add(llvm::createPrintModulePass(llvm::outs()));
-    pass.run(*the_module_);
 }
 
 llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
@@ -91,6 +88,24 @@ void CodeGenContext::SetCurrentReturnValue(llvm::Value *value) {
 
 llvm::Value *CodeGenContext::GetCurrentReturnValue() {
     return block_stack_.back()->return_value;
+}
+
+CodeGenContext::CodeGenContext() :
+        builder_{the_context_}, type_system_{the_context_} {
+    InitializeModuleAndPassManager();
+}
+
+void CodeGenContext::InitializeModuleAndPassManager() {
+    the_module_ = std::make_unique<llvm::Module>("main", the_context_);
+    the_FPM_ = std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
+
+    // 添加四种优化
+    the_FPM_->add(llvm::createInstructionCombiningPass());
+    the_FPM_->add(llvm::createReassociatePass());
+    the_FPM_->add(llvm::createGVNPass());
+    the_FPM_->add(llvm::createCFGSimplificationPass());
+
+    the_FPM_->doInitialization();
 }
 
 }

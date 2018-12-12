@@ -13,6 +13,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/LegacyPassManager.h>
 
 #include <memory>
 #include <unordered_map>
@@ -33,9 +34,9 @@ struct CodeGenBlock {
 
 class CodeGenContext {
 public:
-    CodeGenContext() : builder_{the_context_},
-                       the_module_{std::make_unique<llvm::Module>("main", the_context_)},
-                       type_system_{the_context_} {}
+    CodeGenContext();
+
+    void InitializeModuleAndPassManager();
 
     // 拥有许多核心LLVM数据结构,例如类型和常量值表
     llvm::LLVMContext the_context_;
@@ -43,6 +44,8 @@ public:
     llvm::IRBuilder<> builder_;
     // 包含函数和全局变量,拥有我们生成的所有IR的内存
     std::unique_ptr<llvm::Module> the_module_;
+
+    std::unique_ptr<llvm::legacy::FunctionPassManager> the_FPM_;
     SymbolTable global_vars_;
     TypeSystem type_system_;
 

@@ -8,6 +8,7 @@
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
 
 #include <cassert>
 #include <cstdint>
@@ -15,23 +16,24 @@
 
 namespace tcc {
 
-llvm::Type *TypeOf(Type type, CodeGenContext &context) {
+llvm::Type *GetType(Type type, CodeGenContext &context) {
     return context.type_system_.getVarType(type.type_);
 }
 
-llvm::Value *CastToBoolean(CodeGenContext &context, llvm::Value *condValue) {
+llvm::Value *CastToBool(CodeGenContext &context, llvm::Value *condition_value) {
 
-    if (condValue->getType()->getTypeID() == llvm::Type::IntegerTyID) {
-        condValue = context.builder_.CreateIntCast(condValue, llvm::Type::getInt1Ty(context.the_context_), true);
-        return context.builder_.CreateICmpNE(condValue,
+    if (condition_value->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+        condition_value =
+                context.builder_.CreateIntCast(condition_value, llvm::Type::getInt1Ty(context.the_context_), true);
+        return context.builder_.CreateICmpNE(condition_value,
                                              llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_),
                                                                     0,
                                                                     true));
-    } else if (condValue->getType()->getTypeID() == llvm::Type::DoubleTyID) {
-        return context.builder_.CreateFCmpONE(condValue,
+    } else if (condition_value->getType()->getTypeID() == llvm::Type::DoubleTyID) {
+        return context.builder_.CreateFCmpONE(condition_value,
                                               llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)));
     } else {
-        return condValue;
+        return condition_value;
     }
 }
 
@@ -111,47 +113,53 @@ Json::Value IfStatement::JsonGen() const {
 }
 
 llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
-    llvm::Value *condValue = condition_->CodeGen(context);
-    if (!condValue) {
+    auto condition_value = condition_->CodeGen(context);
+    if (!condition_value) {
         return nullptr;
     }
 
-    condValue = CastToBoolean(context, condValue);
+    condition_value = CastToBool(context, condition_value);
 
-    auto theFunction = context.builder_.GetInsertBlock()->getParent();
+    auto parent_func = context.builder_.GetInsertBlock()->getParent();
 
-    auto thenBB = llvm::BasicBlock::Create(context.the_context_, "then", theFunction);
-    auto falseBB = llvm::BasicBlock::Create(context.the_context_, "else");
-    auto mergeBB = llvm::BasicBlock::Create(context.the_context_, "ifcont");
-
-    if (this->else_block_) {
-        context.builder_.CreateCondBr(condValue, thenBB, falseBB);
+    auto then_block = llvm::BasicBlock::Create(context.the_context_, "then", parent_func);
+    auto else_block = llvm::BasicBlock::Create(context.the_context_, "else");
+    auto merge_block = llvm::BasicBlock::Create(context.the_context_, "condition");
+    if (else_block_) {
+        context.builder_.CreateCondBr(condition_value, then_block, else_block);
     } else {
-        context.builder_.CreateCondBr(condValue, thenBB, mergeBB);
+        context.builder_.CreateCondBr(condition_value, then_block, merge_block);
     }
 
-    context.builder_.SetInsertPoint(thenBB);
-    context.PushBlock(thenBB);
-    then_block_->CodeGen(context);
+    context.builder_.SetInsertPoint(then_block);
+    context.PushBlock(then_block);
+    auto then_value{then_block_->CodeGen(context)};
+    if (!then_value) {
+        return nullptr;
+    }
     context.PopBlock();
+    context.builder_.CreateBr(merge_block);
+    then_block = context.builder_.GetInsertBlock();
 
-    thenBB = context.builder_.GetInsertBlock();
-
-    if (thenBB->getTerminator() == nullptr) {
-        context.builder_.CreateBr(mergeBB);
+    if (then_block->getTerminator() == nullptr) {
+        context.builder_.CreateBr(merge_block);
     }
 
     if (else_block_) {
-        theFunction->getBasicBlockList().push_back(falseBB);
-        context.builder_.SetInsertPoint(falseBB);
-        context.PushBlock(thenBB);
-        else_block_->CodeGen(context);
+        parent_func->getBasicBlockList().push_back(else_block);
+        context.builder_.SetInsertPoint(else_block);
+        context.PushBlock(then_block);
+        auto else_value{else_block_->CodeGen(context)};
+        if (!else_value) {
+            return nullptr;
+        }
         context.PopBlock();
-        context.builder_.CreateBr(mergeBB);
+        context.builder_.CreateBr(merge_block);
+        else_block = context.builder_.GetInsertBlock();
     }
 
-    theFunction->getBasicBlockList().push_back(mergeBB);
-    context.builder_.SetInsertPoint(mergeBB);
+    parent_func->getBasicBlockList().push_back(merge_block);
+    context.builder_.SetInsertPoint(merge_block);
 
     return nullptr;
 }
@@ -204,7 +212,7 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
         return nullptr;
     }
 
-    cond_value = CastToBoolean(context, cond_value);
+    cond_value = CastToBool(context, cond_value);
 
     context.builder_.CreateCondBr(cond_value, block, after);
     context.builder_.SetInsertPoint(block);
@@ -218,7 +226,7 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     }
 
     cond_value = condition_->CodeGen(context);
-    cond_value = CastToBoolean(context, cond_value);
+    cond_value = CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, block, after);
 
     parent_func->getBasicBlockList().push_back(after);
@@ -259,7 +267,7 @@ Json::Value Declaration::JsonGen() const {
 }
 
 llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
-    llvm::Type *type = TypeOf(*type_, context);
+    llvm::Type *type = GetType(*type_, context);
     llvm::Value *initial = nullptr;
 
     llvm::Value *inst = nullptr;
@@ -431,6 +439,7 @@ Json::Value FunctionCall::JsonGen() const {
     return root;
 }
 
+// LLVM 默认使用本机C调用约定
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     auto function{context.the_module_->getFunction(function_name_->name_)};
     if (!function) {
@@ -481,52 +490,63 @@ Json::Value FunctionDeclaration::JsonGen() const {
 }
 
 llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
-    std::vector<llvm::Type *> argTypes;
+    std::vector<llvm::Type *> arg_types;
 
-    for (auto &arg: *this->args_) {
-        argTypes.push_back(TypeOf(*arg->type_, context));
+    for (const auto &arg: *args_) {
+        arg_types.push_back(GetType(*arg->type_, context));
     }
-    llvm::Type *retType = nullptr;
-    retType = TypeOf(*return_type_, context);
+    auto ret_type = GetType(*return_type_, context);
 
-    auto functionType = llvm::FunctionType::get(retType, argTypes, false);
-    auto function = llvm::Function::Create(functionType,
-                                           llvm::GlobalValue::ExternalLinkage,
-                                           function_name_->name_,
-                                           context.the_module_.get());
+    // false 说明该函数不是变参数函数,该函数在 the_module_ 的符号表中注册
+    auto func_type = llvm::FunctionType::get(ret_type, arg_types, false);
+    auto func = llvm::Function::Create(func_type,
+                                       llvm::Function::ExternalLinkage,
+                                       function_name_->name_,
+                                       context.the_module_.get());
 
+    // 设置每个参数的名字,使IR更具有可读性,此步骤非必须
+    std::int32_t count{};
+    for (auto &arg:func->args()) {
+        arg.setName((*args_)[count++]->variable_name_->name_);
+    }
+    // TODO 函数重定义问题
     if (has_body_) {
-        auto basicBlock = llvm::BasicBlock::Create(context.the_context_, "entry", function, nullptr);
+        // 创建了一个名为entry的基本块,并且插入到 func 中
+        auto basic_block{llvm::BasicBlock::Create(context.the_context_, "entry", func)};
 
-        context.builder_.SetInsertPoint(basicBlock);
-        context.PushBlock(basicBlock);
+        // 告诉 builder_ 新指令应该插入到 basic_block 的末尾
+        context.builder_.SetInsertPoint(basic_block);
+        context.PushBlock(basic_block);
 
-        // declare function params
-        auto origin_arg = this->args_->begin();
+        auto origin_arg{std::begin(*args_)};
 
-        for (auto &ir_arg_it: function->args()) {
+        for (auto &ir_arg_it: func->args()) {
             ir_arg_it.setName((*origin_arg)->variable_name_->name_);
-            llvm::Value *argAlloc;
-            argAlloc = (*origin_arg)->CodeGen(context);
-
-            context.builder_.CreateStore(&ir_arg_it, argAlloc, false);
-            context.SetSymbolValue((*origin_arg)->variable_name_->name_, argAlloc);
+            auto arg_alloc{(*origin_arg)->CodeGen(context)};
+            context.builder_.CreateStore(&ir_arg_it, arg_alloc, false);
+            context.SetSymbolValue((*origin_arg)->variable_name_->name_, arg_alloc);
             context.SetSymbolType((*origin_arg)->variable_name_->name_, (*origin_arg)->type_);
             context.SetFuncArg((*origin_arg)->variable_name_->name_, true);
             origin_arg++;
         }
 
-        this->body_->CodeGen(context);
+        body_->CodeGen(context);
+        // TODO 处理没有 return 语句的情况
         if (context.GetCurrentReturnValue()) {
             context.builder_.CreateRet(context.GetCurrentReturnValue());
+            // 此函数对生成的代码执行各种一致性检查,以确定我们的编译器是否
+            // 所有的操作都做得正确
+            llvm::verifyFunction(*func);
+
+            // 优化该函数
+            context.the_FPM_->run(*func);
         } else {
             return ErrorReport("Function block return value not founded");
         }
         context.PopBlock();
-
     }
 
-    return function;
+    return func;
 }
 
 Json::Value CharConstant::JsonGen() const {
