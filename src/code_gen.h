@@ -6,11 +6,13 @@
 #define TINY_C_COMPILER_CODE_GEN_H
 
 #include "ast.h"
+#include "type_system.h"
 
 #include <llvm/IR/Value.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/BasicBlock.h>
 
 #include <memory>
 #include <unordered_map>
@@ -21,23 +23,43 @@ namespace tcc {
 
 using SymbolTable=std::unordered_map<std::string, llvm::Value *>;
 
-//class CodeGenBlock
+struct CodeGenBlock {
+    llvm::BasicBlock *block;
+    llvm::Value *return_value;
+    std::unordered_map<std::string, llvm::Value *> locals;
+    std::unordered_map<std::string, std::shared_ptr<Type>> types;
+    std::unordered_map<std::string, bool> is_func_arg;
+};
 
 class CodeGenContext {
 public:
     CodeGenContext() : builder_{the_context_},
-                       the_module_{std::make_unique<llvm::Module>("main", the_context_)} {}
+                       the_module_{std::make_unique<llvm::Module>("main", the_context_)},
+                       type_system_{the_context_} {}
 
+    // 拥有许多核心LLVM数据结构,例如类型和常量值表
     llvm::LLVMContext the_context_;
+    // 该实例跟踪插入指令的当前位置,并具有创建新指令的函数
     llvm::IRBuilder<> builder_;
+    // 包含函数和全局变量,拥有我们生成的所有IR的内存
     std::unique_ptr<llvm::Module> the_module_;
     SymbolTable global_vars_;
-    //TypeSystem typeSystem;
+    TypeSystem type_system_;
 
     void GenerateCode(CompoundStatement &root);
-
+    llvm::Value *GetSymbolValue(const std::string &name) const;
+    std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
+    bool IsFuncArg(const std::string &name);
+    void SetSymbolValue(const std::string &name, llvm::Value *value);
+    void SetSymbolType(const std::string &name, std::shared_ptr<Type> type);
+    void SetFuncArg(const std::string &name, bool value);
+    llvm::BasicBlock *CurrentBlock() const;
+    void PushBlock(llvm::BasicBlock *block);
+    void PopBlock();
+    void SetCurrentReturnValue(llvm::Value *value);
+    llvm::Value *GetCurrentReturnValue();
 private:
-    //std::vector<CodeGenBlock*> blockStack;
+    std::vector<CodeGenBlock *> block_stack_;
 };
 
 }

@@ -26,4 +26,9 @@ void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, Token
     std::exit(EXIT_FAILURE);
 }
 
+llvm::Value *ErrorReport(const std::string &msg) {
+    std::cerr << msg << '\n';
+    return nullptr;
+}
+
 }

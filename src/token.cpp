@@ -127,10 +127,10 @@ bool Token::IsString() const {
 }
 
 bool Token::IsTypeSpecifier() const {
-    return value_ == TokenValue::kCharKeyword ||
-            value_ == TokenValue::kIntKeyword ||
-            value_ == TokenValue::kDoubleKeyword ||
-            value_ == TokenValue::kVoidKeyword;
+    return value_ == TokenValue::kChar ||
+            value_ == TokenValue::kInt ||
+            value_ == TokenValue::kDouble ||
+            value_ == TokenValue::kVoid;
 }
 
 bool Token::IsIdentifier() const {

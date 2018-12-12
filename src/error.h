@@ -8,6 +8,7 @@
 #include "location.h"
 #include "token.h"
 
+#include <llvm/IR/Value.h>
 #include <fmt/core.h>
 
 #include <string>
@@ -28,6 +29,8 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &forma
     fmt::print(format_str, args...);
     std::exit(EXIT_FAILURE);
 }
+
+llvm::Value *ErrorReport(const std::string &msg);
 
 }
 

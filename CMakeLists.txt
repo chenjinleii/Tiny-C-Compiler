@@ -9,6 +9,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5Core REQUIRED CONFIG)
+find_package(Boost 1.68 REQUIRED COMPONENTS)
 find_package(LLVM REQUIRED CONFIG)
 find_package(fmt)
 find_package(jsoncpp)
@@ -26,6 +27,7 @@ llvm_map_components_to_libnames(llvm_libs
 
 target_link_libraries(${PROJECT_NAME}
                       Qt5::Core
+                      ${Boost_LIBRARIES}
                       ${llvm_libs}
                       fmt::fmt
                       jsoncpp

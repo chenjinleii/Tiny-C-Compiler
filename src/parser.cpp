@@ -68,7 +68,7 @@ void Parser::Expect(TokenValue value) {
 
 std::shared_ptr<Statement> Parser::ParseGlobal() {
     auto result{MakeASTNode<Statement>()};
-    if (Try(TokenValue::kExternKeyword)) {
+    if (Try(TokenValue::kExtern)) {
         result = ParseExtern();
     } else {
         result = ParseDeclaration();
@@ -208,13 +208,13 @@ std::shared_ptr<Declaration> Parser::ParDeclarationWithInit() {
 }
 
 std::shared_ptr<Statement> Parser::ParseStatement() {
-    if (Try(TokenValue::kIfKeyword)) {
+    if (Try(TokenValue::kIf)) {
         return ParseIfStatement();
-    } else if (Try(TokenValue::kWhileKeyword)) {
+    } else if (Try(TokenValue::kWhile)) {
         return ParseWhileStatement();
-    } else if (Try(TokenValue::kForKeyword)) {
+    } else if (Try(TokenValue::kFor)) {
         return ParseForStatement();
-    } else if (Try(TokenValue::kReturnKeyword)) {
+    } else if (Try(TokenValue::kReturn)) {
         return ParseReturnStatement();
     } else if (PeekNextToken().IsTypeSpecifier()) {
         return ParDeclarationWithInit();
@@ -238,7 +238,7 @@ std::shared_ptr<IfStatement> Parser::ParseIfStatement() {
     if_statement->then_block_ = ParseCompound();
     Expect(TokenValue::kRightCurly);
 
-    if (Try(TokenValue::kElseKeyword)) {
+    if (Try(TokenValue::kElse)) {
         Expect(TokenValue::kLeftCurly);
         if_statement->else_block_ = ParseCompound();
         Expect(TokenValue::kRightCurly);
@@ -325,7 +325,7 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
             Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
             Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
         return ParseUnaryOpExpression();
-    } else if (Try(TokenValue::kSizeofKeyword)) {
+    } else if (Try(TokenValue::kSizeof)) {
         return ParseSizeof();
     } else {
         return nullptr;
@@ -388,11 +388,11 @@ std::shared_ptr<Int32Constant> Parser::ParseSizeof() {
         ErrorReportAndExit("expect a type name");
     }
     Expect(TokenValue::kRightParen);
-    if (type->type_ == TokenValue::kIntKeyword) {
+    if (type->type_ == TokenValue::kInt) {
         return MakeASTNode<Int32Constant>(4);
-    } else if (type->type_ == TokenValue::kDoubleKeyword) {
+    } else if (type->type_ == TokenValue::kDouble) {
         return MakeASTNode<Int32Constant>(8);
-    } else if (type->type_ == TokenValue::kCharKeyword) {
+    } else if (type->type_ == TokenValue::kChar) {
         return MakeASTNode<Int32Constant>(1);
     } else {
         ErrorReportAndExit("Unknown type");
@@ -461,8 +461,7 @@ std::shared_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
             return nullptr;
         }
 
-        int next_precedence = PeekNextToken().GetTokenPrecedence();
-        if (curr_precedence < next_precedence) {
+        if (curr_precedence < PeekNextToken().GetTokenPrecedence()) {
             rhs = ParseBinOpRHS(curr_precedence + 1, std::move(rhs));
             if (!rhs) {
                 return nullptr;

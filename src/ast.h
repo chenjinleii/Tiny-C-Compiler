@@ -75,6 +75,9 @@ public:
     virtual ~ASTNode() = default;
     virtual ASTNodeType Kind() const { return ASTNodeType::kASTNode; }
     virtual Json::Value JsonGen() const { return Json::Value(); }
+    // 该方法表示为该AST节点生成IR所依赖的所有内容
+    // llvm::Value 是用于表示LLVM中SSA值的类
+    // SSA内容见 https://en.wikipedia.org/wiki/Static_single_assignment_form
     virtual llvm::Value *CodeGen(CodeGenContext &);
 
     SourceLocation location_;
@@ -82,22 +85,23 @@ public:
 
 class Type : public ASTNode {
 public:
+    explicit Type(TokenValue type) : type_{type} {}
     virtual bool IsPrimitive() const { return false; }
     virtual bool IsPoint() const { return false; }
     ASTNodeType Kind() const override { return ASTNodeType::kType; }
     Json::Value JsonGen() const override;
+
+    TokenValue type_{TokenValue::kNone};
 };
 
 class PrimitiveType : public Type {
 public:
     PrimitiveType() = default;
-    explicit PrimitiveType(TokenValue type) : type_{type} {}
+    explicit PrimitiveType(TokenValue type) : Type{type} {}
 
     bool IsPrimitive() const override { return true; }
     ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
     Json::Value JsonGen() const override;
-
-    TokenValue type_{TokenValue::kNone};
 };
 
 class Statement : public ASTNode {
