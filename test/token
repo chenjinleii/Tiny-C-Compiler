@@ -103,7 +103,7 @@ test.c:16:20:       type: kCharConstant       value: 10
 test.c:16:21:       type: kRightParen         
 test.c:16:22:       type: kSemicolon          
 test.c:17:5:        type: kRightCurly         
-test.c:18:10:       type: kReturn             
-test.c:18:12:       type: kIntConstant        value: 0
-test.c:18:13:       type: kSemicolon          
-test.c:19:1:        type: kRightCurly         
+test.c:19:10:       type: kReturn             
+test.c:19:12:       type: kIntConstant        value: 0
+test.c:19:13:       type: kSemicolon          
+test.c:20:1:        type: kRightCurly         

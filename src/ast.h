@@ -80,8 +80,7 @@ public:
     virtual Json::Value JsonGen() const { return Json::Value(); }
     // 该方法表示为该AST节点生成IR所依赖的所有内容
     // llvm::Value 是用于表示LLVM中SSA值的类
-    // SSA内容见 https://en.wikipedia.org/wiki/Static_single_assignment_form
-    virtual llvm::Value *CodeGen(CodeGenContext &);
+    virtual llvm::Value *CodeGen(CodeGenContext &context);
 
     SourceLocation location_;
 };

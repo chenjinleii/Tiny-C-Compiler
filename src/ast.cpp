@@ -7,7 +7,6 @@
 #include "code_gen.h"
 
 #include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
 
 #include <cassert>
@@ -15,26 +14,6 @@
 #include <vector>
 
 namespace tcc {
-
-// TODO 放到 TypeSystem 中
-llvm::Type *GetType(const Type &type, CodeGenContext &context) {
-    return context.type_system_.GetVarType(type);
-}
-
-llvm::Value *CastToBool(CodeGenContext &context, llvm::Value *condition_value) {
-
-    if (condition_value->getType()->getTypeID() == llvm::Type::IntegerTyID) {
-        condition_value = context.builder_.CreateIntCast
-                (condition_value, llvm::Type::getInt1Ty(context.the_context_), true);
-        return context.builder_.CreateICmpNE
-                (condition_value, llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_), 0, true));
-    } else if (condition_value->getType()->getTypeID() == llvm::Type::DoubleTyID) {
-        return context.builder_.CreateFCmpONE
-                (condition_value, llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)));
-    } else {
-        return condition_value;
-    }
-}
 
 std::string ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
     return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type);
@@ -88,6 +67,7 @@ llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
         }
     }
 
+    // 可能返回 nullptr
     return last;
 }
 
@@ -136,10 +116,11 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
 
     auto condition_value{condition_->CodeGen(context)};
     if (!condition_value) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
 
-    condition_value = CastToBool(context, condition_value);
+    condition_value = context.type_system_.CastToBool(context, condition_value);
 
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
 
@@ -157,6 +138,7 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
     context.PushBlock(then_block);
     auto then_value{then_block_->CodeGen(context)};
     if (!then_value) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
     context.PopBlock();
@@ -169,6 +151,7 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
         context.PushBlock(then_block);
         auto else_value{else_block_->CodeGen(context)};
         if (!else_value) {
+            ErrorReportAndExit(location_, "Code generation failed");
             return nullptr;
         }
         context.PopBlock();
@@ -197,6 +180,7 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
 
     llvm::Value *cond_value{cond_->CodeGen(context)};
     if (!cond_value) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
 
@@ -204,7 +188,7 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
     auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop", parent_func)};
     auto after_block{llvm::BasicBlock::Create(context.the_context_, "while_after")};
 
-    cond_value = CastToBool(context, cond_value);
+    cond_value = context.type_system_.CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
     context.builder_.SetInsertPoint(loop_block);
 
@@ -216,7 +200,7 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
     context.PopBlock();
 
     cond_value = cond_->CodeGen(context);
-    cond_value = CastToBool(context, cond_value);
+    cond_value = context.type_system_.CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
     parent_func->getBasicBlockList().push_back(after_block);
@@ -269,6 +253,7 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
         init_value = init_->CodeGen(context);
     }
     if (!init_value) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
 
@@ -281,9 +266,10 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
         cond_value = cond_->CodeGen(context);
     }
     if (!cond_value) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
-    cond_value = CastToBool(context, cond_value);
+    cond_value = context.type_system_.CastToBool(context, cond_value);
 
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
     context.builder_.SetInsertPoint(loop_block);
@@ -297,11 +283,12 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
         increment_value = increment_->CodeGen(context);
     }
     if (!increment_value) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
 
     cond_value = cond_->CodeGen(context);
-    cond_value = CastToBool(context, cond_value);
+    cond_value = context.type_system_.CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
     parent_func->getBasicBlockList().push_back(after_block);
@@ -346,7 +333,7 @@ Json::Value Declaration::JsonGen() const {
 }
 
 llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
-    auto type{GetType(*type_, context)};
+    auto type{context.type_system_.GetType(*type_)};
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
     auto addr{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
@@ -429,6 +416,7 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
         }
         auto rhs_value{rhs_->CodeGen(context)};
         if (!rhs_value) {
+            ErrorReportAndExit(location_, "Code generation failed");
             return nullptr;
         }
         auto var{context.GetSymbolValue(lhs->name_)};
@@ -462,6 +450,7 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     }
 
     if (!lhs || !rhs) {
+        ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
 
@@ -573,6 +562,7 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
         for (const auto &arg:*args_) {
             args_value.push_back(arg->CodeGen(context));
             if (!args_value.back()) {
+                ErrorReportAndExit(location_, "Code generation failed");
                 return nullptr;
             }
         }
@@ -623,10 +613,10 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
 
     if (args_) {
         for (const auto &arg: *args_) {
-            arg_types.push_back(GetType(*arg->type_, context));
+            arg_types.push_back(context.type_system_.GetType(*arg->type_));
         }
     }
-    auto ret_type = GetType(*return_type_, context);
+    auto ret_type = context.type_system_.GetType(*return_type_);
 
     // false 说明该函数不是变参数函数,该函数在 the_module_ 的符号表中注册
     auto func_type = llvm::FunctionType::get(ret_type, arg_types, false);
@@ -659,18 +649,6 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
                 context.SetSymbolType((*origin_arg)->name_->name_, (*origin_arg)->type_);
                 ++origin_arg;
             }
-//            auto origin_arg = this->args_->begin();
-//            for (auto &ir_arg_it: func->args()) {
-//                ir_arg_it.setName((*origin_arg)->name_->name_);
-//                llvm::Value *argAlloc;
-//                argAlloc = (*origin_arg)->CodeGen(context);
-//
-//                context.builder_.CreateStore(&ir_arg_it, argAlloc, false);
-//                context.SetSymbolValue((*origin_arg)->name_->name_, (llvm::AllocaInst *) argAlloc);
-//                context.SetSymbolType((*origin_arg)->name_->name_, (*origin_arg)->type_);
-//                context.SetFuncArg((*origin_arg)->name_->name_, true);
-//                origin_arg++;
-//            }
         }
 
         body_->CodeGen(context);

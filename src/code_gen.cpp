@@ -14,84 +14,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <system_error>
+#include <utility>
 
 namespace tcc {
-
-void CodeGenContext::GenerateCode(CompoundStatement &root) {
-    std::vector<llvm::Type *> system_args;
-    auto main_func_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(the_context_),
-                                                system_args, false)};
-
-    llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
-    auto block{llvm::BasicBlock::Create(the_context_, "entry")};
-    PushBlock(block);
-    root.CodeGen(*this);
-    PopBlock();
-}
-
-llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
-    for (const auto &ele:block_stack_ | boost::adaptors::reversed) {
-        if (ele->locals.find(name) != std::end(ele->locals)) {
-            return ele->locals[name];
-        }
-    }
-    return nullptr;
-}
-
-std::shared_ptr<Type> CodeGenContext::GetSymbolType(const std::string &name) const {
-    for (const auto &ele : block_stack_ | boost::adaptors::reversed) {
-        if (ele->types.find(name) != std::end(ele->types)) {
-            return ele->types[name];
-        }
-    }
-    return nullptr;
-}
-
-bool CodeGenContext::IsFuncArg(const std::string &name) {
-    for (const auto &ele : block_stack_ | boost::adaptors::reversed) {
-        if (ele->is_func_arg.find(name) != std::end(ele->is_func_arg)) {
-            return ele->is_func_arg[name];
-        }
-    }
-    return false;
-}
-
-void CodeGenContext::SetSymbolValue(const std::string &name, llvm::AllocaInst *value) {
-    block_stack_.back()->locals[name] = value;
-}
-
-void CodeGenContext::SetSymbolType(const std::string &name, std::shared_ptr<Type> type) {
-    block_stack_.back()->types[name] = type;
-}
-
-void CodeGenContext::SetFuncArg(const std::string &name, bool value) {
-    block_stack_.back()->is_func_arg[name] = value;
-}
-
-llvm::BasicBlock *CodeGenContext::CurrentBlock() const {
-    return block_stack_.back()->block;
-}
-
-void CodeGenContext::PushBlock(llvm::BasicBlock *block) {
-    auto code_gen_block{new CodeGenBlock()};
-    code_gen_block->block = block;
-    code_gen_block->return_value = nullptr;
-    block_stack_.push_back(code_gen_block);
-}
-
-void CodeGenContext::PopBlock() {
-    auto code_gen_block{block_stack_.back()};
-    block_stack_.pop_back();
-    delete code_gen_block;
-}
-
-void CodeGenContext::SetCurrentReturnValue(llvm::Value *value) {
-    block_stack_.back()->return_value = value;
-}
-
-llvm::Value *CodeGenContext::GetCurrentReturnValue() {
-    return block_stack_.back()->return_value;
-}
 
 CodeGenContext::CodeGenContext() :
         builder_{the_context_}, type_system_{the_context_} {
@@ -122,9 +47,21 @@ llvm::AllocaInst *CodeGenContext::CreateEntryBlockAlloca(llvm::Function *parent,
 
 }
 
+void CodeGenContext::GenerateCode(CompoundStatement &root) {
+    std::vector<llvm::Type *> system_args;
+    auto main_func_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(the_context_),
+                                                system_args, false)};
+
+    llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
+    auto block{llvm::BasicBlock::Create(the_context_, "entry")};
+    PushBlock(block);
+    root.CodeGen(*this);
+    PopBlock();
+}
+
 void CodeGenContext::Debug(CompoundStatement &root, const std::string &file_name) {
     std::vector<llvm::Type *> system_args;
-    auto main_func_type{llvm::FunctionType::get(llvm::Type::getVoidTy(the_context_),
+    auto main_func_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(the_context_),
                                                 system_args, false)};
 
     llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
@@ -141,6 +78,51 @@ void CodeGenContext::Debug(CompoundStatement &root, const std::string &file_name
         std::exit(EXIT_FAILURE);
     }
     fuck << *the_module_;
+}
+
+void CodeGenContext::SetCurrentReturnValue(llvm::Value *value) {
+    block_stack_.back()->return_value = value;
+}
+
+llvm::Value *CodeGenContext::GetCurrentReturnValue() {
+    return block_stack_.back()->return_value;
+}
+
+void CodeGenContext::SetSymbolValue(const std::string &name, llvm::AllocaInst *value) {
+    block_stack_.back()->locals[name] = value;
+}
+
+void CodeGenContext::SetSymbolType(const std::string &name, std::shared_ptr<Type> type) {
+    block_stack_.back()->types[name] = std::move(type);
+}
+
+llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
+    for (const auto &ele:block_stack_ | boost::adaptors::reversed) {
+        if (ele->locals.find(name) != std::end(ele->locals)) {
+            return ele->locals[name];
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<Type> CodeGenContext::GetSymbolType(const std::string &name) const {
+    for (const auto &ele : block_stack_ | boost::adaptors::reversed) {
+        if (ele->types.find(name) != std::end(ele->types)) {
+            return ele->types[name];
+        }
+    }
+    return nullptr;
+}
+
+void CodeGenContext::PushBlock(llvm::BasicBlock *block) {
+    auto code_gen_block{std::make_unique<CodeGenBlock>()};
+    code_gen_block->block = block;
+    code_gen_block->return_value = nullptr;
+    block_stack_.push_back(std::move(code_gen_block));
+}
+
+void CodeGenContext::PopBlock() {
+    block_stack_.pop_back();
 }
 
 }

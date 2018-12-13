@@ -31,13 +31,13 @@ struct CodeGenBlock {
     llvm::Value *return_value;
     SymbolTable locals;
     std::unordered_map<std::string, std::shared_ptr<Type>> types;
-    std::unordered_map<std::string, bool> is_func_arg;
 };
+
+// TODO 优化选项,printf
 
 class CodeGenContext {
 public:
     CodeGenContext();
-
     void InitializeModuleAndPassManager();
     llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
                                              const std::string &name);
@@ -54,19 +54,17 @@ public:
 
     void GenerateCode(CompoundStatement &root);
     void Debug(CompoundStatement &root, const std::string &file_name);
-    llvm::Value *GetSymbolValue(const std::string &name) const;
-    std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
-    bool IsFuncArg(const std::string &name);
-    void SetSymbolValue(const std::string &name, llvm::AllocaInst *value);
-    void SetSymbolType(const std::string &name, std::shared_ptr<Type> type);
-    void SetFuncArg(const std::string &name, bool value);
-    llvm::BasicBlock *CurrentBlock() const;
-    void PushBlock(llvm::BasicBlock *block);
-    void PopBlock();
     void SetCurrentReturnValue(llvm::Value *value);
     llvm::Value *GetCurrentReturnValue();
+    void SetSymbolValue(const std::string &name, llvm::AllocaInst *value);
+    void SetSymbolType(const std::string &name, std::shared_ptr<Type> type);
+    llvm::Value *GetSymbolValue(const std::string &name) const;
+    std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
+    void PushBlock(llvm::BasicBlock *block);
+    void PopBlock();
 private:
-    std::vector<CodeGenBlock *> block_stack_;
+    std::vector<std::unique_ptr<CodeGenBlock>> block_stack_;
+    bool optimization_{false};
 };
 
 }
