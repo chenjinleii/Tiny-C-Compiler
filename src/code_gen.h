@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <iostream>
 
 namespace tcc {
 
@@ -48,10 +49,10 @@ public:
     std::unique_ptr<llvm::Module> the_module_;
 
     std::unique_ptr<llvm::legacy::FunctionPassManager> the_FPM_;
-    SymbolTable global_vars_;
     TypeSystem type_system_;
 
     void GenerateCode(CompoundStatement &root);
+    void Debug(CompoundStatement &root, const std::string &file_name);
     llvm::Value *GetSymbolValue(const std::string &name) const;
     std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
     bool IsFuncArg(const std::string &name);

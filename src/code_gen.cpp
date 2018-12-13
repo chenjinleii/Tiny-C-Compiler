@@ -27,14 +27,6 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
     PushBlock(block);
     root.CodeGen(*this);
     PopBlock();
-
-    std::error_code error;
-    llvm::raw_fd_ostream fuck{"../test/ir", error};
-    if (error) {
-        std::cerr << "can not open ir file\n";
-        std::exit(EXIT_FAILURE);
-    }
-    fuck << *the_module_;
 }
 
 llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
@@ -125,6 +117,27 @@ llvm::AllocaInst *CodeGenContext::CreateEntryBlockAlloca(llvm::Function *parent,
                            parent->getEntryBlock().begin()};
     return temp.CreateAlloca(type, nullptr, name);
 
+}
+
+void CodeGenContext::Debug(CompoundStatement &root, const std::string &file_name) {
+    std::vector<llvm::Type *> system_args;
+    auto main_func_type{llvm::FunctionType::get(llvm::Type::getVoidTy(the_context_),
+                                                system_args, false)};
+
+    llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
+
+    auto block{llvm::BasicBlock::Create(the_context_, "entry")};
+    PushBlock(block);
+    root.CodeGen(*this);
+    PopBlock();
+
+    std::error_code error;
+    llvm::raw_fd_ostream fuck{file_name, error};
+    if (error) {
+        std::cerr << "can not open ir file\n";
+        std::exit(EXIT_FAILURE);
+    }
+    fuck << *the_module_;
 }
 
 }

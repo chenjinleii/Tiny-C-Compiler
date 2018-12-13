@@ -156,13 +156,16 @@ void RunTest() {
 
     std::string input_file("/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
     std::ofstream ofs{"../test/token"};
+    std::string processed_file(RemoveExtension(input_file) + ".i");
+    std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+    std::system(cmd.c_str());
 
     if (!ofs) {
         std::cerr << "can not open token file\n";
         std::exit(EXIT_FAILURE);
     }
 
-    tcc::Parser parse{tcc::Scanner::debug(input_file, ofs)};
+    tcc::Parser parse{tcc::Scanner::Debug(processed_file, ofs)};
     auto ast_root{parse.Parse()};
     auto json_root{ast_root->JsonGen()};
 
@@ -176,12 +179,13 @@ void RunTest() {
     std::cout << "ast Successfully written\n";
 
     tcc::CodeGenContext context;
-    context.GenerateCode(*ast_root);
+    context.Debug(*ast_root, "../test/ir");
     std::cout << "LLVM IR  Successfully Generate\n";
 
     tcc::ObjGen(context, "test.o");
 
     std::system("gcc -std=c99 -o test test.o");
     std::cout << "Compiled successfully\n";
+    std::cout << "The program runs-----------------------------------------------\n\n";
     std::system("./test");
 }

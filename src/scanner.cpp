@@ -100,7 +100,7 @@ std::vector<Token> Scanner::Scan() {
     return token_sequence;
 }
 
-std::vector<Token> Scanner::debug(const std::string &file_name, std::ostream &os) {
+std::vector<Token> Scanner::Debug(const std::string &file_name, std::ostream &os) {
     Scanner scanner{file_name};
     auto token_sequence{scanner.Scan()};
     for (const auto &token:token_sequence) {
