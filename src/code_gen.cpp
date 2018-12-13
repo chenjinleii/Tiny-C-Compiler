@@ -4,22 +4,22 @@
 
 #include "code_gen.h"
 
-#include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <boost/range/adaptor/reversed.hpp>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/IR/IRPrintingPasses.h>
+
+#include <iostream>
+#include <cstdlib>
+#include <system_error>
 
 namespace tcc {
 
 void CodeGenContext::GenerateCode(CompoundStatement &root) {
     std::vector<llvm::Type *> system_args;
     auto main_func_type{llvm::FunctionType::get(llvm::Type::getVoidTy(the_context_),
-                                                llvm::makeArrayRef(system_args), false)};
+                                                system_args, false)};
 
     llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
 
@@ -28,9 +28,13 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
     root.CodeGen(*this);
     PopBlock();
 
-    llvm::legacy::PassManager passManager;
-    passManager.add(llvm::createPrintModulePass(llvm::outs()));
-    passManager.run(*the_module_);
+    std::error_code error;
+    llvm::raw_fd_ostream fuck{"../test/ir", error};
+    if (error) {
+        std::cerr << "can not open ir file\n";
+        std::exit(EXIT_FAILURE);
+    }
+    fuck << *the_module_;
 }
 
 llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
