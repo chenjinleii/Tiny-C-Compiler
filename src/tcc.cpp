@@ -163,7 +163,8 @@ void RunTest() {
     }
 
     tcc::Parser parse{tcc::Scanner::debug(input_file, ofs)};
-    auto root = parse.Parse()->JsonGen();
+    auto ast_root{parse.Parse()};
+    auto json_root{ast_root->JsonGen()};
 
     std::ofstream ast{"../test/ast.json"};
     if (!ast) {
@@ -171,6 +172,16 @@ void RunTest() {
         std::exit(EXIT_FAILURE);
     }
 
-    ast << root;
+    ast << json_root;
     std::cout << "ast Successfully written\n";
+
+    tcc::CodeGenContext context;
+    context.GenerateCode(*ast_root);
+    std::cout << "LLVM IR  Successfully Generate\n";
+
+    tcc::ObjGen(context, "test.o");
+
+    std::system("gcc -std=c99 -o test test.o");
+    std::cout << "Compiled successfully\n";
+    std::system("./test");
 }

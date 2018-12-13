@@ -22,12 +22,12 @@
 
 namespace tcc {
 
-using SymbolTable=std::unordered_map<std::string, llvm::Value *>;
+using SymbolTable=std::unordered_map<std::string, llvm::AllocaInst *>;
 
 struct CodeGenBlock {
     llvm::BasicBlock *block;
     llvm::Value *return_value;
-    std::unordered_map<std::string, llvm::Value *> locals;
+    SymbolTable locals;
     std::unordered_map<std::string, std::shared_ptr<Type>> types;
     std::unordered_map<std::string, bool> is_func_arg;
 };
@@ -37,6 +37,8 @@ public:
     CodeGenContext();
 
     void InitializeModuleAndPassManager();
+    llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
+                                             const std::string &name);
 
     // 拥有许多核心LLVM数据结构,例如类型和常量值表
     llvm::LLVMContext the_context_;
@@ -53,7 +55,7 @@ public:
     llvm::Value *GetSymbolValue(const std::string &name) const;
     std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
     bool IsFuncArg(const std::string &name);
-    void SetSymbolValue(const std::string &name, llvm::Value *value);
+    void SetSymbolValue(const std::string &name, llvm::AllocaInst *value);
     void SetSymbolType(const std::string &name, std::shared_ptr<Type> type);
     void SetFuncArg(const std::string &name, bool value);
     llvm::BasicBlock *CurrentBlock() const;

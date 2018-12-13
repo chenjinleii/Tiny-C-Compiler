@@ -23,8 +23,8 @@ public:
     explicit TypeSystem(llvm::LLVMContext &context);
     llvm::Value *GetDefaultValue(TokenValue type, llvm::LLVMContext &context);
     llvm::Value *Cast(llvm::Value *value, llvm::Type *type, llvm::BasicBlock *block);
-    llvm::Type *getVarType(const Type &type);
-    llvm::Type *getVarType(TokenValue type);
+    llvm::Type *GetVarType(const Type &type);
+    llvm::LLVMContext &the_context_;
     llvm::Type *void_type_ = llvm::Type::getVoidTy(the_context_);
     llvm::Type *char_type_ = llvm::Type::getInt8Ty(the_context_);
     llvm::Type *int32_type_ = llvm::Type::getInt32Ty(the_context_);
@@ -34,7 +34,7 @@ public:
 private:
     void AddCast(llvm::Type *from, llvm::Type *to, llvm::CastInst::CastOps op);
     std::unordered_map<llvm::Type *, std::unordered_map<llvm::Type *, llvm::CastInst::CastOps>> cast_table_;
-    llvm::LLVMContext &the_context_;
+
 };
 
 }

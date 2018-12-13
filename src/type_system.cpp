@@ -47,12 +47,8 @@ void TypeSystem::AddCast(llvm::Type *from, llvm::Type *to, llvm::CastInst::CastO
     cast_table_[from][to] = op;
 }
 
-llvm::Type *TypeSystem::getVarType(const Type &type) {
-    return getVarType(type.type_);
-}
-
-llvm::Type *TypeSystem::getVarType(TokenValue type) {
-    switch (type) {
+llvm::Type *TypeSystem::GetVarType(const Type &type) {
+    switch (type.type_) {
         case TokenValue::kInt:return int32_type_;
         case TokenValue::kChar:return char_type_;
         case TokenValue::kDouble:return double_type_;

@@ -10,6 +10,9 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <boost/range/adaptor/reversed.hpp>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/IR/IRPrintingPasses.h>
 
 namespace tcc {
 
@@ -24,6 +27,10 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
     PushBlock(block);
     root.CodeGen(*this);
     PopBlock();
+
+    llvm::legacy::PassManager passManager;
+    passManager.add(llvm::createPrintModulePass(llvm::outs()));
+    passManager.run(*the_module_);
 }
 
 llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
@@ -53,7 +60,7 @@ bool CodeGenContext::IsFuncArg(const std::string &name) {
     return false;
 }
 
-void CodeGenContext::SetSymbolValue(const std::string &name, llvm::Value *value) {
+void CodeGenContext::SetSymbolValue(const std::string &name, llvm::AllocaInst *value) {
     block_stack_.back()->locals[name] = value;
 }
 
@@ -106,6 +113,14 @@ void CodeGenContext::InitializeModuleAndPassManager() {
     the_FPM_->add(llvm::createCFGSimplificationPass());
 
     the_FPM_->doInitialization();
+}
+
+llvm::AllocaInst *CodeGenContext::CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
+                                                         const std::string &name) {
+    llvm::IRBuilder<> temp{&parent->getEntryBlock(),
+                           parent->getEntryBlock().begin()};
+    return temp.CreateAlloca(type, nullptr, name);
+
 }
 
 }

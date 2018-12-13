@@ -16,22 +16,20 @@
 
 namespace tcc {
 
-llvm::Type *GetType(Type type, CodeGenContext &context) {
-    return context.type_system_.getVarType(type.type_);
+llvm::Type *GetType(const Type &type, CodeGenContext &context) {
+    return context.type_system_.GetVarType(type);
 }
 
 llvm::Value *CastToBool(CodeGenContext &context, llvm::Value *condition_value) {
 
     if (condition_value->getType()->getTypeID() == llvm::Type::IntegerTyID) {
-        condition_value =
-                context.builder_.CreateIntCast(condition_value, llvm::Type::getInt1Ty(context.the_context_), true);
-        return context.builder_.CreateICmpNE(condition_value,
-                                             llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_),
-                                                                    0,
-                                                                    true));
+        condition_value = context.builder_.CreateIntCast
+                (condition_value, llvm::Type::getInt1Ty(context.the_context_), true);
+        return context.builder_.CreateICmpNE
+                (condition_value, llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_), 0, true));
     } else if (condition_value->getType()->getTypeID() == llvm::Type::DoubleTyID) {
-        return context.builder_.CreateFCmpONE(condition_value,
-                                              llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)));
+        return context.builder_.CreateFCmpONE
+                (condition_value, llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)));
     } else {
         return condition_value;
     }
@@ -54,7 +52,7 @@ Json::Value Type::JsonGen() const {
 Json::Value PrimitiveType::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind()) +
-            ' ' + TokenValues::ToString(type_);
+            ' ' + TokenTypes::ToString(type_);
     return root;
 }
 
@@ -79,11 +77,20 @@ Json::Value CompoundStatement::JsonGen() const {
 }
 
 llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
-    llvm::Value *last = nullptr;
+    llvm::Value *last{};
     for (auto &it : *statements_) {
         last = it->CodeGen(context);
     }
     return last;
+}
+
+void CompoundStatement::AddStatement(std::shared_ptr<Statement> statement) {
+    if (statements_) {
+        statements_->push_back(std::move(statement));
+    } else {
+        statements_ = std::make_shared<StatementList>();
+        statements_->push_back(std::move(statement));
+    }
 }
 
 Json::Value ExpressionStatement::JsonGen() const {
@@ -113,22 +120,23 @@ Json::Value IfStatement::JsonGen() const {
 }
 
 llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
-    auto condition_value = condition_->CodeGen(context);
+    auto condition_value{condition_->CodeGen(context)};
     if (!condition_value) {
         return nullptr;
     }
 
     condition_value = CastToBool(context, condition_value);
 
-    auto parent_func = context.builder_.GetInsertBlock()->getParent();
+    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
 
-    auto then_block = llvm::BasicBlock::Create(context.the_context_, "then", parent_func);
-    auto else_block = llvm::BasicBlock::Create(context.the_context_, "else");
-    auto merge_block = llvm::BasicBlock::Create(context.the_context_, "condition");
+    auto then_block = llvm::BasicBlock::Create(context.the_context_, "if_then", parent_func);
+    auto else_block = llvm::BasicBlock::Create(context.the_context_, "if_else");
+    auto after_block = llvm::BasicBlock::Create(context.the_context_, "if_after");
+
     if (else_block_) {
         context.builder_.CreateCondBr(condition_value, then_block, else_block);
     } else {
-        context.builder_.CreateCondBr(condition_value, then_block, merge_block);
+        context.builder_.CreateCondBr(condition_value, then_block, after_block);
     }
 
     context.builder_.SetInsertPoint(then_block);
@@ -138,12 +146,7 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
         return nullptr;
     }
     context.PopBlock();
-    context.builder_.CreateBr(merge_block);
-    then_block = context.builder_.GetInsertBlock();
-
-    if (then_block->getTerminator() == nullptr) {
-        context.builder_.CreateBr(merge_block);
-    }
+    context.builder_.CreateBr(after_block);
 
     if (else_block_) {
         parent_func->getBasicBlockList().push_back(else_block);
@@ -154,12 +157,11 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
             return nullptr;
         }
         context.PopBlock();
-        context.builder_.CreateBr(merge_block);
-        else_block = context.builder_.GetInsertBlock();
+        context.builder_.CreateBr(after_block);
     }
 
-    parent_func->getBasicBlockList().push_back(merge_block);
-    context.builder_.SetInsertPoint(merge_block);
+    parent_func->getBasicBlockList().push_back(after_block);
+    context.builder_.SetInsertPoint(after_block);
 
     return nullptr;
 }
@@ -173,6 +175,7 @@ Json::Value WhileStatement::JsonGen() const {
     return root;
 }
 
+// TODO while
 llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
     return ASTNode::CodeGen(context);
 }
@@ -181,8 +184,8 @@ Json::Value ForStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
 
-    if (initial_) {
-        root["children"].append(initial_->JsonGen());
+    if (init_) {
+        root["children"].append(init_->JsonGen());
     }
     if (condition_) {
         root["children"].append(condition_->JsonGen());
@@ -198,26 +201,24 @@ Json::Value ForStatement::JsonGen() const {
 }
 
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
-    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-
-    auto block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
-    auto after{llvm::BasicBlock::Create(context.the_context_, "for_cont")};
-
-    if (initial_) {
-        initial_->CodeGen(context);
+    if (init_) {
+        init_->CodeGen(context);
     }
+
+    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
+    auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
+    auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
 
     auto cond_value{condition_->CodeGen(context)};
     if (!cond_value) {
         return nullptr;
     }
-
     cond_value = CastToBool(context, cond_value);
 
-    context.builder_.CreateCondBr(cond_value, block, after);
-    context.builder_.SetInsertPoint(block);
-    context.PushBlock(block);
+    context.builder_.CreateCondBr(cond_value, loop_block, after_block);
+    context.builder_.SetInsertPoint(loop_block);
 
+    context.PushBlock(loop_block);
     block_->CodeGen(context);
     context.PopBlock();
 
@@ -227,10 +228,10 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
 
     cond_value = condition_->CodeGen(context);
     cond_value = CastToBool(context, cond_value);
-    context.builder_.CreateCondBr(cond_value, block, after);
+    context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
-    parent_func->getBasicBlockList().push_back(after);
-    context.builder_.SetInsertPoint(after);
+    parent_func->getBasicBlockList().push_back(after_block);
+    context.builder_.SetInsertPoint(after_block);
 
     return nullptr;
 }
@@ -245,9 +246,9 @@ Json::Value ReturnStatement::JsonGen() const {
 }
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
-    auto returnValue = expression_->CodeGen(context);
-    context.SetCurrentReturnValue(returnValue);
-    return returnValue;
+    auto return_value = expression_->CodeGen(context);
+    context.SetCurrentReturnValue(return_value);
+    return return_value;
 }
 
 Json::Value Declaration::JsonGen() const {
@@ -257,31 +258,30 @@ Json::Value Declaration::JsonGen() const {
     assert(type_ != nullptr);
     root["children"].append(type_->JsonGen());
 
-    assert(variable_name_ != nullptr);
-    root["children"].append(variable_name_->JsonGen());
+    assert(name_ != nullptr);
+    root["children"].append(name_->JsonGen());
 
-    if (initialization_expression_) {
-        root["children"].append(initialization_expression_->JsonGen());
+    if (init_) {
+        root["children"].append(init_->JsonGen());
     }
     return root;
 }
 
 llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
-    llvm::Type *type = GetType(*type_, context);
-    llvm::Value *initial = nullptr;
+    auto type = GetType(*type_, context);
+    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
+    auto alloca{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
-    llvm::Value *inst = nullptr;
+    context.builder_.CreateStore(llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), alloca);
 
-    inst = context.builder_.CreateAlloca(type);
+    context.SetSymbolType(name_->name_, type_);
+    context.SetSymbolValue(name_->name_, alloca);
 
-    context.SetSymbolType(variable_name_->name_, type_);
-    context.SetSymbolValue(variable_name_->name_, inst);
-
-    if (initialization_expression_ != nullptr) {
-        BinaryOpExpression assignment(variable_name_, initialization_expression_, TokenValue::kAssign);
-        assignment.CodeGen(context);
-    }
-    return inst;
+//    if (init_) {
+//        BinaryOpExpression assignment(name_, init_, TokenValue::kAssign);
+//        assignment.CodeGen(context);
+//    }
+    return alloca;
 }
 
 Json::Value Expression::JsonGen() const {
@@ -293,7 +293,7 @@ Json::Value Expression::JsonGen() const {
 Json::Value UnaryOpExpression::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind()) + " "
-            + TokenValues::ToString(op_);
+            + TokenTypes::ToString(op_);
 
     assert(object_ != nullptr);
     root["children"].append(object_->JsonGen());
@@ -308,7 +308,7 @@ llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
 Json::Value PostfixExpression::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind()) + " "
-            + TokenValues::ToString(op_);
+            + TokenTypes::ToString(op_);
 
     assert(object_ != nullptr);
     root["children"].append(object_->JsonGen());
@@ -323,7 +323,7 @@ llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
 Json::Value BinaryOpExpression::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind()) + " "
-            + TokenValues::ToString(op_);
+            + TokenTypes::ToString(op_);
 
     assert(lhs_ != nullptr);
     root["children"].append(lhs_->JsonGen());
@@ -427,7 +427,7 @@ llvm::Value *Identifier::CodeGen(CodeGenContext &context) {
 Json::Value FunctionCall::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
-    root["children"].append(function_name_->JsonGen());
+    root["children"].append(name_->JsonGen());
 
     if (args_) {
         for (const auto &it : *args_) {
@@ -441,7 +441,7 @@ Json::Value FunctionCall::JsonGen() const {
 
 // LLVM 默认使用本机C调用约定
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
-    auto function{context.the_module_->getFunction(function_name_->name_)};
+    auto function{context.the_module_->getFunction(name_->name_)};
     if (!function) {
         return ErrorReport("Unknown function referenced");
     }
@@ -461,8 +461,17 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     return context.builder_.CreateCall(function, args_value);
 }
 
+void FunctionCall::AddArg(std::shared_ptr<Expression> arg) {
+    if (args_) {
+        args_->push_back(std::move(arg));
+    } else {
+        args_ = std::make_shared<ExpressionList>();
+        args_->push_back(std::move(arg));
+    }
+}
+
 ASTNodeType FunctionDeclaration::Kind() const {
-    if (has_body_) {
+    if (body_) {
         return ASTNodeType::kFunctionDefinition;
     } else {
         return ASTNodeType::kFunctionDeclaration;
@@ -473,7 +482,7 @@ Json::Value FunctionDeclaration::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
     root["children"].append(return_type_->JsonGen());
-    root["children"].append(function_name_->JsonGen());
+    root["children"].append(name_->JsonGen());
 
     if (args_) {
         for (auto &it : *args_) {
@@ -492,8 +501,10 @@ Json::Value FunctionDeclaration::JsonGen() const {
 llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     std::vector<llvm::Type *> arg_types;
 
-    for (const auto &arg: *args_) {
-        arg_types.push_back(GetType(*arg->type_, context));
+    if (args_) {
+        for (const auto &arg: *args_) {
+            arg_types.push_back(GetType(*arg->type_, context));
+        }
     }
     auto ret_type = GetType(*return_type_, context);
 
@@ -501,16 +512,16 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     auto func_type = llvm::FunctionType::get(ret_type, arg_types, false);
     auto func = llvm::Function::Create(func_type,
                                        llvm::Function::ExternalLinkage,
-                                       function_name_->name_,
+                                       name_->name_,
                                        context.the_module_.get());
 
     // 设置每个参数的名字,使IR更具有可读性,此步骤非必须
     std::int32_t count{};
     for (auto &arg:func->args()) {
-        arg.setName((*args_)[count++]->variable_name_->name_);
+        arg.setName((*args_)[count++]->name_->name_);
     }
     // TODO 函数重定义问题
-    if (has_body_) {
+    if (body_) {
         // 创建了一个名为entry的基本块,并且插入到 func 中
         auto basic_block{llvm::BasicBlock::Create(context.the_context_, "entry", func)};
 
@@ -518,16 +529,18 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
         context.builder_.SetInsertPoint(basic_block);
         context.PushBlock(basic_block);
 
-        auto origin_arg{std::begin(*args_)};
+        if (args_) {
+            auto origin_arg{std::begin(*args_)};
 
-        for (auto &ir_arg_it: func->args()) {
-            ir_arg_it.setName((*origin_arg)->variable_name_->name_);
-            auto arg_alloc{(*origin_arg)->CodeGen(context)};
-            context.builder_.CreateStore(&ir_arg_it, arg_alloc, false);
-            context.SetSymbolValue((*origin_arg)->variable_name_->name_, arg_alloc);
-            context.SetSymbolType((*origin_arg)->variable_name_->name_, (*origin_arg)->type_);
-            context.SetFuncArg((*origin_arg)->variable_name_->name_, true);
-            origin_arg++;
+            for (auto &ir_arg_it: func->args()) {
+                ir_arg_it.setName((*origin_arg)->name_->name_);
+                auto arg_alloc{(*origin_arg)->CodeGen(context)};
+                context.builder_.CreateStore(&ir_arg_it, arg_alloc, false);
+                //context.SetSymbolValue((*origin_arg)->name_->name_, arg_alloc);
+                context.SetSymbolType((*origin_arg)->name_->name_, (*origin_arg)->type_);
+                context.SetFuncArg((*origin_arg)->name_->name_, true);
+                origin_arg++;
+            }
         }
 
         body_->CodeGen(context);
@@ -547,6 +560,15 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     }
 
     return func;
+}
+
+void FunctionDeclaration::AddArg(std::shared_ptr<Declaration> arg) {
+    if (args_) {
+        args_->push_back(std::move(arg));
+    } else {
+        args_ = std::make_shared<DeclarationList>();
+        args_->push_back(std::move(arg));
+    }
 }
 
 Json::Value CharConstant::JsonGen() const {

@@ -87,11 +87,11 @@ std::shared_ptr<Statement> Parser::ParseDeclaration() {
     if (Try(TokenValue::kLeftParen)) {
         auto function{ParseFunctionDeclaration()};
         function->return_type_ = std::move(declaration_no_init->type_);
-        function->function_name_ = std::move(declaration_no_init->variable_name_);
+        function->name_ = std::move(declaration_no_init->name_);
         return function;
     } else if (Try(TokenValue::kAssign)) {
         auto initialization_expression{ParseExpression()};
-        declaration_no_init->initialization_expression_ = std::move(initialization_expression);
+        declaration_no_init->init_ = std::move(initialization_expression);
         return declaration_no_init;
     } else {
         return declaration_no_init;
@@ -119,9 +119,8 @@ std::shared_ptr<Identifier> Parser::ParseIdentifier() {
 std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     auto function{MakeASTNode<FunctionDeclaration>()};
 
-    function->args_ = std::make_shared<DeclarationList>();
     while (!Test(TokenValue::kRightParen)) {
-        function->args_->push_back(ParDeclarationWithoutInit());
+        function->AddArg(ParDeclarationWithoutInit());
         if (!Test(TokenValue::kRightParen)) {
             Expect(TokenValue::kComma);
         } else {
@@ -132,7 +131,6 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     Expect(TokenValue::kRightParen);
 
     if (Try(TokenValue::kLeftCurly)) {
-        function->has_body_ = true;
         function->body_ = ParseCompound();
         Expect(TokenValue::kRightCurly);
         return function;
@@ -155,11 +153,10 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
     if (!function_name) {
         ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "expect a identifier");
     }
-    function->function_name_ = function_name;
+    function->name_ = function_name;
 
     Expect(TokenValue::kLeftParen);
 
-    function->args_ = std::make_shared<DeclarationList>();
     while (!Test(TokenValue::kRightParen)) {
         function->AddArg(ParDeclarationWithoutInit());
         if (!Test(TokenValue::kRightParen)) {
@@ -178,7 +175,7 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
 std::shared_ptr<CompoundStatement> Parser::ParseCompound() {
     auto compound{MakeASTNode<CompoundStatement>()};
     while (!Test(TokenValue::kRightCurly)) {
-        compound->statements_->push_back(ParseStatement());
+        compound->AddStatement(ParseStatement());
     }
     return compound;
 }
@@ -200,7 +197,7 @@ std::shared_ptr<Declaration> Parser::ParDeclarationWithInit() {
     auto var_declaration_no_init{ParDeclarationWithoutInit()};
 
     if (Try(TokenValue::kAssign)) {
-        var_declaration_no_init->initialization_expression_ = ParseExpression();
+        var_declaration_no_init->init_ = ParseExpression();
     }
     Expect(TokenValue::kSemicolon);
 
@@ -266,7 +263,7 @@ std::shared_ptr<ForStatement> Parser::ParseForStatement() {
 
     Expect(TokenValue::kLeftParen);
     //TODO 支持声明变量
-    for_statement->initial_ = ParseExpression();
+    for_statement->init_ = ParseExpression();
     Expect(TokenValue::kSemicolon);
 
     for_statement->condition_ = ParseExpression();
@@ -415,7 +412,7 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
 
     if (Try(TokenValue::kLeftParen)) {
         auto function_call{MakeASTNode<FunctionCall>()};
-        function_call->function_name_ = std::move(identifier);
+        function_call->name_ = std::move(identifier);
         function_call->args_ = std::make_shared<ExpressionList>();
         if (!Test(TokenValue::kRightParen)) {
             while (true) {

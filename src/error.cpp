@@ -21,8 +21,8 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &msg) 
 
 void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, TokenValue actual) {
     std::cerr << "At: " << location.ToString() << '\n';
-    std::cerr << "expect " << TokenValues::ToString(expect) <<
-              " but actual " << TokenValues::ToString(actual) << '\n';
+    std::cerr << "expect " << TokenTypes::ToString(expect) <<
+              " but actual " << TokenTypes::ToString(actual) << '\n';
     std::exit(EXIT_FAILURE);
 }
 

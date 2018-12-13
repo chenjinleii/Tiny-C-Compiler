@@ -10,42 +10,42 @@
 
 namespace tcc {
 
-std::string TokenValues::ToString(TokenValues::Value value) {
-    return QMetaEnum::fromType<TokenValues::Value>().valueToKey(value);
+std::string TokenTypes::ToString(TokenTypes::Types Type) {
+    return QMetaEnum::fromType<TokenTypes::Types>().valueToKey(Type);
 }
 
 PrecedenceDictionary::PrecedenceDictionary() {
-    precedence_.insert({TokenValues::kAssign, 20});
-    precedence_.insert({TokenValues::kSubAssign, 20});
-    precedence_.insert({TokenValues::kAddAssign, 20});
-    precedence_.insert({TokenValues::kShlAssign, 20});
-    precedence_.insert({TokenValues::kShrAssign, 20});
-    precedence_.insert({TokenValues::kModAssign, 20});
-    precedence_.insert({TokenValues::kXorAssign, 20});
-    precedence_.insert({TokenValues::kMulAssign, 20});
-    precedence_.insert({TokenValues::kOrAssign, 20});
-    precedence_.insert({TokenValues::kAndAssign, 20});
-    precedence_.insert({TokenValues::kDivAssign, 20});
-    precedence_.insert({TokenValues::kLogicOr, 40});
-    precedence_.insert({TokenValues::kLogicAnd, 50});
-    precedence_.insert({TokenValues::kOr, 60});
-    precedence_.insert({TokenValues::kXor, 70});
-    precedence_.insert({TokenValues::kAnd, 80});
-    precedence_.insert({TokenValues::kEqual, 90});
-    precedence_.insert({TokenValues::kNotEqual, 90});
-    precedence_.insert({TokenValues::kLessOrEqual, 100});
-    precedence_.insert({TokenValues::kLess, 100});
-    precedence_.insert({TokenValues::kGreaterOrEqual, 100});
-    precedence_.insert({TokenValues::kGreater, 100});
-    precedence_.insert({TokenValues::kShl, 110});
-    precedence_.insert({TokenValues::kShr, 110});
-    precedence_.insert({TokenValues::kSub, 120});
-    precedence_.insert({TokenValues::kAdd, 120});
-    precedence_.insert({TokenValues::kMod, 130});
-    precedence_.insert({TokenValues::kMul, 130});
-    precedence_.insert({TokenValues::kDiv, 130});
-    precedence_.insert({TokenValues::kArrow, 150});
-    precedence_.insert({TokenValues::kPeriod, 150});
+    precedence_.insert({TokenTypes::kAssign, 20});
+    precedence_.insert({TokenTypes::kSubAssign, 20});
+    precedence_.insert({TokenTypes::kAddAssign, 20});
+    precedence_.insert({TokenTypes::kShlAssign, 20});
+    precedence_.insert({TokenTypes::kShrAssign, 20});
+    precedence_.insert({TokenTypes::kModAssign, 20});
+    precedence_.insert({TokenTypes::kXorAssign, 20});
+    precedence_.insert({TokenTypes::kMulAssign, 20});
+    precedence_.insert({TokenTypes::kOrAssign, 20});
+    precedence_.insert({TokenTypes::kAndAssign, 20});
+    precedence_.insert({TokenTypes::kDivAssign, 20});
+    precedence_.insert({TokenTypes::kLogicOr, 40});
+    precedence_.insert({TokenTypes::kLogicAnd, 50});
+    precedence_.insert({TokenTypes::kOr, 60});
+    precedence_.insert({TokenTypes::kXor, 70});
+    precedence_.insert({TokenTypes::kAnd, 80});
+    precedence_.insert({TokenTypes::kEqual, 90});
+    precedence_.insert({TokenTypes::kNotEqual, 90});
+    precedence_.insert({TokenTypes::kLessOrEqual, 100});
+    precedence_.insert({TokenTypes::kLess, 100});
+    precedence_.insert({TokenTypes::kGreaterOrEqual, 100});
+    precedence_.insert({TokenTypes::kGreater, 100});
+    precedence_.insert({TokenTypes::kShl, 110});
+    precedence_.insert({TokenTypes::kShr, 110});
+    precedence_.insert({TokenTypes::kSub, 120});
+    precedence_.insert({TokenTypes::kAdd, 120});
+    precedence_.insert({TokenTypes::kMod, 130});
+    precedence_.insert({TokenTypes::kMul, 130});
+    precedence_.insert({TokenTypes::kDiv, 130});
+    precedence_.insert({TokenTypes::kArrow, 150});
+    precedence_.insert({TokenTypes::kPeriod, 150});
 }
 
 std::int32_t PrecedenceDictionary::Find(TokenValue value) const {
@@ -65,16 +65,16 @@ Token::Token(const SourceLocation &location, TokenValue value, const std::string
         : location_{location}, value_{value}, name_{name} {}
 
 Token::Token(const SourceLocation &location, char char_value)
-        : location_{location}, value_{TokenValues::kCharConstant}, char_value_{char_value} {}
+        : location_{location}, value_{TokenTypes::kCharConstant}, char_value_{char_value} {}
 
 Token::Token(const SourceLocation &location, std::int32_t int32_value)
-        : location_{location}, value_{TokenValues::kIntConstant}, int32_value_{int32_value} {}
+        : location_{location}, value_{TokenTypes::kIntConstant}, int32_value_{int32_value} {}
 
 Token::Token(const SourceLocation &location, double double_value)
-        : location_{location}, value_{TokenValues::kDoubleConstant}, double_value_{double_value} {}
+        : location_{location}, value_{TokenTypes::kDoubleConstant}, double_value_{double_value} {}
 
 Token::Token(const SourceLocation &location, const std::string &string_value)
-        : location_{location}, value_{TokenValues::kStringLiteral}, string_value_{string_value} {}
+        : location_{location}, value_{TokenTypes::kStringLiteral}, string_value_{string_value} {}
 
 std::string Token::ToString() const {
     auto sp1_count{std::size(location_.ToString())};
@@ -85,7 +85,7 @@ std::string Token::ToString() const {
         sp1.assign(20, ' ');
     }
 
-    auto sp2_count{std::size(TokenValues::ToString(value_))};
+    auto sp2_count{std::size(TokenTypes::ToString(value_))};
     std::string sp2;
     if (sp2_count < 20) {
         sp2.assign(20 - sp2_count, ' ');
@@ -93,7 +93,7 @@ std::string Token::ToString() const {
         sp2.assign(20, ' ');
     }
 
-    std::string str(location_.ToString() + sp1 + "type: " + TokenValues::ToString(value_) + sp2);
+    std::string str(location_.ToString() + sp1 + "type: " + TokenTypes::ToString(value_) + sp2);
 
     if (IsChar()) {
         str += "value: " + std::to_string(GetCharValue());

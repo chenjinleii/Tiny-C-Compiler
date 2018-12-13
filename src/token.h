@@ -15,10 +15,10 @@
 
 namespace tcc {
 
-class TokenValues : public QObject {
+class TokenTypes : public QObject {
 Q_OBJECT
 public:
-    enum Value {
+    enum Types {
         kCharConstant,
         kIntConstant,
         kDoubleConstant,
@@ -121,12 +121,12 @@ public:
         kNone,
         kEof
     };
-    Q_ENUM(Value)
+    Q_ENUM(Types)
 
-    static std::string ToString(Value value);
+    static std::string ToString(Types Type);
 };
 
-using TokenValue=TokenValues::Value;
+using TokenValue=TokenTypes::Types;
 
 class PrecedenceDictionary {
 public:

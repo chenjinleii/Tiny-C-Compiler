@@ -58,7 +58,7 @@ TokenValue KeywordsDictionary::Find(const std::string &name) const {
     if (auto iter{keywords_.find(name)};iter != std::end(keywords_)) {
         return iter->second;
     } else {
-        return TokenValues::kIdentifier;
+        return TokenTypes::kIdentifier;
     }
 }
 
@@ -90,8 +90,8 @@ std::vector<Token> Scanner::Scan() {
     std::vector<Token> token_sequence;
 
     while (HasNextChar()) {
-        if (auto token{GetNextToken()};!token.TokenValueIs(TokenValues::kNone) &&
-                !token.TokenValueIs(TokenValues::kEof)) {
+        if (auto token{GetNextToken()};!token.TokenValueIs(TokenTypes::kNone) &&
+                !token.TokenValueIs(TokenTypes::kEof)) {
             token_sequence.push_back(token);
         }
         buffer_.clear();
@@ -360,12 +360,12 @@ Token Scanner::HandleChar() {
         ch = HandleEscape();
     }
     if (ch == EOF) {
-        return MakeToken(TokenValues::kEof);
+        return MakeToken(TokenTypes::kEof);
     }
 
     if (auto next{GetNextChar()};next != '\'') {
         ErrorReportAndExit(location_, "miss '");
-        return MakeToken(TokenValues::kNone);
+        return MakeToken(TokenTypes::kNone);
     }
 
     return MakeToken(ch);
@@ -378,7 +378,7 @@ Token Scanner::HandleString() {
         if (ch == '\\') {
             ch = HandleEscape();
             if (ch == EOF) {
-                return MakeToken(TokenValues::kNone);
+                return MakeToken(TokenTypes::kNone);
             }
         }
         buffer_.push_back(ch);
@@ -386,7 +386,7 @@ Token Scanner::HandleString() {
 
     if (GetNextChar() != '\"') {
         ErrorReportAndExit(location_, "miss \"");
-        return MakeToken(TokenValues::kNone);
+        return MakeToken(TokenTypes::kNone);
     }
 
     return MakeToken(buffer_);

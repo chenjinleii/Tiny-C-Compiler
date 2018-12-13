@@ -12,13 +12,14 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <utility>
 
 namespace tcc {
 
 class Parser {
 public:
-    explicit Parser(const std::vector<Token> &token_sequence) :
-            token_sequence_{token_sequence} {}
+    explicit Parser(std::vector<Token> token_sequence) :
+            token_sequence_{std::move(token_sequence)} {}
     std::shared_ptr<CompoundStatement> Parse();
 private:
     Token GetNextToken();

@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <cstdint>
+#include <utility>
 
 namespace tcc {
 
@@ -73,7 +74,9 @@ class ASTNode {
 public:
     ASTNode() = default;
     virtual ~ASTNode() = default;
+
     virtual ASTNodeType Kind() const { return ASTNodeType::kASTNode; }
+
     virtual Json::Value JsonGen() const { return Json::Value(); }
     // 该方法表示为该AST节点生成IR所依赖的所有内容
     // llvm::Value 是用于表示LLVM中SSA值的类
@@ -85,9 +88,8 @@ public:
 
 class Type : public ASTNode {
 public:
+    Type() = default;
     explicit Type(TokenValue type) : type_{type} {}
-    virtual bool IsPrimitive() const { return false; }
-    virtual bool IsPoint() const { return false; }
     ASTNodeType Kind() const override { return ASTNodeType::kType; }
     Json::Value JsonGen() const override;
 
@@ -99,7 +101,6 @@ public:
     PrimitiveType() = default;
     explicit PrimitiveType(TokenValue type) : Type{type} {}
 
-    bool IsPrimitive() const override { return true; }
     ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
     Json::Value JsonGen() const override;
 };
@@ -117,12 +118,12 @@ public:
             statements_{std::move(statements)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kCompoundStatement; }
-    void AddStatement(std::shared_ptr<Statement> statement) { statements_->push_back(std::move(statement)); }
+    void AddStatement(std::shared_ptr<Statement> statement);
 
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
-    std::shared_ptr<StatementList> statements_{std::make_shared<StatementList>()};
+    std::shared_ptr<StatementList> statements_;
 };
 
 class ExpressionStatement : public Statement {
@@ -178,11 +179,11 @@ public:
 class ForStatement : public Statement {
 public:
     ForStatement() = default;
-    ForStatement(std::shared_ptr<Expression> initial,
+    ForStatement(std::shared_ptr<Expression> initi,
                  std::shared_ptr<Expression> condition,
                  std::shared_ptr<Expression> increment,
                  std::shared_ptr<CompoundStatement> block) :
-            initial_{std::move(initial)},
+            init_{std::move(initi)},
             condition_{std::move(condition)},
             increment_{std::move(increment)}, block_{std::move(block)} {}
 
@@ -191,7 +192,7 @@ public:
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
-    std::shared_ptr<Expression> initial_, condition_, increment_;
+    std::shared_ptr<Expression> init_, condition_, increment_;
     std::shared_ptr<CompoundStatement> block_;
 };
 
@@ -215,10 +216,10 @@ class Declaration : public Statement {
 public:
     Declaration() = default;
     Declaration(std::shared_ptr<PrimitiveType> type,
-                std::shared_ptr<Identifier> variable_name,
-                std::shared_ptr<Expression> initialization_expression = nullptr) :
-            type_{std::move(type)}, variable_name_{std::move(variable_name)},
-            initialization_expression_{std::move(initialization_expression)} {}
+                std::shared_ptr<Identifier> name,
+                std::shared_ptr<Expression> init = nullptr) :
+            type_{std::move(type)}, name_{std::move(name)},
+            init_{std::move(init)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kDeclaration; }
 
@@ -226,8 +227,8 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Type> type_;
-    std::shared_ptr<Identifier> variable_name_;
-    std::shared_ptr<Expression> initialization_expression_;
+    std::shared_ptr<Identifier> name_;
+    std::shared_ptr<Expression> init_;
 };
 
 class Expression : public ASTNode {
@@ -285,7 +286,7 @@ public:
 class Identifier : public Expression {
 public:
     Identifier() = default;
-    explicit Identifier(const std::string &name) : name_{name} {}
+    explicit Identifier(std::string name) : name_{std::move(name)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kIdentifier; }
 
@@ -298,17 +299,17 @@ public:
 class FunctionCall : public Expression {
 public:
     FunctionCall() = default;
-    explicit FunctionCall(std::shared_ptr<Identifier> function_name,
+    explicit FunctionCall(std::shared_ptr<Identifier> name,
                           std::shared_ptr<ExpressionList> args = nullptr) :
-            function_name_{std::move(function_name)}, args_{std::move(args)} {}
+            name_{std::move(name)}, args_{std::move(args)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kFunctionCall; }
-    void AddArg(std::shared_ptr<Expression> arg) { args_->push_back(std::move(arg)); }
+    void AddArg(std::shared_ptr<Expression> arg);
 
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
-    std::shared_ptr<Identifier> function_name_;
+    std::shared_ptr<Identifier> name_;
     std::shared_ptr<ExpressionList> args_;
 };
 
@@ -316,24 +317,21 @@ class FunctionDeclaration : public Statement {
 public:
     FunctionDeclaration() = default;
     FunctionDeclaration(std::shared_ptr<Type> return_type,
-                        std::shared_ptr<Identifier> function_name,
+                        std::shared_ptr<Identifier> name,
                         std::shared_ptr<DeclarationList> args,
-                        bool has_body,
                         std::shared_ptr<CompoundStatement> body)
-            : return_type_{std::move(return_type)}, function_name_{std::move(function_name)},
-              args_{std::move(args)}, has_body_{has_body},
-              body_{std::move(body)} {}
+            : return_type_{std::move(return_type)}, name_{std::move(name)},
+              args_{std::move(args)}, body_{std::move(body)} {}
 
     ASTNodeType Kind() const override;
-    void AddArg(std::shared_ptr<Declaration> arg) { args_->push_back(arg); }
+    void AddArg(std::shared_ptr<Declaration> arg);
 
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Type> return_type_;
-    std::shared_ptr<Identifier> function_name_;
+    std::shared_ptr<Identifier> name_;
     std::shared_ptr<DeclarationList> args_;
-    bool has_body_{false};
     std::shared_ptr<CompoundStatement> body_;
 };
 
@@ -379,7 +377,7 @@ public:
 class StringLiteral : public Expression {
 public:
     StringLiteral() = default;
-    explicit StringLiteral(const std::string &value) : value_{value} {}
+    explicit StringLiteral(std::string value) : value_{std::move(value)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kStringLiteral; }
 
