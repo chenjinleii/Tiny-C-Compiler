@@ -16,6 +16,7 @@
 
 namespace tcc {
 
+// TODO 放到 TypeSystem 中
 llvm::Type *GetType(const Type &type, CodeGenContext &context) {
     return context.type_system_.GetVarType(type);
 }
@@ -78,9 +79,15 @@ Json::Value CompoundStatement::JsonGen() const {
 
 llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
     llvm::Value *last{};
-    for (auto &it : *statements_) {
-        last = it->CodeGen(context);
+    if (statements_) {
+        for (auto &it : *statements_) {
+            if (!it) {
+                ErrorReportAndExit(location_, "The statement is empty");
+            }
+            last = it->CodeGen(context);
+        }
     }
+
     return last;
 }
 
@@ -102,6 +109,9 @@ Json::Value ExpressionStatement::JsonGen() const {
 }
 
 llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
+    if (!expression_) {
+        ErrorReportAndExit(location_, "The expression is empty");
+    }
     return expression_->CodeGen(context);
 }
 
@@ -120,6 +130,10 @@ Json::Value IfStatement::JsonGen() const {
 }
 
 llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
+    if (!condition_) {
+        ErrorReportAndExit(location_, "The condition of the if statement cannot be empty");
+    }
+
     auto condition_value{condition_->CodeGen(context)};
     if (!condition_value) {
         return nullptr;
@@ -146,6 +160,7 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
         return nullptr;
     }
     context.PopBlock();
+    // 注意需要使用控制流指令例如 return/branch 来终止基本块
     context.builder_.CreateBr(after_block);
 
     if (else_block_) {
@@ -169,15 +184,45 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
 Json::Value WhileStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
-    assert(condition_ != nullptr);
-    root["children"].append(condition_->JsonGen());
+    assert(cond_ != nullptr);
+    root["children"].append(cond_->JsonGen());
     root["children"].append(block_->JsonGen());
     return root;
 }
 
-// TODO while
 llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
-    return ASTNode::CodeGen(context);
+    if (!cond_) {
+        ErrorReportAndExit(location_, "The condition of the while statement cannot be empty");
+    }
+
+    llvm::Value *cond_value{cond_->CodeGen(context)};
+    if (!cond_value) {
+        return nullptr;
+    }
+
+    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
+    auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop", parent_func)};
+    auto after_block{llvm::BasicBlock::Create(context.the_context_, "while_after")};
+
+    cond_value = CastToBool(context, cond_value);
+    context.builder_.CreateCondBr(cond_value, loop_block, after_block);
+    context.builder_.SetInsertPoint(loop_block);
+
+    context.PushBlock(loop_block);
+    llvm::Value *block_value = block_->CodeGen(context);
+    if (!block_value) {
+        return nullptr;
+    }
+    context.PopBlock();
+
+    cond_value = cond_->CodeGen(context);
+    cond_value = CastToBool(context, cond_value);
+    context.builder_.CreateCondBr(cond_value, loop_block, after_block);
+
+    parent_func->getBasicBlockList().push_back(after_block);
+    context.builder_.SetInsertPoint(after_block);
+
+    return nullptr;
 }
 
 Json::Value ForStatement::JsonGen() const {
@@ -187,8 +232,8 @@ Json::Value ForStatement::JsonGen() const {
     if (init_) {
         root["children"].append(init_->JsonGen());
     }
-    if (condition_) {
-        root["children"].append(condition_->JsonGen());
+    if (cond_) {
+        root["children"].append(cond_->JsonGen());
     }
     if (increment_) {
         root["children"].append(increment_->JsonGen());
@@ -200,16 +245,41 @@ Json::Value ForStatement::JsonGen() const {
     return root;
 }
 
+/*
+ *  for (1; 1; 1)
+ *      putchar('*');
+ *
+ * 生成的 IR 为:
+ *
+ * entry:
+ * br i1 true, label %for_loop, label %for_after
+ *
+ * for_loop:
+ * %0 = call i32 @putchar(i8 42)
+ * br i1 true, label %for_loop, label %for_after
+ *
+ * for_after:
+ *
+ */
+
+// TODO 处理 for 中三个表达式任意为空的情况
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
+    llvm::Value *init_value{};
     if (init_) {
-        init_->CodeGen(context);
+        init_value = init_->CodeGen(context);
+    }
+    if (!init_value) {
+        return nullptr;
     }
 
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
     auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
     auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
 
-    auto cond_value{condition_->CodeGen(context)};
+    llvm::Value *cond_value{};
+    if (cond_) {
+        cond_value = cond_->CodeGen(context);
+    }
     if (!cond_value) {
         return nullptr;
     }
@@ -219,14 +289,21 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     context.builder_.SetInsertPoint(loop_block);
 
     context.PushBlock(loop_block);
-    block_->CodeGen(context);
+    llvm::Value *block_value = block_->CodeGen(context);
+    if (!block_value) {
+        return nullptr;
+    }
     context.PopBlock();
 
+    llvm::Value *increment_value{};
     if (increment_) {
-        increment_->CodeGen(context);
+        increment_value = increment_->CodeGen(context);
+    }
+    if (!increment_value) {
+        return nullptr;
     }
 
-    cond_value = condition_->CodeGen(context);
+    cond_value = cond_->CodeGen(context);
     cond_value = CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
@@ -246,8 +323,12 @@ Json::Value ReturnStatement::JsonGen() const {
 }
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
+    if (!expression_) {
+        ErrorReportAndExit(location_, "return expression is empty");
+    }
     auto return_value = expression_->CodeGen(context);
     context.SetCurrentReturnValue(return_value);
+
     return return_value;
 }
 
@@ -268,20 +349,20 @@ Json::Value Declaration::JsonGen() const {
 }
 
 llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
-    auto type = GetType(*type_, context);
+    auto type{GetType(*type_, context)};
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-    auto alloca{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
+    auto addr{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
-    context.builder_.CreateStore(llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), alloca);
+    context.builder_.CreateStore(llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
 
     context.SetSymbolType(name_->name_, type_);
-    context.SetSymbolValue(name_->name_, alloca);
+    context.SetSymbolValue(name_->name_, addr);
 
-//    if (init_) {
-//        BinaryOpExpression assignment(name_, init_, TokenValue::kAssign);
-//        assignment.CodeGen(context);
-//    }
-    return alloca;
+    if (init_) {
+        BinaryOpExpression assignment(name_, init_, TokenValue::kAssign);
+        assignment.CodeGen(context);
+    }
+    return addr;
 }
 
 Json::Value Expression::JsonGen() const {
@@ -370,19 +451,19 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
             return fp ? context.builder_.CreateFDiv(lhs, rhs) :
                    context.builder_.CreateSDiv(lhs, rhs);
         case TokenValue::kAnd:
-            return fp ? ErrorReport("Double type has no AND operation") :
+            return fp ? ErrorReportAndExit(location_, "Double type has no AND operation"), nullptr :
                    context.builder_.CreateAnd(lhs, rhs);
         case TokenValue::kOr:
-            return fp ? ErrorReport("Double type has no OR operation") :
+            return fp ? ErrorReportAndExit(location_, "Double type has no OR operation"), nullptr :
                    context.builder_.CreateOr(lhs, rhs);
         case TokenValue::kXor:
-            return fp ? ErrorReport("Double type has no XOR operation") :
+            return fp ? ErrorReportAndExit(location_, "Double type has no XOR operation"), nullptr :
                    context.builder_.CreateXor(lhs, rhs);
         case TokenValue::kShl:
-            return fp ? ErrorReport("Double type has no LEFT SHIFT operation") :
+            return fp ? ErrorReportAndExit(location_, "Double type has no SHL operation"), nullptr :
                    context.builder_.CreateShl(lhs, rhs);
         case TokenValue::kShr:
-            return fp ? ErrorReport("Double type has no RIGHT SHIFT operation") :
+            return fp ? ErrorReportAndExit(location_, "Double type has no SHR operation"), nullptr :
                    context.builder_.CreateAShr(lhs, rhs);
         case TokenValue::kLess:
             return fp ? (lhs = context.builder_.CreateFCmpULT(lhs, rhs),
@@ -406,7 +487,10 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
         case TokenValue::kNotEqual:
             return fp ? context.builder_.CreateFCmpONE(lhs, rhs) :
                    context.builder_.CreateICmpNE(lhs, rhs);
-        default:return ErrorReport("Unknown binary operator");
+        default: {
+            ErrorReportAndExit(location_, "Unknown binary operator");
+            return nullptr;
+        }
     }
 }
 
@@ -417,11 +501,13 @@ Json::Value Identifier::JsonGen() const {
 }
 
 llvm::Value *Identifier::CodeGen(CodeGenContext &context) {
-    llvm::Value *value = context.GetSymbolValue(name_);
+    auto value{context.GetSymbolValue(name_)};
     if (!value) {
-        return ErrorReport("Unknown variable name ");
+        ErrorReportAndExit(location_, "Unknown variable name");
+        return nullptr;
     }
-    return context.builder_.CreateLoad(value, false, "");
+    // 从栈中加载
+    return context.builder_.CreateLoad(value, name_);
 }
 
 Json::Value FunctionCall::JsonGen() const {
@@ -443,18 +529,23 @@ Json::Value FunctionCall::JsonGen() const {
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     auto function{context.the_module_->getFunction(name_->name_)};
     if (!function) {
-        return ErrorReport("Unknown function referenced");
-    }
-
-    if (function->arg_size() != std::size(*args_)) {
-        return ErrorReport("Incorrect # arguments passed");
+        ErrorReportAndExit(location_, "Unknown function referenced");
+        return nullptr;
     }
 
     std::vector<llvm::Value *> args_value;
-    for (const auto &arg:*args_) {
-        args_value.push_back(arg->CodeGen(context));
-        if (!args_value.back()) {
+
+    if (args_) {
+        if (function->arg_size() != std::size(*args_)) {
+            ErrorReportAndExit(location_, "Incorrect arguments passed");
             return nullptr;
+        }
+
+        for (const auto &arg:*args_) {
+            args_value.push_back(arg->CodeGen(context));
+            if (!args_value.back()) {
+                return nullptr;
+            }
         }
     }
 
@@ -523,23 +614,22 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     // TODO 函数重定义问题
     if (body_) {
         // 创建了一个名为entry的基本块,并且插入到 func 中
-        auto basic_block{llvm::BasicBlock::Create(context.the_context_, "entry", func)};
+        auto entry{llvm::BasicBlock::Create(context.the_context_, "entry", func)};
 
         // 告诉 builder_ 新指令应该插入到 basic_block 的末尾
-        context.builder_.SetInsertPoint(basic_block);
-        context.PushBlock(basic_block);
+        context.builder_.SetInsertPoint(entry);
+        context.PushBlock(entry);
 
         if (args_) {
             auto origin_arg{std::begin(*args_)};
-
-            for (auto &ir_arg_it: func->args()) {
-                ir_arg_it.setName((*origin_arg)->name_->name_);
-                auto arg_alloc{(*origin_arg)->CodeGen(context)};
-                context.builder_.CreateStore(&ir_arg_it, arg_alloc, false);
-                //context.SetSymbolValue((*origin_arg)->name_->name_, arg_alloc);
-                context.SetSymbolType((*origin_arg)->name_->name_, (*origin_arg)->type_);
-                context.SetFuncArg((*origin_arg)->name_->name_, true);
-                origin_arg++;
+            for (auto &arg: func->args()) {
+//                arg.setName((*origin_arg)->name_->name_);
+//                auto alloca{context.CreateEntryBlockAlloca(par)};
+//
+//                context.builder_.CreateStore(&arg, arg_alloc, false);
+//                context.SetSymbolValue((*origin_arg)->name_->name_, arg_alloc);
+//                context.SetSymbolType((*origin_arg)->name_->name_, (*origin_arg)->type_);
+//                ++origin_arg;
             }
         }
 
@@ -550,11 +640,11 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
             // 此函数对生成的代码执行各种一致性检查,以确定我们的编译器是否
             // 所有的操作都做得正确
             llvm::verifyFunction(*func);
-
             // 优化该函数
             context.the_FPM_->run(*func);
         } else {
-            return ErrorReport("Function block return value not founded");
+            ErrorReportAndExit(location_, "Function block return value not founded");
+            return nullptr;
         }
         context.PopBlock();
     }

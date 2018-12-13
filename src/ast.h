@@ -164,7 +164,7 @@ public:
     WhileStatement() = default;
     WhileStatement(std::shared_ptr<Expression>
                    condition, std::shared_ptr<CompoundStatement> block) :
-            condition_{std::move(condition)},
+            cond_{std::move(condition)},
             block_{std::move(block)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kWhileStatement; }
@@ -172,7 +172,7 @@ public:
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
-    std::shared_ptr<Expression> condition_;
+    std::shared_ptr<Expression> cond_;
     std::shared_ptr<CompoundStatement> block_;
 };
 
@@ -184,7 +184,7 @@ public:
                  std::shared_ptr<Expression> increment,
                  std::shared_ptr<CompoundStatement> block) :
             init_{std::move(initi)},
-            condition_{std::move(condition)},
+            cond_{std::move(condition)},
             increment_{std::move(increment)}, block_{std::move(block)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kForStatement; }
@@ -192,7 +192,7 @@ public:
     Json::Value JsonGen() const override;
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
-    std::shared_ptr<Expression> init_, condition_, increment_;
+    std::shared_ptr<Expression> init_, cond_, increment_;
     std::shared_ptr<CompoundStatement> block_;
 };
 

@@ -2,8 +2,6 @@
 // Created by kaiser on 18-12-8.
 //
 
-//TODO 预处理之后位置记录问题
-
 #include "scanner.h"
 #include "error.h"
 
@@ -62,10 +60,10 @@ TokenValue KeywordsDictionary::Find(const std::string &name) const {
     }
 }
 
-Scanner::Scanner(const std::string &file_name) {
-    std::ifstream ifs{file_name};
+Scanner::Scanner(const std::string &processed_file, const std::string &input_file) {
+    std::ifstream ifs{processed_file};
     if (!ifs) {
-        ErrorReportAndExit("When trying to open file " + file_name + ", occurred error.");
+        ErrorReportAndExit("When trying to open file " + input_file + ", occurred error.");
     }
 
     std::ostringstream ost;
@@ -78,11 +76,11 @@ Scanner::Scanner(const std::string &file_name) {
     auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
     input_.erase(iter.base(), std::end(input_));
 
-    auto index{file_name.rfind('/')};
+    auto index{input_file.rfind('/')};
     if (index != std::string::npos) {
-        location_.file_name_ = file_name.substr(index + 1);
+        location_.file_name_ = input_file.substr(index + 1);
     } else {
-        location_.file_name_ = file_name;
+        location_.file_name_ = input_file;
     }
 }
 
@@ -100,8 +98,9 @@ std::vector<Token> Scanner::Scan() {
     return token_sequence;
 }
 
-std::vector<Token> Scanner::Debug(const std::string &file_name, std::ostream &os) {
-    Scanner scanner{file_name};
+std::vector<Token> Scanner::Debug(const std::string &processed_file,
+                                  const std::string &input_file, std::ostream &os) {
+    Scanner scanner{processed_file, input_file};
     auto token_sequence{scanner.Scan()};
     for (const auto &token:token_sequence) {
         os << token.ToString() << '\n';
@@ -452,9 +451,20 @@ void Scanner::SkipSpace() {
 }
 
 void Scanner::SkipComment() {
+    std::string buff;
+    GetNextChar();
+    char ch = GetNextChar();
+    while (HasNextChar() && std::isdigit(ch)) {
+        buff.push_back(ch);
+        ch = GetNextChar();
+    }
+    PutBack();
+
     while (HasNextChar() && PeekNextChar() != '\n') {
         GetNextChar();
     }
+    GetNextChar();
+    location_.row_ = std::stoi(buff);
 }
 
 char Scanner::GetNextChar() {

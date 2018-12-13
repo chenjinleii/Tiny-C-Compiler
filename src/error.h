@@ -30,8 +30,6 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &forma
     std::exit(EXIT_FAILURE);
 }
 
-llvm::Value *ErrorReport(const std::string &msg);
-
 }
 
 #endif //TINY_C_COMPILER_ERROR_H

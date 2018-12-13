@@ -3,20 +3,18 @@ source_filename = "main"
 
 declare i32 @putchar(i32)
 
+define i32 @fuck(i32 %i) {
+entry:
+  %i1 = alloca i32
+  store i32 0, i32* %i1
+  store i32 %i, i32* %i1
+  %i2 = load i32, i32* %i1
+  ret i32 %i2
+}
+
 define i32 @main() {
 entry:
-  %0 = call i32 @putchar(i8 72)
-  %1 = call i32 @putchar(i8 101)
-  %2 = call i32 @putchar(i8 108)
-  %3 = call i32 @putchar(i8 108)
-  %4 = call i32 @putchar(i8 111)
-  %5 = call i32 @putchar(i8 32)
-  %6 = call i32 @putchar(i8 87)
-  %7 = call i32 @putchar(i8 111)
-  %8 = call i32 @putchar(i8 114)
-  %9 = call i32 @putchar(i8 108)
-  %10 = call i32 @putchar(i8 100)
-  %11 = call i32 @putchar(i8 33)
-  %12 = call i32 @putchar(i8 10)
+  %0 = call i32 @fuck(i32 2)
+  %1 = call i32 @putchar(i32 %0)
   ret i32 0
 }

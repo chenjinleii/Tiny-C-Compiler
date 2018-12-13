@@ -136,7 +136,7 @@ void RunTcc(const std::string &input_file,
     std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
     std::system(cmd.c_str());
 
-    tcc::Scanner scanner{processed_file};
+    tcc::Scanner scanner{processed_file, input_file};
 
     tcc::Parser parse{scanner.Scan()};
     auto root{parse.Parse()};
@@ -165,7 +165,7 @@ void RunTest() {
         std::exit(EXIT_FAILURE);
     }
 
-    tcc::Parser parse{tcc::Scanner::Debug(processed_file, ofs)};
+    tcc::Parser parse{tcc::Scanner::Debug(processed_file, input_file, ofs)};
     auto ast_root{parse.Parse()};
     auto json_root{ast_root->JsonGen()};
 

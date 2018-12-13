@@ -23,6 +23,7 @@
 
 namespace tcc {
 
+// 保存变量在内存中的位置
 using SymbolTable=std::unordered_map<std::string, llvm::AllocaInst *>;
 
 struct CodeGenBlock {

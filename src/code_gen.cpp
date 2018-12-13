@@ -8,6 +8,7 @@
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Utils.h>
 #include <boost/range/adaptor/reversed.hpp>
 
 #include <iostream>
@@ -102,17 +103,20 @@ void CodeGenContext::InitializeModuleAndPassManager() {
     the_module_ = std::make_unique<llvm::Module>("main", the_context_);
     the_FPM_ = std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
 
-    // 添加四种优化
+    // 优化
     the_FPM_->add(llvm::createInstructionCombiningPass());
     the_FPM_->add(llvm::createReassociatePass());
     the_FPM_->add(llvm::createGVNPass());
     the_FPM_->add(llvm::createCFGSimplificationPass());
+    the_FPM_->add(llvm::createPromoteMemoryToRegisterPass());
 
     the_FPM_->doInitialization();
 }
 
 llvm::AllocaInst *CodeGenContext::CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
                                                          const std::string &name) {
+    // 在栈中分配内存,确保在函数的入口块处创建 alloca
+    // 调用 begin() 表示指向入口块的第一条指令
     llvm::IRBuilder<> temp{&parent->getEntryBlock(),
                            parent->getEntryBlock().begin()};
     return temp.CreateAlloca(type, nullptr, name);

@@ -20,15 +20,10 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &msg) 
 }
 
 void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, TokenValue actual) {
-    std::cerr << "At: " << location.ToString() << '\n';
-    std::cerr << "expect " << TokenTypes::ToString(expect) <<
-              " but actual " << TokenTypes::ToString(actual) << '\n';
+    std::cerr << "Grammatical errors: At: " << location.ToString() << '\n';
+    std::cerr << "Expect " << TokenTypes::ToString(expect).substr(1) <<
+              " but actual " << TokenTypes::ToString(actual).substr(1) << '\n';
     std::exit(EXIT_FAILURE);
-}
-
-llvm::Value *ErrorReport(const std::string &msg) {
-    std::cerr << msg << '\n';
-    return nullptr;
 }
 
 }

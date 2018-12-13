@@ -248,7 +248,7 @@ std::shared_ptr<WhileStatement> Parser::ParseWhileStatement() {
     auto while_statement{MakeASTNode<WhileStatement>()};
 
     Expect(TokenValue::kLeftParen);
-    while_statement->condition_ = ParseExpression();
+    while_statement->cond_ = ParseExpression();
     Expect(TokenValue::kRightParen);
 
     Expect(TokenValue::kLeftCurly);
@@ -266,7 +266,7 @@ std::shared_ptr<ForStatement> Parser::ParseForStatement() {
     for_statement->init_ = ParseExpression();
     Expect(TokenValue::kSemicolon);
 
-    for_statement->condition_ = ParseExpression();
+    for_statement->cond_ = ParseExpression();
     Expect(TokenValue::kSemicolon);
     for_statement->increment_ = ParseExpression();
     Expect(TokenValue::kRightParen);
