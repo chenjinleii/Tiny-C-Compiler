@@ -3,18 +3,48 @@ source_filename = "main"
 
 declare i32 @putchar(i32)
 
-define i32 @fuck(i32 %i) {
-entry:
-  %i1 = alloca i32
-  store i32 0, i32* %i1
-  store i32 %i, i32* %i1
-  %i2 = load i32, i32* %i1
-  ret i32 %i2
-}
-
 define i32 @main() {
 entry:
-  %0 = call i32 @fuck(i32 2)
-  %1 = call i32 @putchar(i32 %0)
+  br label %for_loop
+
+for_loop:                                         ; preds = %entry, %for_after
+  %y18 = phi double [ %16, %for_after ], [ 1.500000e+00, %entry ]
+  br label %for_loop2
+
+for_loop2:                                        ; preds = %for_loop, %if_after
+  %x16 = phi double [ %13, %if_after ], [ -1.500000e+00, %for_loop ]
+  %0 = fmul double %x16, %x16
+  %1 = fmul double %y18, %y18
+  %2 = fadd double %0, %1
+  %3 = fadd double %2, -1.000000e+00
+  %4 = fmul double %3, %3
+  %5 = fmul double %3, %4
+  %6 = fmul double %0, %y18
+  %7 = fmul double %y18, %6
+  %8 = fmul double %y18, %7
+  %9 = fsub double %5, %8
+  %10 = fcmp ugt double %9, 0.000000e+00
+  br i1 %10, label %if_else, label %if_then
+
+if_then:                                          ; preds = %for_loop2
+  %11 = call i32 @putchar(i8 42)
+  br label %if_after
+
+if_else:                                          ; preds = %for_loop2
+  %12 = call i32 @putchar(i8 32)
+  br label %if_after
+
+if_after:                                         ; preds = %if_else, %if_then
+  %13 = fadd double %x16, 5.000000e-02
+  %14 = fcmp ult double %13, 1.500000e+00
+  br i1 %14, label %for_loop2, label %for_after
+
+for_after:                                        ; preds = %if_after
+  %15 = call i32 @putchar(i8 10)
+  %16 = fadd double %y18, -1.000000e-01
+  %17 = fcmp ogt double %16, -1.500000e+00
+  br i1 %17, label %for_loop, label %for_after20
+
+for_after20:                                      ; preds = %for_after
   ret i32 0
 }

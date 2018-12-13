@@ -68,10 +68,10 @@
                                                 "children" :
                                                     [
                                                         {
-                                                            "name" : "kPrimitiveType kInt"
+                                                            "name" : "kPrimitiveType kDouble"
                                                         },
                                                         {
-                                                            "name" : "kIdentifier a"
+                                                            "name" : "kIdentifier x"
                                                         }
                                                     ],
                                                 "name" : "kDeclaration"
@@ -80,10 +80,10 @@
                                                 "children" :
                                                     [
                                                         {
-                                                            "name" : "kPrimitiveType kInt"
+                                                            "name" : "kPrimitiveType kDouble"
                                                         },
                                                         {
-                                                            "name" : "kIdentifier b"
+                                                            "name" : "kIdentifier y"
                                                         }
                                                     ],
                                                 "name" : "kDeclaration"
@@ -92,31 +92,28 @@
                                                 "children" :
                                                     [
                                                         {
-                                                            "children" :
-                                                                [
-                                                                    {
-                                                                        "children" :
-                                                                            [
-                                                                                {
-                                                                                    "name" : "kIdentifier a"
-                                                                                }
-                                                                            ],
-                                                                        "name" : "kUnaryOpExpression kInc"
-                                                                    },
-                                                                    {
-                                                                        "children" :
-                                                                            [
-                                                                                {
-                                                                                    "name" : "kIdentifier b"
-                                                                                }
-                                                                            ],
-                                                                        "name" : "kPostfixExpression kInc"
-                                                                    }
-                                                                ],
-                                                            "name" : "kBinaryOpExpression kMul"
+                                                            "name" : "kInt32Constant 1"
+                                                        },
+                                                        {
+                                                            "name" : "kInt32Constant 1"
+                                                        },
+                                                        {
+                                                            "name" : "kInt32Constant 1"
+                                                        },
+                                                        {
+                                                            "name" : "kCompoundStatement"
                                                         }
                                                     ],
-                                                "name" : "kExpressionStatement"
+                                                "name" : "kForStatement"
+                                            },
+                                            {
+                                                "children" :
+                                                    [
+                                                        {
+                                                            "name" : "kInt32Constant 0"
+                                                        }
+                                                    ],
+                                                "name" : "kReturnStatement"
                                             }
                                         ],
                                     "name" : "kCompoundStatement"

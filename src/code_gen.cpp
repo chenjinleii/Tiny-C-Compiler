@@ -19,11 +19,10 @@ namespace tcc {
 
 void CodeGenContext::GenerateCode(CompoundStatement &root) {
     std::vector<llvm::Type *> system_args;
-    auto main_func_type{llvm::FunctionType::get(llvm::Type::getVoidTy(the_context_),
+    auto main_func_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(the_context_),
                                                 system_args, false)};
 
     llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
-
     auto block{llvm::BasicBlock::Create(the_context_, "entry")};
     PushBlock(block);
     root.CodeGen(*this);

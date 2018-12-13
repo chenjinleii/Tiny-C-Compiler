@@ -178,14 +178,14 @@ void RunTest() {
     ast << json_root;
     std::cout << "ast Successfully written\n";
 
-//    tcc::CodeGenContext context;
-//    context.Debug(*ast_root, "../test/ir");
-//    std::cout << "LLVM IR  Successfully Generate\n";
-//
-//    tcc::ObjGen(context, "test.o");
-//
-//    std::system("gcc -std=c99 -o test test.o");
-//    std::cout << "Compiled successfully\n";
-//    std::cout << "The program runs-----------------------------------------------\n\n";
-//    std::system("./test");
+    tcc::CodeGenContext context;
+    context.Debug(*ast_root, "../test/ir");
+    std::cout << "LLVM IR  Successfully Generate\n";
+
+    tcc::ObjGen(context, "test.o");
+
+    std::system("gcc -std=c99 -o test test.o");
+    std::cout << "Compiled successfully\n";
+    std::cout << "The program runs-----------------------------------------------\n\n";
+    std::system("./test");
 }
