@@ -1,0 +1,25 @@
+test.c:1:3:         type: kInt                
+test.c:1:11:        type: kIdentifier         name:  putchar
+test.c:1:12:        type: kLeftParen          
+test.c:1:15:        type: kInt                
+test.c:1:17:        type: kIdentifier         name:  c
+test.c:1:18:        type: kRightParen         
+test.c:1:19:        type: kSemicolon          
+test.c:3:3:         type: kInt                
+test.c:3:8:         type: kIdentifier         name:  main
+test.c:3:9:         type: kLeftParen          
+test.c:3:10:        type: kRightParen         
+test.c:3:12:        type: kLeftCurly          
+test.c:19:7:        type: kInt                
+test.c:19:9:        type: kIdentifier         name:  a
+test.c:19:10:       type: kSemicolon          
+test.c:20:7:        type: kInt                
+test.c:20:9:        type: kIdentifier         name:  b
+test.c:20:10:       type: kSemicolon          
+test.c:21:6:        type: kInc                
+test.c:21:7:        type: kIdentifier         name:  a
+test.c:21:9:        type: kMul                
+test.c:21:11:       type: kIdentifier         name:  b
+test.c:21:13:       type: kInc                
+test.c:21:14:       type: kSemicolon          
+test.c:22:1:        type: kRightCurly         

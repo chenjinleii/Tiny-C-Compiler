@@ -1,0 +1,102 @@
+{
+	"children" : 
+	[
+		{
+			"children" : 
+			[
+				{
+					"name" : "kPrimitiveType kInt"
+				},
+				{
+					"name" : "kIdentifier putchar"
+				},
+				{
+					"children" : 
+					[
+						{
+							"name" : "kPrimitiveType kInt"
+						},
+						{
+							"name" : "kIdentifier c"
+						}
+					],
+					"name" : "kDeclaration"
+				}
+			],
+			"name" : "kFunctionDeclaration"
+		},
+		{
+			"children" : 
+			[
+				{
+					"name" : "kPrimitiveType kInt"
+				},
+				{
+					"name" : "kIdentifier main"
+				},
+				{
+					"children" : 
+					[
+						{
+							"children" : 
+							[
+								{
+									"name" : "kPrimitiveType kInt"
+								},
+								{
+									"name" : "kIdentifier a"
+								}
+							],
+							"name" : "kDeclaration"
+						},
+						{
+							"children" : 
+							[
+								{
+									"name" : "kPrimitiveType kInt"
+								},
+								{
+									"name" : "kIdentifier b"
+								}
+							],
+							"name" : "kDeclaration"
+						},
+						{
+							"children" : 
+							[
+								{
+									"children" : 
+									[
+										{
+											"children" : 
+											[
+												{
+													"name" : "kIdentifier a"
+												}
+											],
+											"name" : "kUnaryOpExpression kInc"
+										},
+										{
+											"children" : 
+											[
+												{
+													"name" : "kIdentifier b"
+												}
+											],
+											"name" : "kPostfixExpression kInc"
+										}
+									],
+									"name" : "kBinaryOpExpression kMul"
+								}
+							],
+							"name" : "kExpressionStatement"
+						}
+					],
+					"name" : "kCompoundStatement"
+				}
+			],
+			"name" : "kFunctionDefinition"
+		}
+	],
+	"name" : "kCompoundStatement"
+}
