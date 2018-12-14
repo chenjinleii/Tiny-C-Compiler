@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
             if (argv[i][1] == 'o') {
                 if (argv[i + 1]) {
                     program_name = argv[i + 1];
+                    ++i;
                 } else {
                     tcc::ErrorReportAndExit("error: No program name entered.\n");
                 }
@@ -173,10 +174,9 @@ void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
 
 void RunTest() {
     std::cout << "Test Mode\n";
-
     std::string input_file("/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
-    std::string processed_file(RemoveExtension(input_file) + ".i");
 
+    std::string processed_file(RemoveExtension(input_file) + ".i");
     std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
     if (auto status{std::system(cmd.c_str())};!CommandSuccess(status)) {
         tcc::ErrorReportAndExit("Preprocessing Failure.\n");
@@ -186,18 +186,13 @@ void RunTest() {
     if (!ofs) {
         tcc::ErrorReportAndExit("Can not open token file.\n");
     }
-
-    tcc::Parser parse{tcc::Scanner::Debug(processed_file, input_file, ofs)};
-    auto ast_root{parse.Parse()};
-    auto json_root{ast_root->JsonGen()};
+    auto token_sequence{tcc::Scanner::Test(processed_file, input_file, ofs)};
 
     std::ofstream ast{"../test/ast.json"};
     if (!ast) {
         tcc::ErrorReportAndExit("Can not open json file.\n");
     }
-
-    ast << json_root;
-    std::cout << "AST Successfully Written\n";
+    auto ast_root{tcc::Parser::Test(token_sequence, ast)};
 
     tcc::CodeGenContext context(false);
     context.Debug(*ast_root, "../test/ir");

@@ -27,9 +27,9 @@ class Scanner {
 public:
     explicit Scanner(const std::string &processed_file, const std::string &input_file);
     std::vector<Token> Scan();
-    static std::vector<Token> Debug(const std::string &processed_file,
-                                    const std::string &input_file,
-                                    std::ostream &os = std::cout);
+    static std::vector<Token> Test(const std::string &processed_file,
+                                   const std::string &input_file,
+                                   std::ostream &os = std::cout);
 private:
     Token GetNextToken();
 

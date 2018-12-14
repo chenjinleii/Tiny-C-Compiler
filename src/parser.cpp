@@ -6,7 +6,6 @@
 #include "error.h"
 #include "parser.h"
 
-#include <iostream>
 #include <cstdlib>
 
 namespace tcc {
@@ -23,6 +22,16 @@ std::shared_ptr<CompoundStatement> Parser::Parse() {
     }
 
     return root;
+}
+
+std::shared_ptr<CompoundStatement> Parser::Test(std::vector<Token> token_sequence,
+                                                std::ostream &os) {
+    auto ast_root{Parser{std::move(token_sequence)}.Parse()};
+    auto json_root{ast_root->JsonGen()};
+
+    os << json_root;
+    std::cout << "AST Successfully Written\n";
+    return ast_root;
 }
 
 Token Parser::GetNextToken() {
@@ -131,7 +140,7 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     Expect(TokenValue::kRightParen);
 
     if (Try(TokenValue::kLeftCurly)) {
-        function->body_ = ParseCompound();
+        function->body_ = ParseCompound(true);
         Expect(TokenValue::kRightCurly);
         return function;
     } else {
@@ -139,7 +148,6 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
     }
 }
 
-// TODO extern变量
 std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
     auto function{MakeASTNode<FunctionDeclaration>()};
 
@@ -171,13 +179,25 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
     return function;
 }
 
-// 强制要求大括号
-std::shared_ptr<CompoundStatement> Parser::ParseCompound() {
-    auto compound{MakeASTNode<CompoundStatement>()};
-    while (!Test(TokenValue::kRightCurly)) {
-        compound->AddStatement(ParseStatement());
+std::shared_ptr<Statement> Parser::ParseCompound(bool is_func) {
+    if (!is_func) {
+        if (Try(TokenValue::kLeftCurly)) {
+            auto compound{MakeASTNode<CompoundStatement>()};
+            while (!Test(TokenValue::kRightCurly)) {
+                compound->AddStatement(ParseStatement());
+            }
+            Expect(TokenValue::kRightCurly);
+            return compound;
+        } else {
+            return ParseStatement();
+        }
+    } else {
+        auto compound{MakeASTNode<CompoundStatement>()};
+        while (!Test(TokenValue::kRightCurly)) {
+            compound->AddStatement(ParseStatement());
+        }
+        return compound;
     }
-    return compound;
 }
 
 std::shared_ptr<Declaration> Parser::ParDeclarationWithoutInit() {
@@ -215,9 +235,8 @@ std::shared_ptr<Statement> Parser::ParseStatement() {
         return ParseReturnStatement();
     } else if (PeekNextToken().IsTypeSpecifier()) {
         return ParDeclarationWithInit();
-    } else if (Try(TokenValue::kLeftCurly)) {
-        auto compound{ParseCompound()};
-        Expect(TokenValue::kRightCurly);
+    } else if (Test(TokenValue::kLeftCurly)) {
+        auto compound{ParseCompound(false)};
         return compound;
     } else {
         return ParseExpressionStatement();
@@ -231,14 +250,10 @@ std::shared_ptr<IfStatement> Parser::ParseIfStatement() {
     if_statement->condition_ = ParseExpression();
     Expect(TokenValue::kRightParen);
 
-    Expect(TokenValue::kLeftCurly);
-    if_statement->then_block_ = ParseCompound();
-    Expect(TokenValue::kRightCurly);
+    if_statement->then_block_ = ParseCompound(false);
 
     if (Try(TokenValue::kElse)) {
-        Expect(TokenValue::kLeftCurly);
-        if_statement->else_block_ = ParseCompound();
-        Expect(TokenValue::kRightCurly);
+        if_statement->else_block_ = ParseCompound(false);
     }
 
     return if_statement;
@@ -251,9 +266,7 @@ std::shared_ptr<WhileStatement> Parser::ParseWhileStatement() {
     while_statement->cond_ = ParseExpression();
     Expect(TokenValue::kRightParen);
 
-    Expect(TokenValue::kLeftCurly);
-    while_statement->block_ = ParseCompound();
-    Expect(TokenValue::kRightCurly);
+    while_statement->block_ = ParseCompound(false);
 
     return while_statement;
 }
@@ -262,28 +275,33 @@ std::shared_ptr<ForStatement> Parser::ParseForStatement() {
     auto for_statement{MakeASTNode<ForStatement>()};
 
     Expect(TokenValue::kLeftParen);
-    //TODO 支持声明变量
-    for_statement->init_ = ParseExpression();
-    Expect(TokenValue::kSemicolon);
+
+    if (PeekNextToken().IsTypeSpecifier()) {
+        for_statement->declaration_ = ParDeclarationWithInit();
+    } else {
+        for_statement->init_ = ParseExpression();
+        Expect(TokenValue::kSemicolon);
+    }
 
     for_statement->cond_ = ParseExpression();
     Expect(TokenValue::kSemicolon);
     for_statement->increment_ = ParseExpression();
     Expect(TokenValue::kRightParen);
 
-    Expect(TokenValue::kLeftCurly);
-    for_statement->block_ = ParseCompound();
-    Expect(TokenValue::kRightCurly);
+    for_statement->block_ = ParseCompound(false);
 
     return for_statement;
 }
 
-// TODO 处理 return;
 std::shared_ptr<ReturnStatement> Parser::ParseReturnStatement() {
     auto return_statement{MakeASTNode<ReturnStatement>()};
+    if (Try(TokenValue::kSemicolon)) {
+        return return_statement;
+    } else {
+        return_statement->expression_ = ParseExpression();
+        Expect(TokenValue::kSemicolon);
+    }
 
-    return_statement->expression_ = ParseExpression();
-    Expect(TokenValue::kSemicolon);
     return return_statement;
 }
 

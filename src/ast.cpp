@@ -215,7 +215,10 @@ Json::Value ForStatement::JsonGen() const {
 
     if (init_) {
         root["children"].append(init_->JsonGen());
+    } else if (declaration_) {
+        root["children"].append(declaration_->JsonGen());
     }
+
     if (cond_) {
         root["children"].append(cond_->JsonGen());
     }
@@ -246,20 +249,28 @@ Json::Value ForStatement::JsonGen() const {
  *
  */
 
-// TODO 处理 for 中三个表达式任意为空的情况
+// TODO 处理表达式为空的情况
+// TODO 支持声明变量,现在有 BUG
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
+    auto before_block{context.builder_.GetInsertBlock()};
+    auto parent_func{before_block->getParent()};
+    auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
+    auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
+    context.PushBlock(loop_block);
+
     llvm::Value *init_value{};
     if (init_) {
         init_value = init_->CodeGen(context);
+    } else if (declaration_) {
+        context.builder_.SetInsertPoint(loop_block);
+        init_value = declaration_->CodeGen(context);
+        context.builder_.SetInsertPoint(before_block);
     }
+
     if (!init_value) {
         ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
-
-    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-    auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
-    auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
 
     llvm::Value *cond_value{};
     if (cond_) {
@@ -274,7 +285,6 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
     context.builder_.SetInsertPoint(loop_block);
 
-    context.PushBlock(loop_block);
     block_->CodeGen(context);
     context.PopBlock();
 
@@ -300,20 +310,22 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
 Json::Value ReturnStatement::JsonGen() const {
     Json::Value root;
     root["name"] = ASTNodeTypes::ToString(Kind());
-    assert(expression_ != nullptr);
-    root["children"].append(expression_->JsonGen());
+    if (expression_) {
+        root["children"].append(expression_->JsonGen());
+    }
 
     return root;
 }
 
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
-    if (!expression_) {
-        ErrorReportAndExit(location_, "return expression is empty");
+    if (expression_) {
+        auto return_value = expression_->CodeGen(context);
+        context.SetCurrentReturnValue(return_value);
+        return return_value;
+    } else {
+        context.SetCurrentReturnValue(nullptr);
+        return nullptr;
     }
-    auto return_value = expression_->CodeGen(context);
-    context.SetCurrentReturnValue(return_value);
-
-    return return_value;
 }
 
 Json::Value Declaration::JsonGen() const {
@@ -432,7 +444,7 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
         }
         auto var{context.GetSymbolValue(lhs->name_)};
         if (!var) {
-            ErrorReportAndExit(location_, "Unknown variable name");
+            ErrorReportAndExit(location_, "Unknown variable name {}.", lhs->name_);
         }
 
         context.builder_.CreateStore(rhs_value, var);
@@ -664,8 +676,9 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
 
         body_->CodeGen(context);
         // TODO 处理没有 return 语句的情况
-        if (context.GetCurrentReturnValue()) {
-            context.builder_.CreateRet(context.GetCurrentReturnValue());
+        if (auto ret{context.GetCurrentReturnValue()};ret) {
+            context.builder_.CreateRet(ret);
+
             // 此函数对生成的代码执行各种一致性检查,以确定我们的编译器是否
             // 所有的操作都做得正确
             llvm::verifyFunction(*func);
@@ -674,8 +687,7 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
                 context.the_FPM_->run(*func);
             }
         } else {
-            ErrorReportAndExit(location_, "Function block return value not founded");
-            return nullptr;
+            context.builder_.CreateRetVoid();
         }
         context.PopBlock();
     }

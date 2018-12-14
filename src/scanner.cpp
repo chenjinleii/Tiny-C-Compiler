@@ -73,11 +73,15 @@ Scanner::Scanner(const std::string &processed_file, const std::string &input_fil
     }
 
     input_ = ost.str();
+    if (std::size(input_) == 0) {
+        ErrorReportAndExit("File is empty");
+    }
+
     auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
     input_.erase(iter.base(), std::end(input_));
 
     auto index{input_file.rfind('/')};
-    if (index != std::string::npos) {
+    if (index != std::string::npos && index + 1 < std::size(input_file)) {
         location_.file_name_ = input_file.substr(index + 1);
     } else {
         location_.file_name_ = input_file;
@@ -88,9 +92,16 @@ std::vector<Token> Scanner::Scan() {
     std::vector<Token> token_sequence;
 
     while (HasNextChar()) {
-        if (auto token{GetNextToken()};!token.TokenValueIs(TokenTypes::kNone) &&
-                !token.TokenValueIs(TokenTypes::kEof)) {
-            token_sequence.push_back(token);
+        if (auto token{GetNextToken()};!token.TokenValueIs(TokenTypes::kNone)) {
+            if (token.TokenValueIs(TokenTypes::kEof)) {
+                break;
+            }
+            if (token.IsString() && std::size(token_sequence) > 0
+                    && token_sequence.back().IsString()) {
+                token_sequence.back().AppendStringValue(token.GetStringValue());
+            } else {
+                token_sequence.push_back(token);
+            }
         }
         buffer_.clear();
     }
@@ -98,14 +109,14 @@ std::vector<Token> Scanner::Scan() {
     return token_sequence;
 }
 
-std::vector<Token> Scanner::Debug(const std::string &processed_file,
-                                  const std::string &input_file, std::ostream &os) {
+std::vector<Token> Scanner::Test(const std::string &processed_file,
+                                 const std::string &input_file, std::ostream &os) {
     Scanner scanner{processed_file, input_file};
     auto token_sequence{scanner.Scan()};
     for (const auto &token:token_sequence) {
         os << token.ToString() << '\n';
     }
-    std::cout << "token Successfully written\n";
+    std::cout << "Token Successfully Written\n";
 
     return token_sequence;
 }
@@ -278,7 +289,6 @@ Token Scanner::HandleIdentifierOrKeyword() {
     return MakeToken(token, buffer_);
 }
 
-// TODO 类型后缀
 Token Scanner::HandleNumber() {
     if (buffer_.front() == '.') {
         auto ch{GetNextChar()};
@@ -370,7 +380,6 @@ Token Scanner::HandleChar() {
     return MakeToken(ch);
 }
 
-//TODO 连接相邻字符串
 Token Scanner::HandleString() {
     while (HasNextChar() && !Test('\"') && !Test('\n')) {
         char ch{GetNextChar()};

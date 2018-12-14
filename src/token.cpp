@@ -173,4 +173,8 @@ SourceLocation Token::GetTokenLocation() const {
     return location_;
 }
 
+void Token::AppendStringValue(const std::string &str) {
+    string_value_ += str;
+}
+
 }

@@ -3,11 +3,37 @@ source_filename = "main"
 
 declare i32 @putchar(i32)
 
+define void @fuck(i32 %a) {
+entry:
+  %a1 = alloca i32
+  store i32 %a, i32* %a1
+  %a2 = load i32, i32* %a1
+  %a3 = load i32, i32* %a1
+  %0 = icmp ult i32 %a3, 55
+  %1 = icmp ne i1 %0, false
+  br i1 %1, label %for_loop, label %for_after
+
+for_loop:                                         ; preds = %for_loop, %entry
+  %a4 = load i32, i32* %a1
+  %2 = call i32 @putchar(i32 %a4)
+  %a5 = load i32, i32* %a1
+  %3 = add i32 %a5, 1
+  store i32 %3, i32* %a1
+  %a6 = load i32, i32* %a1
+  %4 = icmp ult i32 %a6, 55
+  %5 = icmp ne i1 %4, false
+  br i1 %5, label %for_loop, label %for_after
+
+for_after:                                        ; preds = %for_loop, %entry
+  ret void
+}
+
 define i32 @main() {
 entry:
   %a = alloca double
   %y = alloca double
   %x = alloca double
+  call void @fuck(i32 48)
   store i32 0, double* %x
   store i32 0, double* %y
   store double 1.500000e+00, double* %y

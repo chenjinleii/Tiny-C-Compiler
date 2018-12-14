@@ -2,8 +2,6 @@
 // Created by kaiser on 18-12-8.
 //
 
-//TODO enum struct array point switch以及其他内置类型
-
 #ifndef TINY_C_COMPILER_AST_H
 #define TINY_C_COMPILER_AST_H
 
@@ -143,8 +141,8 @@ class IfStatement : public Statement {
 public:
     IfStatement() = default;
     IfStatement(std::shared_ptr<Expression> condition_,
-                std::shared_ptr<CompoundStatement> then_block,
-                std::shared_ptr<CompoundStatement> else_block)
+                std::shared_ptr<Statement> then_block,
+                std::shared_ptr<Statement> else_block)
             : condition_{std::move(condition_)}, then_block_{std::move(then_block)},
               else_block_{std::move(else_block)} {}
 
@@ -154,15 +152,15 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Expression> condition_;
-    std::shared_ptr<CompoundStatement> then_block_;
-    std::shared_ptr<CompoundStatement> else_block_;
+    std::shared_ptr<Statement> then_block_;
+    std::shared_ptr<Statement> else_block_;
 };
 
 class WhileStatement : public Statement {
 public:
     WhileStatement() = default;
     WhileStatement(std::shared_ptr<Expression>
-                   condition, std::shared_ptr<CompoundStatement> block) :
+                   condition, std::shared_ptr<Statement> block) :
             cond_{std::move(condition)},
             block_{std::move(block)} {}
 
@@ -172,19 +170,21 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Expression> cond_;
-    std::shared_ptr<CompoundStatement> block_;
+    std::shared_ptr<Statement> block_;
 };
 
 class ForStatement : public Statement {
 public:
     ForStatement() = default;
-    ForStatement(std::shared_ptr<Expression> initi,
+    ForStatement(std::shared_ptr<Expression> init,
                  std::shared_ptr<Expression> condition,
                  std::shared_ptr<Expression> increment,
-                 std::shared_ptr<CompoundStatement> block) :
-            init_{std::move(initi)},
+                 std::shared_ptr<Statement> block,
+                 std::shared_ptr<Declaration> declaration) :
+            init_{std::move(init)},
             cond_{std::move(condition)},
-            increment_{std::move(increment)}, block_{std::move(block)} {}
+            increment_{std::move(increment)}, block_{std::move(block)},
+            declaration_{std::move(declaration)} {}
 
     ASTNodeType Kind() const override { return ASTNodeType::kForStatement; }
 
@@ -192,7 +192,8 @@ public:
     llvm::Value *CodeGen(CodeGenContext &context) override;
 
     std::shared_ptr<Expression> init_, cond_, increment_;
-    std::shared_ptr<CompoundStatement> block_;
+    std::shared_ptr<Statement> block_;
+    std::shared_ptr<Declaration> declaration_;
 };
 
 class ReturnStatement : public Statement {
@@ -331,7 +332,7 @@ public:
     std::shared_ptr<Type> return_type_;
     std::shared_ptr<Identifier> name_;
     std::shared_ptr<DeclarationList> args_;
-    std::shared_ptr<CompoundStatement> body_;
+    std::shared_ptr<Statement> body_;
 };
 
 class CharConstant : public Expression {

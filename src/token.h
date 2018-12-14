@@ -136,7 +136,6 @@ private:
     std::unordered_map<TokenValue, std::int32_t> precedence_;
 };
 
-// TODO 更多内置类型
 class Token {
 public:
     Token() = default;
@@ -167,6 +166,7 @@ public:
     std::int32_t GetInt32Value() const;
     double GetDoubleValue() const;
     std::string GetStringValue() const;
+    void AppendStringValue(const std::string &str);
 private:
     SourceLocation location_;
     TokenValue value_{TokenValue::kNone};
