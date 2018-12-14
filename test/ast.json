@@ -41,11 +41,32 @@
 							"children" : 
 							[
 								{
+									"name" : "kPrimitiveType kDouble"
+								},
+								{
+									"name" : "kIdentifier x"
+								}
+							],
+							"name" : "kDeclaration"
+						},
+						{
+							"children" : 
+							[
+								{
+									"name" : "kPrimitiveType kDouble"
+								},
+								{
+									"name" : "kIdentifier y"
+								}
+							],
+							"name" : "kDeclaration"
+						},
+						{
+							"children" : 
+							[
+								{
 									"children" : 
 									[
-										{
-											"name" : "kPrimitiveType kDouble"
-										},
 										{
 											"name" : "kIdentifier y"
 										},
@@ -53,7 +74,7 @@
 											"name" : "kDoubleConstant 1.500000"
 										}
 									],
-									"name" : "kDeclaration"
+									"name" : "kBinaryOpExpression kAssign"
 								},
 								{
 									"children" : 
@@ -89,16 +110,13 @@
 													"children" : 
 													[
 														{
-															"name" : "kPrimitiveType kDouble"
-														},
-														{
 															"name" : "kIdentifier x"
 														},
 														{
 															"name" : "kDoubleConstant -1.500000"
 														}
 													],
-													"name" : "kDeclaration"
+													"name" : "kBinaryOpExpression kAssign"
 												},
 												{
 													"children" : 
@@ -320,4 +338,38 @@
 													"children" : 
 													[
 														{
-															
+															"name" : "kIdentifier putchar"
+														},
+														{
+															"name" : "kCharConstant \n"
+														}
+													],
+													"name" : "kFunctionCall"
+												}
+											],
+											"name" : "kExpressionStatement"
+										}
+									],
+									"name" : "kCompoundStatement"
+								}
+							],
+							"name" : "kForStatement"
+						},
+						{
+							"children" : 
+							[
+								{
+									"name" : "kInt32Constant 0"
+								}
+							],
+							"name" : "kReturnStatement"
+						}
+					],
+					"name" : "kCompoundStatement"
+				}
+			],
+			"name" : "kFunctionDefinition"
+		}
+	],
+	"name" : "kCompoundStatement"
+}
