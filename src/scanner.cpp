@@ -409,7 +409,7 @@ char Scanner::HandleEscape() {
         case 'x':return HandleHexEscape();
         case '0' ... '7':return HandleOctEscape(ch);
         default: {
-            ErrorReportAndExit(location_, "unrecognized escape character '%c'", ch);
+            ErrorReportAndExit(location_, "unrecognized escape character '{}'", ch);
             return EOF;
         }
     }

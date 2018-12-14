@@ -37,8 +37,8 @@ struct CodeGenBlock {
 
 class CodeGenContext {
 public:
-    CodeGenContext();
-    void InitializeModuleAndPassManager();
+    explicit CodeGenContext(bool optimization);
+    void InitializePassManager();
     llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
                                              const std::string &name);
 
@@ -51,7 +51,7 @@ public:
 
     std::unique_ptr<llvm::legacy::FunctionPassManager> the_FPM_;
     TypeSystem type_system_;
-
+    bool GetOptimization() const;
     void GenerateCode(CompoundStatement &root);
     void Debug(CompoundStatement &root, const std::string &file_name);
     void SetCurrentReturnValue(llvm::Value *value);

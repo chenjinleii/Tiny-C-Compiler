@@ -18,13 +18,17 @@
 
 namespace tcc {
 
-CodeGenContext::CodeGenContext() :
-        builder_{the_context_}, type_system_{the_context_} {
-    InitializeModuleAndPassManager();
+CodeGenContext::CodeGenContext(bool optimization) :
+        builder_{the_context_},
+        the_module_{std::make_unique<llvm::Module>("main", the_context_)},
+        type_system_{the_context_} {
+    if (optimization) {
+        InitializePassManager();
+        optimization_ = optimization;
+    }
 }
 
-void CodeGenContext::InitializeModuleAndPassManager() {
-    the_module_ = std::make_unique<llvm::Module>("main", the_context_);
+void CodeGenContext::InitializePassManager() {
     the_FPM_ = std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
 
     // 优化
@@ -123,6 +127,10 @@ void CodeGenContext::PushBlock(llvm::BasicBlock *block) {
 
 void CodeGenContext::PopBlock() {
     block_stack_.pop_back();
+}
+
+bool CodeGenContext::GetOptimization() const {
+    return optimization_;
 }
 
 }

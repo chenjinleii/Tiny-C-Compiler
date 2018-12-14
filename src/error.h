@@ -29,6 +29,12 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &forma
     std::exit(EXIT_FAILURE);
 }
 
+template<typename... Args>
+void ErrorReportAndExit(const std::string &format_str, const Args &... args) {
+    fmt::print(format_str, args...);
+    std::exit(EXIT_FAILURE);
+}
+
 }
 
 #endif //TINY_C_COMPILER_ERROR_H

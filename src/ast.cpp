@@ -369,7 +369,18 @@ Json::Value UnaryOpExpression::JsonGen() const {
 // ++/--/~/!
 // TODO 支持~/!
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
-    return PostfixExpression{object_, op_}.CodeGen(context);
+    if (op_ == TokenValue::kInc || op_ == TokenValue::kDec) {
+        return PostfixExpression{object_, op_}.CodeGen(context);
+    } else if (op_ == TokenValue::kLogicNeg) {
+        auto value{context.type_system_.CastToBool(context, object_->CodeGen(context))};
+        return context.builder_.CreateICmpNE(value,
+                                             llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_), 1));
+    } else if (op_ == TokenValue::kNeg) {
+        return context.builder_.CreateNeg(object_->CodeGen(context));
+    } else {
+        ErrorReportAndExit(location_, "Unknown unary prefix operator");
+        return nullptr;
+    }
 }
 
 Json::Value PostfixExpression::JsonGen() const {
@@ -462,7 +473,7 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
         case TokenValue::kSub:
             return is_double ? context.builder_.CreateFSub(lhs, rhs) :
                    context.builder_.CreateSub(lhs, rhs);
-        case TokenValue::kMul   :
+        case TokenValue::kMul:
             return is_double ? context.builder_.CreateFMul(lhs, rhs) :
                    context.builder_.CreateMul(lhs, rhs);
         case TokenValue::kDiv:
@@ -659,7 +670,9 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
             // 所有的操作都做得正确
             llvm::verifyFunction(*func);
             // 优化该函数
-            context.the_FPM_->run(*func);
+            if (context.GetOptimization()) {
+                context.the_FPM_->run(*func);
+            }
         } else {
             ErrorReportAndExit(location_, "Function block return value not founded");
             return nullptr;
