@@ -10,100 +10,96 @@ test.c:3:8:         type: kIdentifier         name:  main
 test.c:3:9:         type: kLeftParen          
 test.c:3:10:        type: kRightParen         
 test.c:3:12:        type: kLeftCurly          
-test.c:4:10:        type: kDouble             
-test.c:4:12:        type: kIdentifier         name:  x
-test.c:4:13:        type: kSemicolon          
-test.c:5:10:        type: kDouble             
-test.c:5:12:        type: kIdentifier         name:  y
-test.c:5:13:        type: kSemicolon          
-test.c:6:7:         type: kFor                
-test.c:6:9:         type: kLeftParen          
-test.c:6:11:        type: kIdentifier         name:  y
-test.c:6:13:        type: kAssign             
-test.c:6:17:        type: kDoubleConstant     value: 1.500000
-test.c:6:18:        type: kSemicolon          
-test.c:6:20:        type: kIdentifier         name:  y
-test.c:6:22:        type: kGreater            
-test.c:6:24:        type: kSub                
-test.c:6:27:        type: kDoubleConstant     value: 1.500000
-test.c:6:28:        type: kSemicolon          
-test.c:6:30:        type: kIdentifier         name:  y
-test.c:6:33:        type: kSubAssign          
-test.c:6:37:        type: kDoubleConstant     value: 0.100000
-test.c:6:38:        type: kRightParen         
-test.c:6:40:        type: kLeftCurly          
-test.c:7:11:        type: kFor                
-test.c:7:13:        type: kLeftParen          
-test.c:7:15:        type: kIdentifier         name:  x
-test.c:7:17:        type: kAssign             
-test.c:7:19:        type: kSub                
-test.c:7:22:        type: kDoubleConstant     value: 1.500000
-test.c:7:23:        type: kSemicolon          
-test.c:7:25:        type: kIdentifier         name:  x
-test.c:7:27:        type: kLess               
-test.c:7:31:        type: kDoubleConstant     value: 1.500000
-test.c:7:32:        type: kSemicolon          
-test.c:7:34:        type: kIdentifier         name:  x
-test.c:7:37:        type: kAddAssign          
-test.c:7:42:        type: kDoubleConstant     value: 0.050000
-test.c:7:43:        type: kRightParen         
-test.c:7:45:        type: kLeftCurly          
-test.c:8:18:        type: kDouble             
-test.c:8:20:        type: kIdentifier         name:  a
-test.c:8:22:        type: kAssign             
-test.c:8:24:        type: kIdentifier         name:  x
-test.c:8:26:        type: kMul                
-test.c:8:28:        type: kIdentifier         name:  x
-test.c:8:30:        type: kAdd                
-test.c:8:32:        type: kIdentifier         name:  y
-test.c:8:34:        type: kMul                
-test.c:8:36:        type: kIdentifier         name:  y
-test.c:8:38:        type: kSub                
-test.c:8:40:        type: kIntConstant        value: 1
-test.c:8:41:        type: kSemicolon          
-test.c:9:14:        type: kIf                 
-test.c:9:16:        type: kLeftParen          
-test.c:9:17:        type: kIdentifier         name:  a
-test.c:9:19:        type: kMul                
-test.c:9:21:        type: kIdentifier         name:  a
-test.c:9:23:        type: kMul                
-test.c:9:25:        type: kIdentifier         name:  a
-test.c:9:27:        type: kSub                
-test.c:9:29:        type: kIdentifier         name:  x
-test.c:9:31:        type: kMul                
-test.c:9:33:        type: kIdentifier         name:  x
-test.c:9:35:        type: kMul                
-test.c:9:37:        type: kIdentifier         name:  y
-test.c:9:39:        type: kMul                
-test.c:9:41:        type: kIdentifier         name:  y
-test.c:9:43:        type: kMul                
-test.c:9:45:        type: kIdentifier         name:  y
-test.c:9:48:        type: kLessOrEqual        
-test.c:9:52:        type: kDoubleConstant     value: 0.000000
-test.c:9:53:        type: kRightParen         
-test.c:9:55:        type: kLeftCurly          
+test.c:4:7:         type: kFor                
+test.c:4:9:         type: kLeftParen          
+test.c:4:15:        type: kDouble             
+test.c:4:17:        type: kIdentifier         name:  y
+test.c:4:19:        type: kAssign             
+test.c:4:23:        type: kDoubleConstant     value: 1.500000
+test.c:4:24:        type: kSemicolon          
+test.c:4:26:        type: kIdentifier         name:  y
+test.c:4:28:        type: kGreater            
+test.c:4:30:        type: kSub                
+test.c:4:33:        type: kDoubleConstant     value: 1.500000
+test.c:4:34:        type: kSemicolon          
+test.c:4:36:        type: kIdentifier         name:  y
+test.c:4:39:        type: kSubAssign          
+test.c:4:43:        type: kDoubleConstant     value: 0.100000
+test.c:4:44:        type: kRightParen         
+test.c:4:46:        type: kLeftCurly          
+test.c:5:11:        type: kFor                
+test.c:5:13:        type: kLeftParen          
+test.c:5:19:        type: kDouble             
+test.c:5:21:        type: kIdentifier         name:  x
+test.c:5:23:        type: kAssign             
+test.c:5:25:        type: kSub                
+test.c:5:28:        type: kDoubleConstant     value: 1.500000
+test.c:5:29:        type: kSemicolon          
+test.c:5:31:        type: kIdentifier         name:  x
+test.c:5:33:        type: kLess               
+test.c:5:37:        type: kDoubleConstant     value: 1.500000
+test.c:5:38:        type: kSemicolon          
+test.c:5:40:        type: kIdentifier         name:  x
+test.c:5:43:        type: kAddAssign          
+test.c:5:48:        type: kDoubleConstant     value: 0.050000
+test.c:5:49:        type: kRightParen         
+test.c:5:51:        type: kLeftCurly          
+test.c:6:18:        type: kDouble             
+test.c:6:20:        type: kIdentifier         name:  a
+test.c:6:22:        type: kAssign             
+test.c:6:24:        type: kIdentifier         name:  x
+test.c:6:26:        type: kMul                
+test.c:6:28:        type: kIdentifier         name:  x
+test.c:6:30:        type: kAdd                
+test.c:6:32:        type: kIdentifier         name:  y
+test.c:6:34:        type: kMul                
+test.c:6:36:        type: kIdentifier         name:  y
+test.c:6:38:        type: kSub                
+test.c:6:40:        type: kIntConstant        value: 1
+test.c:6:41:        type: kSemicolon          
+test.c:7:14:        type: kIf                 
+test.c:7:16:        type: kLeftParen          
+test.c:7:17:        type: kIdentifier         name:  a
+test.c:7:19:        type: kMul                
+test.c:7:21:        type: kIdentifier         name:  a
+test.c:7:23:        type: kMul                
+test.c:7:25:        type: kIdentifier         name:  a
+test.c:7:27:        type: kSub                
+test.c:7:29:        type: kIdentifier         name:  x
+test.c:7:31:        type: kMul                
+test.c:7:33:        type: kIdentifier         name:  x
+test.c:7:35:        type: kMul                
+test.c:7:37:        type: kIdentifier         name:  y
+test.c:7:39:        type: kMul                
+test.c:7:41:        type: kIdentifier         name:  y
+test.c:7:43:        type: kMul                
+test.c:7:45:        type: kIdentifier         name:  y
+test.c:7:48:        type: kLessOrEqual        
+test.c:7:52:        type: kDoubleConstant     value: 0.000000
+test.c:7:53:        type: kRightParen         
+test.c:7:55:        type: kLeftCurly          
+test.c:8:23:        type: kIdentifier         name:  putchar
+test.c:8:24:        type: kLeftParen          
+test.c:8:27:        type: kCharConstant       value: 42
+test.c:8:28:        type: kRightParen         
+test.c:8:29:        type: kSemicolon          
+test.c:9:13:        type: kRightCurly         
+test.c:9:18:        type: kElse               
+test.c:9:20:        type: kLeftCurly          
 test.c:10:23:       type: kIdentifier         name:  putchar
 test.c:10:24:       type: kLeftParen          
-test.c:10:27:       type: kCharConstant       value: 42
+test.c:10:27:       type: kCharConstant       value: 32
 test.c:10:28:       type: kRightParen         
 test.c:10:29:       type: kSemicolon          
 test.c:11:13:       type: kRightCurly         
-test.c:11:18:       type: kElse               
-test.c:11:20:       type: kLeftCurly          
-test.c:12:23:       type: kIdentifier         name:  putchar
-test.c:12:24:       type: kLeftParen          
-test.c:12:27:       type: kCharConstant       value: 32
-test.c:12:28:       type: kRightParen         
-test.c:12:29:       type: kSemicolon          
-test.c:13:13:       type: kRightCurly         
-test.c:15:9:        type: kRightCurly         
-test.c:16:15:       type: kIdentifier         name:  putchar
-test.c:16:16:       type: kLeftParen          
-test.c:16:20:       type: kCharConstant       value: 10
-test.c:16:21:       type: kRightParen         
-test.c:16:22:       type: kSemicolon          
-test.c:17:5:        type: kRightCurly         
-test.c:18:10:       type: kReturn             
-test.c:18:12:       type: kIntConstant        value: 0
-test.c:18:13:       type: kSemicolon          
-test.c:19:1:        type: kRightCurly         
+test.c:13:9:        type: kRightCurly         
+test.c:14:15:       type: kIdentifier         name:  putchar
+test.c:14:16:       type: kLeftParen          
+test.c:14:20:       type: kCharConstant       value: 10
+test.c:14:21:       type: kRightParen         
+test.c:14:22:       type: kSemicolon          
+test.c:15:5:        type: kRightCurly         
+test.c:16:10:       type: kReturn             
+test.c:16:12:       type: kIntConstant        value: 0
+test.c:16:13:       type: kSemicolon          
+test.c:17:1:        type: kRightCurly         

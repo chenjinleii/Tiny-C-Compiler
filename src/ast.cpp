@@ -250,7 +250,6 @@ Json::Value ForStatement::JsonGen() const {
  */
 
 // TODO 处理表达式为空的情况
-// TODO 支持声明变量,现在有 BUG
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     auto before_block{context.builder_.GetInsertBlock()};
     auto parent_func{before_block->getParent()};
@@ -262,9 +261,7 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     if (init_) {
         init_value = init_->CodeGen(context);
     } else if (declaration_) {
-        context.builder_.SetInsertPoint(loop_block);
         init_value = declaration_->CodeGen(context);
-        context.builder_.SetInsertPoint(before_block);
     }
 
     if (!init_value) {
@@ -275,18 +272,17 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
     llvm::Value *cond_value{};
     if (cond_) {
         cond_value = cond_->CodeGen(context);
+        cond_value = context.type_system_.CastToBool(context, cond_value);
     }
     if (!cond_value) {
         ErrorReportAndExit(location_, "Code generation failed");
         return nullptr;
     }
-    cond_value = context.type_system_.CastToBool(context, cond_value);
 
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
     context.builder_.SetInsertPoint(loop_block);
 
     block_->CodeGen(context);
-    context.PopBlock();
 
     llvm::Value *increment_value{};
     if (increment_) {
@@ -297,9 +293,14 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
         return nullptr;
     }
 
-    cond_value = cond_->CodeGen(context);
-    cond_value = context.type_system_.CastToBool(context, cond_value);
+    if (cond_) {
+        cond_value = cond_->CodeGen(context);
+        cond_value = context.type_system_.CastToBool(context, cond_value);
+    }
+
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
+
+    context.PopBlock();
 
     parent_func->getBasicBlockList().push_back(after_block);
     context.builder_.SetInsertPoint(after_block);

@@ -6,9 +6,8 @@ declare i32 @putchar(i32)
 define i32 @main() {
 entry:
   %a = alloca double
-  %y = alloca double
   %x = alloca double
-  store i32 0, double* %x
+  %y = alloca double
   store i32 0, double* %y
   store double 1.500000e+00, double* %y
   %y1 = load double, double* %y
@@ -18,6 +17,7 @@ entry:
   br i1 %2, label %for_loop, label %for_after20
 
 for_loop:                                         ; preds = %for_after, %entry
+  store i32 0, double* %x
   store double -1.500000e+00, double* %x
   %x3 = load double, double* %x
   %3 = fcmp ult double %x3, 1.500000e+00
