@@ -4,7 +4,7 @@
 
 #include "token.h"
 
-#include <QMetaEnum>
+#include <QtCore/QMetaEnum>
 
 #include <iostream>
 

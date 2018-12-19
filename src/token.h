@@ -7,7 +7,7 @@
 
 #include "location.h"
 
-#include <QObject>
+#include <QtCore/QObject>
 
 #include <cstdint>
 #include <string>

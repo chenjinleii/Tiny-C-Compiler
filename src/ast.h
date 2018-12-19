@@ -10,7 +10,7 @@
 
 #include <json/json.h>
 #include <llvm/IR/Value.h>
-#include <QMetaEnum>
+#include <QtCore/QMetaEnum>
 
 #include <cstdint>
 #include <memory>
