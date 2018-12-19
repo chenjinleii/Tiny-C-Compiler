@@ -5,34 +5,34 @@
 			"children" : 
 			[
 				{
-					"name" : "kPrimitiveType kInt"
+					"name" : "PrimitiveType kInt"
 				},
 				{
-					"name" : "kIdentifier putchar"
+					"name" : "Identifier putchar"
 				},
 				{
 					"children" : 
 					[
 						{
-							"name" : "kPrimitiveType kInt"
+							"name" : "PrimitiveType kInt"
 						},
 						{
-							"name" : "kIdentifier c"
+							"name" : "Identifier c"
 						}
 					],
-					"name" : "kDeclaration"
+					"name" : "Declaration"
 				}
 			],
-			"name" : "kFunctionDeclaration"
+			"name" : "FunctionDeclaration"
 		},
 		{
 			"children" : 
 			[
 				{
-					"name" : "kPrimitiveType kInt"
+					"name" : "PrimitiveType kInt"
 				},
 				{
-					"name" : "kIdentifier main"
+					"name" : "Identifier main"
 				},
 				{
 					"children" : 
@@ -44,40 +44,40 @@
 									"children" : 
 									[
 										{
-											"name" : "kPrimitiveType kDouble"
+											"name" : "PrimitiveType kDouble"
 										},
 										{
-											"name" : "kIdentifier y"
+											"name" : "Identifier y"
 										},
 										{
-											"name" : "kDoubleConstant 1.500000"
+											"name" : "DoubleConstant 1.500000"
 										}
 									],
-									"name" : "kDeclaration"
+									"name" : "Declaration"
 								},
 								{
 									"children" : 
 									[
 										{
-											"name" : "kIdentifier y"
+											"name" : "Identifier y"
 										},
 										{
-											"name" : "kDoubleConstant -1.500000"
+											"name" : "DoubleConstant -1.500000"
 										}
 									],
-									"name" : "kBinaryOpExpression kGreater"
+									"name" : "BinaryOpExpression kGreater"
 								},
 								{
 									"children" : 
 									[
 										{
-											"name" : "kIdentifier y"
+											"name" : "Identifier y"
 										},
 										{
-											"name" : "kDoubleConstant 0.100000"
+											"name" : "DoubleConstant 0.100000"
 										}
 									],
-									"name" : "kBinaryOpExpression kSubAssign"
+									"name" : "BinaryOpExpression kSubAssign"
 								},
 								{
 									"children" : 
@@ -89,40 +89,40 @@
 													"children" : 
 													[
 														{
-															"name" : "kPrimitiveType kDouble"
+															"name" : "PrimitiveType kDouble"
 														},
 														{
-															"name" : "kIdentifier x"
+															"name" : "Identifier x"
 														},
 														{
-															"name" : "kDoubleConstant -1.500000"
+															"name" : "DoubleConstant -1.500000"
 														}
 													],
-													"name" : "kDeclaration"
+													"name" : "Declaration"
 												},
 												{
 													"children" : 
 													[
 														{
-															"name" : "kIdentifier x"
+															"name" : "Identifier x"
 														},
 														{
-															"name" : "kDoubleConstant 1.500000"
+															"name" : "DoubleConstant 1.500000"
 														}
 													],
-													"name" : "kBinaryOpExpression kLess"
+													"name" : "BinaryOpExpression kLess"
 												},
 												{
 													"children" : 
 													[
 														{
-															"name" : "kIdentifier x"
+															"name" : "Identifier x"
 														},
 														{
-															"name" : "kDoubleConstant 0.050000"
+															"name" : "DoubleConstant 0.050000"
 														}
 													],
-													"name" : "kBinaryOpExpression kAddAssign"
+													"name" : "BinaryOpExpression kAddAssign"
 												},
 												{
 													"children" : 
@@ -131,10 +131,10 @@
 															"children" : 
 															[
 																{
-																	"name" : "kPrimitiveType kDouble"
+																	"name" : "PrimitiveType kDouble"
 																},
 																{
-																	"name" : "kIdentifier a"
+																	"name" : "Identifier a"
 																},
 																{
 																	"children" : 
@@ -146,37 +146,37 @@
 																					"children" : 
 																					[
 																						{
-																							"name" : "kIdentifier x"
+																							"name" : "Identifier x"
 																						},
 																						{
-																							"name" : "kIdentifier x"
+																							"name" : "Identifier x"
 																						}
 																					],
-																					"name" : "kBinaryOpExpression kMul"
+																					"name" : "BinaryOpExpression kMul"
 																				},
 																				{
 																					"children" : 
 																					[
 																						{
-																							"name" : "kIdentifier y"
+																							"name" : "Identifier y"
 																						},
 																						{
-																							"name" : "kIdentifier y"
+																							"name" : "Identifier y"
 																						}
 																					],
-																					"name" : "kBinaryOpExpression kMul"
+																					"name" : "BinaryOpExpression kMul"
 																				}
 																			],
-																			"name" : "kBinaryOpExpression kAdd"
+																			"name" : "BinaryOpExpression kAdd"
 																		},
 																		{
-																			"name" : "kInt32Constant 1"
+																			"name" : "Int32Constant 1"
 																		}
 																	],
-																	"name" : "kBinaryOpExpression kSub"
+																	"name" : "BinaryOpExpression kSub"
 																}
 															],
-															"name" : "kDeclaration"
+															"name" : "Declaration"
 														},
 														{
 															"children" : 
@@ -194,19 +194,19 @@
 																							"children" : 
 																							[
 																								{
-																									"name" : "kIdentifier a"
+																									"name" : "Identifier a"
 																								},
 																								{
-																									"name" : "kIdentifier a"
+																									"name" : "Identifier a"
 																								}
 																							],
-																							"name" : "kBinaryOpExpression kMul"
+																							"name" : "BinaryOpExpression kMul"
 																						},
 																						{
-																							"name" : "kIdentifier a"
+																							"name" : "Identifier a"
 																						}
 																					],
-																					"name" : "kBinaryOpExpression kMul"
+																					"name" : "BinaryOpExpression kMul"
 																				},
 																				{
 																					"children" : 
@@ -221,40 +221,40 @@
 																											"children" : 
 																											[
 																												{
-																													"name" : "kIdentifier x"
+																													"name" : "Identifier x"
 																												},
 																												{
-																													"name" : "kIdentifier x"
+																													"name" : "Identifier x"
 																												}
 																											],
-																											"name" : "kBinaryOpExpression kMul"
+																											"name" : "BinaryOpExpression kMul"
 																										},
 																										{
-																											"name" : "kIdentifier y"
+																											"name" : "Identifier y"
 																										}
 																									],
-																									"name" : "kBinaryOpExpression kMul"
+																									"name" : "BinaryOpExpression kMul"
 																								},
 																								{
-																									"name" : "kIdentifier y"
+																									"name" : "Identifier y"
 																								}
 																							],
-																							"name" : "kBinaryOpExpression kMul"
+																							"name" : "BinaryOpExpression kMul"
 																						},
 																						{
-																							"name" : "kIdentifier y"
+																							"name" : "Identifier y"
 																						}
 																					],
-																					"name" : "kBinaryOpExpression kMul"
+																					"name" : "BinaryOpExpression kMul"
 																				}
 																			],
-																			"name" : "kBinaryOpExpression kSub"
+																			"name" : "BinaryOpExpression kSub"
 																		},
 																		{
-																			"name" : "kDoubleConstant 0.000000"
+																			"name" : "DoubleConstant 0.000000"
 																		}
 																	],
-																	"name" : "kBinaryOpExpression kLessOrEqual"
+																	"name" : "BinaryOpExpression kLessOrEqual"
 																},
 																{
 																	"children" : 
@@ -266,19 +266,19 @@
 																					"children" : 
 																					[
 																						{
-																							"name" : "kIdentifier putchar"
+																							"name" : "Identifier putchar"
 																						},
 																						{
-																							"name" : "kCharConstant *"
+																							"name" : "CharConstant *"
 																						}
 																					],
-																					"name" : "kFunctionCall"
+																					"name" : "FunctionCall"
 																				}
 																			],
-																			"name" : "kExpressionStatement"
+																			"name" : "ExpressionStatement"
 																		}
 																	],
-																	"name" : "kCompoundStatement"
+																	"name" : "CompoundStatement"
 																},
 																{
 																	"children" : 
@@ -290,28 +290,28 @@
 																					"children" : 
 																					[
 																						{
-																							"name" : "kIdentifier putchar"
+																							"name" : "Identifier putchar"
 																						},
 																						{
-																							"name" : "kCharConstant  "
+																							"name" : "CharConstant  "
 																						}
 																					],
-																					"name" : "kFunctionCall"
+																					"name" : "FunctionCall"
 																				}
 																			],
-																			"name" : "kExpressionStatement"
+																			"name" : "ExpressionStatement"
 																		}
 																	],
-																	"name" : "kCompoundStatement"
+																	"name" : "CompoundStatement"
 																}
 															],
-															"name" : "kIfStatement"
+															"name" : "IfStatement"
 														}
 													],
-													"name" : "kCompoundStatement"
+													"name" : "CompoundStatement"
 												}
 											],
-											"name" : "kForStatement"
+											"name" : "ForStatement"
 										},
 										{
 											"children" : 
@@ -320,38 +320,38 @@
 													"children" : 
 													[
 														{
-															"name" : "kIdentifier putchar"
+															"name" : "Identifier putchar"
 														},
 														{
-															"name" : "kCharConstant \n"
+															"name" : "CharConstant \n"
 														}
 													],
-													"name" : "kFunctionCall"
+													"name" : "FunctionCall"
 												}
 											],
-											"name" : "kExpressionStatement"
+											"name" : "ExpressionStatement"
 										}
 									],
-									"name" : "kCompoundStatement"
+									"name" : "CompoundStatement"
 								}
 							],
-							"name" : "kForStatement"
+							"name" : "ForStatement"
 						},
 						{
 							"children" : 
 							[
 								{
-									"name" : "kInt32Constant 0"
+									"name" : "Int32Constant 0"
 								}
 							],
-							"name" : "kReturnStatement"
+							"name" : "ReturnStatement"
 						}
 					],
-					"name" : "kCompoundStatement"
+					"name" : "CompoundStatement"
 				}
 			],
-			"name" : "kFunctionDefinition"
+			"name" : "FunctionDefinition"
 		}
 	],
-	"name" : "kCompoundStatement"
+	"name" : "CompoundStatement"
 }

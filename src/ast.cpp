@@ -16,7 +16,7 @@
 namespace tcc {
 
 std::string ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
-    return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type);
+    return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type) + 1;
 }
 
 llvm::Value *ASTNode::CodeGen(CodeGenContext &) {
@@ -31,8 +31,8 @@ Json::Value Type::JsonGen() const {
 
 Json::Value PrimitiveType::JsonGen() const {
     Json::Value root;
-    root["name"] = ASTNodeTypes::ToString(Kind()) +
-            ' ' + TokenTypes::ToString(type_);
+    root["name"] = ASTNodeTypes::ToString(Kind())
+            + ' ' + TokenTypes::ToString(type_);
     return root;
 }
 
@@ -116,14 +116,12 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
 
     auto condition_value{condition_->CodeGen(context)};
     if (!condition_value) {
-        ErrorReportAndExit(location_, "Code generation failed");
+        ErrorReportAndExit(location_, "If condition code generation failed");
         return nullptr;
     }
-
     condition_value = context.type_system_.CastToBool(context, condition_value);
 
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-
     auto then_block = llvm::BasicBlock::Create(context.the_context_, "if_then", parent_func);
     auto else_block = llvm::BasicBlock::Create(context.the_context_, "if_else");
     auto after_block = llvm::BasicBlock::Create(context.the_context_, "if_after");
@@ -136,11 +134,10 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
 
     context.builder_.SetInsertPoint(then_block);
     context.PushBlock(then_block);
-    auto then_value{then_block_->CodeGen(context)};
-    if (!then_value) {
-        ErrorReportAndExit(location_, "Code generation failed");
-        return nullptr;
-    }
+
+    // 可以为空
+    then_block_->CodeGen(context);
+
     context.PopBlock();
     // 注意需要使用控制流指令例如 return/branch 来终止基本块
     context.builder_.CreateBr(after_block);
@@ -149,11 +146,10 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
         parent_func->getBasicBlockList().push_back(else_block);
         context.builder_.SetInsertPoint(else_block);
         context.PushBlock(then_block);
-        auto else_value{else_block_->CodeGen(context)};
-        if (!else_value) {
-            ErrorReportAndExit(location_, "Code generation failed");
-            return nullptr;
-        }
+
+        // 可以为空
+        else_block_->CodeGen(context);
+
         context.PopBlock();
         context.builder_.CreateBr(after_block);
     }
@@ -180,26 +176,30 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
 
     llvm::Value *cond_value{cond_->CodeGen(context)};
     if (!cond_value) {
-        ErrorReportAndExit(location_, "Code generation failed");
+        ErrorReportAndExit(location_, "While condition code generation failed");
         return nullptr;
     }
+    cond_value = context.type_system_.CastToBool(context, cond_value);
 
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
     auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop", parent_func)};
     auto after_block{llvm::BasicBlock::Create(context.the_context_, "while_after")};
 
-    cond_value = context.type_system_.CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
     context.builder_.SetInsertPoint(loop_block);
 
     context.PushBlock(loop_block);
-    llvm::Value *block_value = block_->CodeGen(context);
-    if (!block_value) {
-        return nullptr;
-    }
+
+    // 可以为空
+    block_->CodeGen(context);
+
     context.PopBlock();
 
     cond_value = cond_->CodeGen(context);
+    if (!cond_value) {
+        ErrorReportAndExit(location_, "While condition code generation failed");
+        return nullptr;
+    }
     cond_value = context.type_system_.CastToBool(context, cond_value);
     context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
@@ -249,56 +249,44 @@ Json::Value ForStatement::JsonGen() const {
  *
  */
 
-// TODO 处理表达式为空的情况
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
-    auto before_block{context.builder_.GetInsertBlock()};
-    auto parent_func{before_block->getParent()};
+    auto parent_func{context.builder_.GetInsertBlock()->getParent()};
     auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
     auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
+
     context.PushBlock(loop_block);
 
-    llvm::Value *init_value{};
+    // init cond increment 均可以为空
     if (init_) {
-        init_value = init_->CodeGen(context);
+        init_->CodeGen(context);
     } else if (declaration_) {
-        init_value = declaration_->CodeGen(context);
-    }
-
-    if (!init_value) {
-        ErrorReportAndExit(location_, "Code generation failed");
-        return nullptr;
+        declaration_->CodeGen(context);
     }
 
     llvm::Value *cond_value{};
     if (cond_) {
         cond_value = cond_->CodeGen(context);
         cond_value = context.type_system_.CastToBool(context, cond_value);
-    }
-    if (!cond_value) {
-        ErrorReportAndExit(location_, "Code generation failed");
-        return nullptr;
+        context.builder_.CreateCondBr(cond_value, loop_block, after_block);
+    } else {
+        context.builder_.CreateBr(loop_block);
     }
 
-    context.builder_.CreateCondBr(cond_value, loop_block, after_block);
     context.builder_.SetInsertPoint(loop_block);
 
     block_->CodeGen(context);
 
-    llvm::Value *increment_value{};
     if (increment_) {
-        increment_value = increment_->CodeGen(context);
-    }
-    if (!increment_value) {
-        ErrorReportAndExit(location_, "Code generation failed");
-        return nullptr;
+        increment_->CodeGen(context);
     }
 
     if (cond_) {
         cond_value = cond_->CodeGen(context);
         cond_value = context.type_system_.CastToBool(context, cond_value);
+        context.builder_.CreateCondBr(cond_value, loop_block, after_block);
+    } else {
+        context.builder_.CreateBr(loop_block);
     }
-
-    context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
     context.PopBlock();
 
@@ -318,6 +306,7 @@ Json::Value ReturnStatement::JsonGen() const {
     return root;
 }
 
+// 目前只支持 return 在末尾的情况
 llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
     if (expression_) {
         auto return_value = expression_->CodeGen(context);
@@ -350,6 +339,7 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
     auto parent_func{context.builder_.GetInsertBlock()->getParent()};
     auto addr{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
+    // 默认初始化为 0
     context.builder_.CreateStore(llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
 
     context.SetSymbolType(name_->name_, type_);
@@ -359,6 +349,7 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
         BinaryOpExpression assignment(name_, init_, TokenValue::kAssign);
         assignment.CodeGen(context);
     }
+
     return addr;
 }
 
@@ -380,14 +371,15 @@ Json::Value UnaryOpExpression::JsonGen() const {
 }
 
 // ++/--/~/!
-// TODO 支持~/!
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
     if (op_ == TokenValue::kInc || op_ == TokenValue::kDec) {
         return PostfixExpression{object_, op_}.CodeGen(context);
     } else if (op_ == TokenValue::kLogicNeg) {
+        // TODO 迷之错误
         auto value{context.type_system_.CastToBool(context, object_->CodeGen(context))};
         return context.builder_.CreateICmpNE(value,
-                                             llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_), 1));
+                                             llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_),
+                                                                    static_cast<uint64_t>(false)));
     } else if (op_ == TokenValue::kNeg) {
         return context.builder_.CreateNeg(object_->CodeGen(context));
     } else {
@@ -430,7 +422,6 @@ Json::Value BinaryOpExpression::JsonGen() const {
     return root;
 }
 
-// TODO 其他赋值运算符
 llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     if (op_ == TokenValue::kAssign) {
         auto lhs{dynamic_cast<Identifier *>(lhs_.get())};
@@ -440,7 +431,8 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
         }
         auto rhs_value{rhs_->CodeGen(context)};
         if (!rhs_value) {
-            ErrorReportAndExit(location_, "Code generation failed");
+            ErrorReportAndExit(location_, "The code to the right of "
+                                          "the assignment operator failed to generate");
             return nullptr;
         }
         auto var{context.GetSymbolValue(lhs->name_)};
@@ -456,6 +448,30 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     } else if (op_ == TokenValue::kSubAssign) {
         return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
                 (lhs_, rhs_, TokenValue::kSub), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kMulAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kMul), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kDivAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kDiv), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kModAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kMod), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kAndAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kAnd), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kOrAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kOr), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kXorAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kXor), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kShlAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kShl), TokenValue::kAssign}.CodeGen(context);
+    } else if (op_ == TokenValue::kShrAssign) {
+        return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
+                (lhs_, rhs_, TokenValue::kShr), TokenValue::kAssign}.CodeGen(context);
     }
 
     auto lhs{lhs_->CodeGen(context)};
@@ -466,15 +482,15 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
             || (rhs->getType()->getTypeID() == llvm::Type::DoubleTyID)) {
         is_double = true;
         if ((rhs->getType()->getTypeID() != llvm::Type::DoubleTyID)) {
-            rhs = context.builder_.CreateUIToFP(rhs, llvm::Type::getDoubleTy(context.the_context_), "ftmp");
+            rhs = context.builder_.CreateUIToFP(rhs, llvm::Type::getDoubleTy(context.the_context_));
         }
         if ((lhs->getType()->getTypeID() != llvm::Type::DoubleTyID)) {
-            lhs = context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_), "ftmp");
+            lhs = context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_));
         }
     }
 
     if (!lhs || !rhs) {
-        ErrorReportAndExit(location_, "Code generation failed");
+        ErrorReportAndExit(location_, "Binary expression Code generation failed");
         return nullptr;
     }
 
@@ -586,7 +602,7 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
         for (const auto &arg:*args_) {
             args_value.push_back(arg->CodeGen(context));
             if (!args_value.back()) {
-                ErrorReportAndExit(location_, "Code generation failed");
+                ErrorReportAndExit(location_, "Function arg code generation failed");
                 return nullptr;
             }
         }
@@ -643,18 +659,18 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     auto ret_type = context.type_system_.GetType(*return_type_);
 
     // false 说明该函数不是变参数函数,该函数在 the_module_ 的符号表中注册
-    auto func_type = llvm::FunctionType::get(ret_type, arg_types, false);
-    auto func = llvm::Function::Create(func_type,
-                                       llvm::Function::ExternalLinkage,
-                                       name_->name_,
-                                       context.the_module_.get());
+    auto func_type{llvm::FunctionType::get(ret_type, arg_types, false)};
+    auto func{llvm::Function::Create(func_type,
+                                     llvm::Function::ExternalLinkage,
+                                     name_->name_,
+                                     context.the_module_.get())};
 
     // 设置每个参数的名字,使IR更具有可读性,此步骤非必须
     std::int32_t count{};
     for (auto &arg:func->args()) {
         arg.setName((*args_)[count++]->name_->name_);
     }
-    // TODO 函数重定义问题
+
     if (body_) {
         // 创建了一个名为entry的基本块,并且插入到 func 中
         auto entry{llvm::BasicBlock::Create(context.the_context_, "entry", func)};
@@ -676,20 +692,21 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
         }
 
         body_->CodeGen(context);
-        // TODO 处理没有 return 语句的情况
+
         if (auto ret{context.GetCurrentReturnValue()};ret) {
             context.builder_.CreateRet(ret);
-
-            // 此函数对生成的代码执行各种一致性检查,以确定我们的编译器是否
-            // 所有的操作都做得正确
-            llvm::verifyFunction(*func);
-            // 优化该函数
-            if (context.GetOptimization()) {
-                context.the_FPM_->run(*func);
-            }
         } else {
             context.builder_.CreateRetVoid();
         }
+
+        // 此函数对生成的代码执行各种一致性检查,以确定我们的编译器是否
+        // 所有的操作都做得正确
+        llvm::verifyFunction(*func);
+        // 优化该函数
+        if (context.GetOptimization()) {
+            context.the_FPM_->run(*func);
+        }
+
         context.PopBlock();
     }
 
