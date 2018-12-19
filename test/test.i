@@ -16,7 +16,6 @@ int main() {
             } else {
                 putchar(' ');
             }
-
         }
         putchar('\n');
     }

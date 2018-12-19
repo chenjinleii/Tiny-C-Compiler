@@ -11,7 +11,7 @@
 namespace tcc {
 
 std::string TokenTypes::ToString(TokenTypes::Types Type) {
-    return QMetaEnum::fromType<TokenTypes::Types>().valueToKey(Type);
+    return QMetaEnum::fromType<TokenTypes::Types>().valueToKey(Type) + 1;
 }
 
 PrecedenceDictionary::PrecedenceDictionary() {

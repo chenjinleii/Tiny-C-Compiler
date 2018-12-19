@@ -21,8 +21,8 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &msg) 
 
 void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, TokenValue actually) {
     std::cerr << "Grammatical errors: At: " << location.ToString() << '\n';
-    std::cerr << "Expect " << TokenTypes::ToString(expect).substr(1) <<
-              " but actually " << TokenTypes::ToString(actually).substr(1) << '\n';
+    std::cerr << "Expect " << TokenTypes::ToString(expect) <<
+              " but actually " << TokenTypes::ToString(actually) << '\n';
     std::exit(EXIT_FAILURE);
 }
 
