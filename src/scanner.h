@@ -7,11 +7,11 @@
 
 #include "token.h"
 
-#include <string>
 #include <cstdint>
-#include <vector>
-#include <unordered_map>
 #include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace tcc {
 
@@ -19,17 +19,20 @@ class KeywordsDictionary {
  public:
   KeywordsDictionary();
   TokenValue Find(const std::string &name) const;
+
  private:
   std::unordered_map<std::string, TokenValue> keywords_;
 };
 
 class Scanner {
  public:
-  explicit Scanner(const std::string &processed_file, const std::string &input_file);
+  explicit Scanner(const std::string &processed_file,
+                   const std::string &input_file);
   std::vector<Token> Scan();
   static std::vector<Token> Test(const std::string &processed_file,
                                  const std::string &input_file,
                                  std::ostream &os = std::cout);
+
  private:
   Token GetNextToken();
 
@@ -71,6 +74,6 @@ class Scanner {
 
 bool IsOctDigit(char ch);
 
-}
+}  // namespace tcc
 
-#endif //TINY_C_COMPILER_SCANNER_H
+#endif  // TINY_C_COMPILER_SCANNER_H

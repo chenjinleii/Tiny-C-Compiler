@@ -8,23 +8,23 @@
 #include "ast.h"
 #include "type_system.h"
 
-#include <llvm/IR/Value.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/Module.h>
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Value.h>
 
-#include <memory>
-#include <unordered_map>
-#include <string>
-#include <vector>
 #include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace tcc {
 
 // 保存变量在内存中的位置
-using SymbolTable=std::unordered_map<std::string, llvm::AllocaInst *>;
+using SymbolTable = std::unordered_map<std::string, llvm::AllocaInst *>;
 
 struct CodeGenBlock {
   llvm::BasicBlock *block;
@@ -39,7 +39,8 @@ class CodeGenContext {
  public:
   explicit CodeGenContext(bool optimization);
   void InitializePassManager();
-  llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
+  llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *parent,
+                                           llvm::Type *type,
                                            const std::string &name);
 
   // 拥有许多核心LLVM数据结构,例如类型和常量值表
@@ -62,11 +63,12 @@ class CodeGenContext {
   std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
   void PushBlock(llvm::BasicBlock *block);
   void PopBlock();
+
  private:
   std::vector<std::unique_ptr<CodeGenBlock>> block_stack_;
   bool optimization_{false};
 };
 
-}
+}  // namespace tcc
 
-#endif //TINY_C_COMPILER_CODE_GEN_H
+#endif  // TINY_C_COMPILER_CODE_GEN_H

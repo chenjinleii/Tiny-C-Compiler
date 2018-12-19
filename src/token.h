@@ -9,14 +9,14 @@
 
 #include <QObject>
 
-#include <string>
 #include <cstdint>
+#include <string>
 #include <unordered_map>
 
 namespace tcc {
 
 class TokenTypes : public QObject {
- Q_OBJECT
+  Q_OBJECT
  public:
   enum Types {
     kCharConstant,
@@ -64,59 +64,59 @@ class TokenTypes : public QObject {
     kComplex,
     kImaginary,
 
-    kAssign,           // =
-    kAddAssign,        // +=
-    kSubAssign,        // -=
-    kMulAssign,        // *=
-    kDivAssign,        // /=
-    kModAssign,        // %=
-    kAndAssign,        // &=
-    kOrAssign,         // |=
-    kXorAssign,        // ^=
-    kShlAssign,        // <<=
-    kShrAssign,        // >>=
+    kAssign,     // =
+    kAddAssign,  // +=
+    kSubAssign,  // -=
+    kMulAssign,  // *=
+    kDivAssign,  // /=
+    kModAssign,  // %=
+    kAndAssign,  // &=
+    kOrAssign,   // |=
+    kXorAssign,  // ^=
+    kShlAssign,  // <<=
+    kShrAssign,  // >>=
 
-    kInc,              // ++
-    kDec,              // --
+    kInc,  // ++
+    kDec,  // --
 
-    kAdd,              // +
-    kSub,              // -
-    kMul,              // *
-    kDiv,              // /
-    kMod,              // %
-    kNeg,              // ~
-    kAnd,              // &
-    kOr,               // |
-    kXor,              // ^
-    kShl,              // <<
-    kShr,              // >>
+    kAdd,  // +
+    kSub,  // -
+    kMul,  // *
+    kDiv,  // /
+    kMod,  // %
+    kNeg,  // ~
+    kAnd,  // &
+    kOr,   // |
+    kXor,  // ^
+    kShl,  // <<
+    kShr,  // >>
 
-    kLogicNeg,         // !
-    kLogicAnd,         // &&
-    kLogicOr,          // ||
+    kLogicNeg,  // !
+    kLogicAnd,  // &&
+    kLogicOr,   // ||
 
-    kEqual,            // ==
-    kNotEqual,         // !=
-    kLess,             // <
-    kGreater,          // >
-    kLessOrEqual,      // <=
-    kGreaterOrEqual,   // >=
+    kEqual,           // ==
+    kNotEqual,        // !=
+    kLess,            // <
+    kGreater,         // >
+    kLessOrEqual,     // <=
+    kGreaterOrEqual,  // >=
 
-    kArrow,            // ->
-    kPeriod,           // .
+    kArrow,   // ->
+    kPeriod,  // .
 
-    kQuestionMark,     // ?
-    kComma,            // ,
+    kQuestionMark,  // ?
+    kComma,         // ,
 
-    kLeftParen,        // (
-    kRightParen,       // )
-    kLeftSquare,       // [
-    kRightSquare,      // ]
-    kLeftCurly,        // {
-    kRightCurly,       // }
-    kSemicolon,        // ;
-    KColon,            // :
-    kEllipsis,         // ...
+    kLeftParen,    // (
+    kRightParen,   // )
+    kLeftSquare,   // [
+    kRightSquare,  // ]
+    kLeftCurly,    // {
+    kRightCurly,   // }
+    kSemicolon,    // ;
+    KColon,        // :
+    kEllipsis,     // ...
 
     kNone,
     kEof
@@ -126,12 +126,13 @@ class TokenTypes : public QObject {
   static std::string ToString(Types Type);
 };
 
-using TokenValue=TokenTypes::Types;
+using TokenValue = TokenTypes::Types;
 
 class PrecedenceDictionary {
  public:
   PrecedenceDictionary();
   std::int32_t Find(TokenValue value) const;
+
  private:
   std::unordered_map<TokenValue, std::int32_t> precedence_;
 };
@@ -140,7 +141,8 @@ class Token {
  public:
   Token() = default;
   Token(const SourceLocation &location, TokenValue value);
-  Token(const SourceLocation &location, TokenValue value, const std::string &name);
+  Token(const SourceLocation &location, TokenValue value,
+        const std::string &name);
   Token(const SourceLocation &location, char char_value);
   Token(const SourceLocation &location, std::int32_t int32_value);
   Token(const SourceLocation &location, double double_value);
@@ -167,6 +169,7 @@ class Token {
   double GetDoubleValue() const;
   std::string GetStringValue() const;
   void AppendStringValue(const std::string &str);
+
  private:
   SourceLocation location_;
   TokenValue value_{TokenValue::kNone};
@@ -180,6 +183,6 @@ class Token {
   PrecedenceDictionary precedence_dictionary_;
 };
 
-}
+}  // namespace tcc
 
-#endif //TINY_C_COMPILER_TOKEN_H
+#endif  // TINY_C_COMPILER_TOKEN_H

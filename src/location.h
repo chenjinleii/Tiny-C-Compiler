@@ -5,8 +5,8 @@
 #ifndef TINY_C_COMPILER_SOURCE_LOCATION_H
 #define TINY_C_COMPILER_SOURCE_LOCATION_H
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace tcc {
 
@@ -19,6 +19,6 @@ class SourceLocation {
   std::int32_t column_{};
 };
 
-}
+}  // namespace tcc
 
-#endif //TINY_C_COMPILER_SOURCE_LOCATION_H
+#endif  // TINY_C_COMPILER_SOURCE_LOCATION_H

@@ -4,18 +4,18 @@
 
 #include "code_gen.h"
 
+#include <llvm/ADT/Optional.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
-#include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include <llvm/ADT/Optional.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/IR/LegacyPassManager.h>
 
-#include <string>
 #include <iostream>
+#include <string>
 #include <system_error>
 
 namespace tcc {
@@ -50,7 +50,8 @@ void ObjGen(CodeGenContext &context, const std::string &obj_file) {
 
   // 配置模块,指定目标机器和数据布局
   // 这不是必须的,但是这对优化有好处
-  auto the_target_machine{target->createTargetMachine(target_triple, cpu, features, opt, rm)};
+  auto the_target_machine{
+      target->createTargetMachine(target_triple, cpu, features, opt, rm)};
   context.the_module_->setDataLayout(the_target_machine->createDataLayout());
 
   // 定义要将文件写入的位置
@@ -75,4 +76,4 @@ void ObjGen(CodeGenContext &context, const std::string &obj_file) {
   dest.flush();
 }
 
-}
+}  // namespace tcc

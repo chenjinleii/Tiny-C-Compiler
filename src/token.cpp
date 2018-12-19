@@ -49,7 +49,7 @@ PrecedenceDictionary::PrecedenceDictionary() {
 }
 
 std::int32_t PrecedenceDictionary::Find(TokenValue value) const {
-  if (auto iter{precedence_.find(value)};iter != std::end(precedence_)) {
+  if (auto iter{precedence_.find(value)}; iter != std::end(precedence_)) {
     return iter->second;
   } else {
     return -1;
@@ -61,20 +61,29 @@ Token::Token(const SourceLocation &location, TokenValue value)
   precedence_ = precedence_dictionary_.Find(value);
 }
 
-Token::Token(const SourceLocation &location, TokenValue value, const std::string &name)
+Token::Token(const SourceLocation &location, TokenValue value,
+             const std::string &name)
     : location_{location}, value_{value}, name_{name} {}
 
 Token::Token(const SourceLocation &location, char char_value)
-    : location_{location}, value_{TokenTypes::kCharConstant}, char_value_{char_value} {}
+    : location_{location},
+      value_{TokenTypes::kCharConstant},
+      char_value_{char_value} {}
 
 Token::Token(const SourceLocation &location, std::int32_t int32_value)
-    : location_{location}, value_{TokenTypes::kIntConstant}, int32_value_{int32_value} {}
+    : location_{location},
+      value_{TokenTypes::kIntConstant},
+      int32_value_{int32_value} {}
 
 Token::Token(const SourceLocation &location, double double_value)
-    : location_{location}, value_{TokenTypes::kDoubleConstant}, double_value_{double_value} {}
+    : location_{location},
+      value_{TokenTypes::kDoubleConstant},
+      double_value_{double_value} {}
 
 Token::Token(const SourceLocation &location, const std::string &string_value)
-    : location_{location}, value_{TokenTypes::kStringLiteral}, string_value_{string_value} {}
+    : location_{location},
+      value_{TokenTypes::kStringLiteral},
+      string_value_{string_value} {}
 
 std::string Token::ToString() const {
   auto sp1_count{std::size(location_.ToString())};
@@ -93,7 +102,8 @@ std::string Token::ToString() const {
     sp2.assign(20, ' ');
   }
 
-  std::string str(location_.ToString() + sp1 + "type: " + TokenTypes::ToString(value_) + sp2);
+  std::string str(location_.ToString() + sp1 +
+                  "type: " + TokenTypes::ToString(value_) + sp2);
 
   if (IsChar()) {
     str += "value: " + std::to_string(GetCharValue());
@@ -110,71 +120,39 @@ std::string Token::ToString() const {
   return str;
 }
 
-bool Token::IsChar() const {
-  return value_ == TokenValue::kCharConstant;
-}
+bool Token::IsChar() const { return value_ == TokenValue::kCharConstant; }
 
-bool Token::IsInt32() const {
-  return value_ == TokenValue::kIntConstant;
-}
+bool Token::IsInt32() const { return value_ == TokenValue::kIntConstant; }
 
-bool Token::IsDouble() const {
-  return value_ == TokenValue::kDoubleConstant;
-}
+bool Token::IsDouble() const { return value_ == TokenValue::kDoubleConstant; }
 
-bool Token::IsString() const {
-  return value_ == TokenValue::kStringLiteral;
-}
+bool Token::IsString() const { return value_ == TokenValue::kStringLiteral; }
 
 bool Token::IsTypeSpecifier() const {
-  return value_ == TokenValue::kChar ||
-      value_ == TokenValue::kInt ||
-      value_ == TokenValue::kDouble ||
-      value_ == TokenValue::kVoid;
+  return value_ == TokenValue::kChar || value_ == TokenValue::kInt ||
+         value_ == TokenValue::kDouble || value_ == TokenValue::kVoid;
 }
 
-bool Token::IsIdentifier() const {
-  return value_ == TokenValue::kIdentifier;
-}
+bool Token::IsIdentifier() const { return value_ == TokenValue::kIdentifier; }
 
-bool Token::TokenValueIs(TokenValue value) const {
-  return value_ == value;
-}
+bool Token::TokenValueIs(TokenValue value) const { return value_ == value; }
 
-TokenValue Token::GetTokenValue() const {
-  return value_;
-}
+TokenValue Token::GetTokenValue() const { return value_; }
 
-std::string Token::GetTokenName() const {
-  return name_;
-}
+std::string Token::GetTokenName() const { return name_; }
 
-std::int32_t Token::GetTokenPrecedence() const {
-  return precedence_;
-}
+std::int32_t Token::GetTokenPrecedence() const { return precedence_; }
 
-char Token::GetCharValue() const {
-  return char_value_;
-}
+char Token::GetCharValue() const { return char_value_; }
 
-std::int32_t Token::GetInt32Value() const {
-  return int32_value_;
-}
+std::int32_t Token::GetInt32Value() const { return int32_value_; }
 
-double Token::GetDoubleValue() const {
-  return double_value_;
-}
+double Token::GetDoubleValue() const { return double_value_; }
 
-std::string Token::GetStringValue() const {
-  return string_value_;
-}
+std::string Token::GetStringValue() const { return string_value_; }
 
-SourceLocation Token::GetTokenLocation() const {
-  return location_;
-}
+SourceLocation Token::GetTokenLocation() const { return location_; }
 
-void Token::AppendStringValue(const std::string &str) {
-  string_value_ += str;
-}
+void Token::AppendStringValue(const std::string &str) { string_value_ += str; }
 
-}
+}  // namespace tcc

@@ -5,10 +5,10 @@
 #include "scanner.h"
 #include "error.h"
 
-#include <fstream>
-#include <cctype>
-#include <sstream>
 #include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <sstream>
 
 namespace tcc {
 
@@ -53,17 +53,19 @@ KeywordsDictionary::KeywordsDictionary() {
 }
 
 TokenValue KeywordsDictionary::Find(const std::string &name) const {
-  if (auto iter{keywords_.find(name)};iter != std::end(keywords_)) {
+  if (auto iter{keywords_.find(name)}; iter != std::end(keywords_)) {
     return iter->second;
   } else {
     return TokenTypes::kIdentifier;
   }
 }
 
-Scanner::Scanner(const std::string &processed_file, const std::string &input_file) {
+Scanner::Scanner(const std::string &processed_file,
+                 const std::string &input_file) {
   std::ifstream ifs{processed_file};
   if (!ifs) {
-    ErrorReportAndExit("When trying to open file " + input_file + ", occurred error.");
+    ErrorReportAndExit("When trying to open file " + input_file +
+                       ", occurred error.");
   }
 
   std::ostringstream ost;
@@ -92,12 +94,12 @@ std::vector<Token> Scanner::Scan() {
   std::vector<Token> token_sequence;
 
   while (HasNextChar()) {
-    if (auto token{GetNextToken()};!token.TokenValueIs(TokenTypes::kNone)) {
+    if (auto token{GetNextToken()}; !token.TokenValueIs(TokenTypes::kNone)) {
       if (token.TokenValueIs(TokenTypes::kEof)) {
         break;
       }
-      if (token.IsString() && std::size(token_sequence) > 0
-          && token_sequence.back().IsString()) {
+      if (token.IsString() && std::size(token_sequence) > 0 &&
+          token_sequence.back().IsString()) {
         token_sequence.back().AppendStringValue(token.GetStringValue());
       } else {
         token_sequence.push_back(token);
@@ -110,10 +112,11 @@ std::vector<Token> Scanner::Scan() {
 }
 
 std::vector<Token> Scanner::Test(const std::string &processed_file,
-                                 const std::string &input_file, std::ostream &os) {
+                                 const std::string &input_file,
+                                 std::ostream &os) {
   Scanner scanner{processed_file, input_file};
   auto token_sequence{scanner.Scan()};
-  for (const auto &token:token_sequence) {
+  for (const auto &token : token_sequence) {
     os << token.ToString() << '\n';
   }
   std::cout << "Token Successfully Written\n";
@@ -130,17 +133,28 @@ Token Scanner::GetNextToken() {
       SkipComment();
       return GetNextToken();
     }
-    case ':':return MakeToken(TokenValue::KColon);
-    case '(':return MakeToken(TokenValue::kLeftParen);
-    case ')':return MakeToken(TokenValue::kRightParen);
-    case '[':return MakeToken(TokenValue::kLeftSquare);
-    case ']':return MakeToken(TokenValue::kRightSquare);
-    case '{':return MakeToken(TokenValue::kLeftCurly);
-    case '}':return MakeToken(TokenValue::kRightCurly);
-    case '?':return MakeToken(TokenValue::kQuestionMark);
-    case ',':return MakeToken(TokenValue::kComma);
-    case '~':return MakeToken(TokenValue::kNeg);
-    case ';':return MakeToken(TokenValue::kSemicolon);
+    case ':':
+      return MakeToken(TokenValue::KColon);
+    case '(':
+      return MakeToken(TokenValue::kLeftParen);
+    case ')':
+      return MakeToken(TokenValue::kRightParen);
+    case '[':
+      return MakeToken(TokenValue::kLeftSquare);
+    case ']':
+      return MakeToken(TokenValue::kRightSquare);
+    case '{':
+      return MakeToken(TokenValue::kLeftCurly);
+    case '}':
+      return MakeToken(TokenValue::kRightCurly);
+    case '?':
+      return MakeToken(TokenValue::kQuestionMark);
+    case ',':
+      return MakeToken(TokenValue::kComma);
+    case '~':
+      return MakeToken(TokenValue::kNeg);
+    case ';':
+      return MakeToken(TokenValue::kSemicolon);
     case '-': {
       if (Try('>')) {
         return MakeToken(TokenValue::kArrow);
@@ -251,25 +265,29 @@ Token Scanner::GetNextToken() {
       if (std::isdigit(PeekNextChar())) {
         buffer_.push_back(ch);
         return HandleNumber();
-      } else if (auto[next, next_two]{PeekNextTwoChar()};next == '.' && next_two == '.') {
+      } else if (auto [next, next_two]{PeekNextTwoChar()};
+                 next == '.' && next_two == '.') {
         return MakeToken(TokenValue::kEllipsis);
       } else {
         return MakeToken(TokenValue::kPeriod);
       }
     }
-    case '0'...'9': {
+    case '0' ... '9': {
       buffer_.push_back(ch);
       return HandleNumber();
     }
-    case '\'':return HandleChar();
-    case '\"':return HandleString();
-    case 'a'...'z':
-    case 'A'...'Z':
+    case '\'':
+      return HandleChar();
+    case '\"':
+      return HandleString();
+    case 'a' ... 'z':
+    case 'A' ... 'Z':
     case '_': {
       buffer_.push_back(ch);
       return HandleIdentifierOrKeyword();
     }
-    case EOF:return MakeToken(TokenValue::kEof);
+    case EOF:
+      return MakeToken(TokenValue::kEof);
     default: {
       ErrorReportAndExit(location_, "Unknown character.");
       return MakeToken(TokenValue::kNone);
@@ -339,7 +357,6 @@ Token Scanner::HandleNumber() {
   } else {
     return MakeToken(std::stoi(buffer_));
   }
-
 }
 
 std::int32_t Scanner::HandleOctNumber() {
@@ -372,7 +389,7 @@ Token Scanner::HandleChar() {
     return MakeToken(TokenTypes::kEof);
   }
 
-  if (auto next{GetNextChar()};next != '\'') {
+  if (auto next{GetNextChar()}; next != '\'') {
     ErrorReportAndExit(location_, "miss '");
     return MakeToken(TokenTypes::kNone);
   }
@@ -406,17 +423,27 @@ char Scanner::HandleEscape() {
     case '\\':
     case '\'':
     case '\"':
-    case '\?':return ch;
-    case 'a':return '\a';
-    case 'b':return '\b';
-    case 'f':return '\f';
-    case 'n':return '\n';
-    case 'r':return '\r';
-    case 't':return '\t';
-    case 'v':return '\v';
+    case '\?':
+      return ch;
+    case 'a':
+      return '\a';
+    case 'b':
+      return '\b';
+    case 'f':
+      return '\f';
+    case 'n':
+      return '\n';
+    case 'r':
+      return '\r';
+    case 't':
+      return '\t';
+    case 'v':
+      return '\v';
     case 'X':
-    case 'x':return HandleHexEscape();
-    case '0' ... '7':return HandleOctEscape(ch);
+    case 'x':
+      return HandleHexEscape();
+    case '0' ... '7':
+      return HandleOctEscape(ch);
     default: {
       ErrorReportAndExit(location_, "unrecognized escape character '{}'", ch);
       return EOF;
@@ -429,7 +456,7 @@ char Scanner::HandleOctEscape(char ch) {
   buf.push_back(ch);
 
   for (std::int32_t i{0}; i < 2; ++i) {
-    if (char next{GetNextChar()};IsOctDigit(next)) {
+    if (char next{GetNextChar()}; IsOctDigit(next)) {
       buf.push_back(next);
     } else {
       PutBack();
@@ -443,7 +470,7 @@ char Scanner::HandleHexEscape() {
   std::string buf;
 
   for (std::int32_t i{0}; i < 2; ++i) {
-    if (char next{GetNextChar()};std::isxdigit(next)) {
+    if (char next{GetNextChar()}; std::isxdigit(next)) {
       buf.push_back(next);
     } else {
       PutBack();
@@ -520,9 +547,7 @@ void Scanner::PutBack() {
   }
 }
 
-bool Scanner::HasNextChar() const {
-  return index_ < std::size(input_);
-}
+bool Scanner::HasNextChar() const { return index_ < std::size(input_); }
 
 bool Scanner::Try(char ch) {
   if (PeekNextChar() == ch) {
@@ -533,13 +558,9 @@ bool Scanner::Try(char ch) {
   }
 }
 
-bool Scanner::Test(char ch) const {
-  return PeekNextChar() == ch;
-}
+bool Scanner::Test(char ch) const { return PeekNextChar() == ch; }
 
-Token Scanner::MakeToken(TokenValue value) {
-  return Token{location_, value};
-}
+Token Scanner::MakeToken(TokenValue value) { return Token{location_, value}; }
 
 Token Scanner::MakeToken(TokenValue value, const std::string &name) {
   return Token{location_, value, name};
@@ -561,8 +582,6 @@ Token Scanner::MakeToken(const std::string &string_value) {
   return Token{location_, string_value};
 }
 
-bool IsOctDigit(char ch) {
-  return ch >= '0' && ch < '8';
-}
+bool IsOctDigit(char ch) { return ch >= '0' && ch < '8'; }
 
-}
+}  // namespace tcc

@@ -10,22 +10,23 @@
 #include "ast.h"
 #include "token.h"
 
-#include <memory>
-#include <vector>
-#include <string>
 #include <cstdint>
-#include <utility>
 #include <iostream>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace tcc {
 
 class Parser {
  public:
-  explicit Parser(std::vector<Token> token_sequence) :
-      token_sequence_{std::move(token_sequence)} {}
+  explicit Parser(std::vector<Token> token_sequence)
+      : token_sequence_{std::move(token_sequence)} {}
   std::shared_ptr<CompoundStatement> Parse();
-  static std::shared_ptr<CompoundStatement> Test(std::vector<Token> token_sequence,
-                                                 std::ostream &os = std::cout);
+  static std::shared_ptr<CompoundStatement> Test(
+      std::vector<Token> token_sequence, std::ostream &os = std::cout);
+
  private:
   Token GetNextToken();
   Token PeekNextToken() const;
@@ -67,7 +68,7 @@ class Parser {
   std::vector<Token> token_sequence_;
   std::vector<Token>::size_type index_{};
 
-  template<typename T, typename... Args>
+  template <typename T, typename... Args>
   std::shared_ptr<T> MakeASTNode(Args... args) {
     auto t{std::make_shared<T>(args...)};
     t->location_ = PeekNextToken().GetTokenLocation();
@@ -75,6 +76,6 @@ class Parser {
   }
 };
 
-}
+}  // namespace tcc
 
-#endif //TINY_C_COMPILER_PARSER_H
+#endif  // TINY_C_COMPILER_PARSER_H

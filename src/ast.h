@@ -30,7 +30,7 @@ using StatementList = std::vector<std::shared_ptr<Statement>>;
 using DeclarationList = std::vector<std::shared_ptr<Declaration>>;
 
 class ASTNodeTypes : public QObject {
- Q_OBJECT
+  Q_OBJECT
  public:
   enum Type {
     kASTNode,

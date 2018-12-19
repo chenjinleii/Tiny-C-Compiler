@@ -2,9 +2,9 @@
 // Created by kaiser on 18-12-8.
 //
 
-#include "error.h"
 #include "ast.h"
 #include "code_gen.h"
+#include "error.h"
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Verifier.h>
@@ -19,9 +19,7 @@ std::string ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
   return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type) + 1;
 }
 
-llvm::Value *ASTNode::CodeGen(CodeGenContext &) {
-  return nullptr;
-}
+llvm::Value *ASTNode::CodeGen(CodeGenContext &) { return nullptr; }
 
 Json::Value Type::JsonGen() const {
   Json::Value root;
@@ -31,8 +29,8 @@ Json::Value Type::JsonGen() const {
 
 Json::Value PrimitiveType::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind())
-      + ' ' + TokenTypes::ToString(type_);
+  root["name"] =
+      ASTNodeTypes::ToString(Kind()) + ' ' + TokenTypes::ToString(type_);
   return root;
 }
 
@@ -111,7 +109,8 @@ Json::Value IfStatement::JsonGen() const {
 
 llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
   if (!condition_) {
-    ErrorReportAndExit(location_, "The condition of the if statement cannot be empty");
+    ErrorReportAndExit(location_,
+                       "The condition of the if statement cannot be empty");
   }
 
   auto condition_value{condition_->CodeGen(context)};
@@ -122,7 +121,8 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
   condition_value = context.type_system_.CastToBool(context, condition_value);
 
   auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-  auto then_block = llvm::BasicBlock::Create(context.the_context_, "if_then", parent_func);
+  auto then_block =
+      llvm::BasicBlock::Create(context.the_context_, "if_then", parent_func);
   auto else_block = llvm::BasicBlock::Create(context.the_context_, "if_else");
   auto after_block = llvm::BasicBlock::Create(context.the_context_, "if_after");
 
@@ -171,7 +171,8 @@ Json::Value WhileStatement::JsonGen() const {
 
 llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
   if (!cond_) {
-    ErrorReportAndExit(location_, "The condition of the while statement cannot be empty");
+    ErrorReportAndExit(location_,
+                       "The condition of the while statement cannot be empty");
   }
 
   llvm::Value *cond_value{cond_->CodeGen(context)};
@@ -182,8 +183,10 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
   cond_value = context.type_system_.CastToBool(context, cond_value);
 
   auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-  auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop", parent_func)};
-  auto after_block{llvm::BasicBlock::Create(context.the_context_, "while_after")};
+  auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop",
+                                           parent_func)};
+  auto after_block{
+      llvm::BasicBlock::Create(context.the_context_, "while_after")};
 
   context.builder_.CreateCondBr(cond_value, loop_block, after_block);
   context.builder_.SetInsertPoint(loop_block);
@@ -251,7 +254,8 @@ Json::Value ForStatement::JsonGen() const {
 
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
   auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-  auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
+  auto loop_block{
+      llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
   auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
 
   context.PushBlock(loop_block);
@@ -340,7 +344,8 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
   auto addr{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
   // 默认初始化为 0
-  context.builder_.CreateStore(llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
+  context.builder_.CreateStore(
+      llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
 
   context.SetSymbolType(name_->name_, type_);
   context.SetSymbolValue(name_->name_, addr);
@@ -361,8 +366,8 @@ Json::Value Expression::JsonGen() const {
 
 Json::Value UnaryOpExpression::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " "
-      + TokenTypes::ToString(op_);
+  root["name"] =
+      ASTNodeTypes::ToString(Kind()) + " " + TokenTypes::ToString(op_);
 
   assert(object_ != nullptr);
   root["children"].append(object_->JsonGen());
@@ -376,10 +381,12 @@ llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
     return PostfixExpression{object_, op_}.CodeGen(context);
   } else if (op_ == TokenValue::kLogicNeg) {
     // TODO 迷之错误
-    auto value{context.type_system_.CastToBool(context, object_->CodeGen(context))};
-    return context.builder_.CreateICmpNE(value,
-                                         llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_),
-                                                                static_cast<uint64_t>(false)));
+    auto value{
+        context.type_system_.CastToBool(context, object_->CodeGen(context))};
+    return context.builder_.CreateICmpNE(
+        value,
+        llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_),
+                               static_cast<uint64_t>(false)));
   } else if (op_ == TokenValue::kNeg) {
     return context.builder_.CreateNeg(object_->CodeGen(context));
   } else {
@@ -390,8 +397,8 @@ llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
 
 Json::Value PostfixExpression::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " "
-      + TokenTypes::ToString(op_);
+  root["name"] =
+      ASTNodeTypes::ToString(Kind()) + " " + TokenTypes::ToString(op_);
 
   assert(object_ != nullptr);
   root["children"].append(object_->JsonGen());
@@ -401,18 +408,19 @@ Json::Value PostfixExpression::JsonGen() const {
 
 // ++/--
 llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
-  BinaryOpExpression postfix{object_, std::make_shared<BinaryOpExpression>
-      (object_,
-       std::make_shared<Int32Constant>(1),
-       op_ == TokenValue::kInc ? TokenValue::kAdd : TokenValue::kSub),
-                             TokenValue::kAssign};
+  BinaryOpExpression postfix{
+      object_,
+      std::make_shared<BinaryOpExpression>(
+          object_, std::make_shared<Int32Constant>(1),
+          op_ == TokenValue::kInc ? TokenValue::kAdd : TokenValue::kSub),
+      TokenValue::kAssign};
   return postfix.CodeGen(context);
 }
 
 Json::Value BinaryOpExpression::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " "
-      + TokenTypes::ToString(op_);
+  root["name"] =
+      ASTNodeTypes::ToString(Kind()) + " " + TokenTypes::ToString(op_);
 
   assert(lhs_ != nullptr);
   root["children"].append(lhs_->JsonGen());
@@ -431,8 +439,9 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     }
     auto rhs_value{rhs_->CodeGen(context)};
     if (!rhs_value) {
-      ErrorReportAndExit(location_, "The code to the right of "
-                                    "the assignment operator failed to generate");
+      ErrorReportAndExit(location_,
+                         "The code to the right of "
+                         "the assignment operator failed to generate");
       return nullptr;
     }
     auto var{context.GetSymbolValue(lhs->name_)};
@@ -443,49 +452,80 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     context.builder_.CreateStore(rhs_value, var);
     return rhs_value;
   } else if (op_ == TokenValue::kAddAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kAdd), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kAdd),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kSubAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kSub), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kSub),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kMulAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kMul), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kMul),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kDivAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kDiv), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kDiv),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kModAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kMod), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kMod),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kAndAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kAnd), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kAnd),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kOrAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kOr), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kOr),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kXorAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kXor), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kXor),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kShlAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kShl), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kShl),
+        TokenValue::kAssign}
+        .CodeGen(context);
   } else if (op_ == TokenValue::kShrAssign) {
-    return BinaryOpExpression{lhs_, std::make_shared<BinaryOpExpression>
-        (lhs_, rhs_, TokenValue::kShr), TokenValue::kAssign}.CodeGen(context);
+    return BinaryOpExpression{
+        lhs_,
+        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kShr),
+        TokenValue::kAssign}
+        .CodeGen(context);
   }
 
   auto lhs{lhs_->CodeGen(context)};
   auto rhs{rhs_->CodeGen(context)};
   bool is_double{false};
 
-  if ((lhs->getType()->getTypeID() == llvm::Type::DoubleTyID)
-      || (rhs->getType()->getTypeID() == llvm::Type::DoubleTyID)) {
+  if ((lhs->getType()->getTypeID() == llvm::Type::DoubleTyID) ||
+      (rhs->getType()->getTypeID() == llvm::Type::DoubleTyID)) {
     is_double = true;
     if ((rhs->getType()->getTypeID() != llvm::Type::DoubleTyID)) {
-      rhs = context.builder_.CreateUIToFP(rhs, llvm::Type::getDoubleTy(context.the_context_));
+      rhs = context.builder_.CreateUIToFP(
+          rhs, llvm::Type::getDoubleTy(context.the_context_));
     }
     if ((lhs->getType()->getTypeID() != llvm::Type::DoubleTyID)) {
-      lhs = context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_));
+      lhs = context.builder_.CreateUIToFP(
+          lhs, llvm::Type::getDoubleTy(context.the_context_));
     }
   }
 
@@ -497,54 +537,67 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
   // LLVM 指令类型要求严格,两运算对象必须具有相同的类型
   switch (op_) {
     case TokenValue::kAdd:
-      return is_double ? context.builder_.CreateFAdd(lhs, rhs) :
-             context.builder_.CreateAdd(lhs, rhs);
+      return is_double ? context.builder_.CreateFAdd(lhs, rhs)
+                       : context.builder_.CreateAdd(lhs, rhs);
     case TokenValue::kSub:
-      return is_double ? context.builder_.CreateFSub(lhs, rhs) :
-             context.builder_.CreateSub(lhs, rhs);
+      return is_double ? context.builder_.CreateFSub(lhs, rhs)
+                       : context.builder_.CreateSub(lhs, rhs);
     case TokenValue::kMul:
-      return is_double ? context.builder_.CreateFMul(lhs, rhs) :
-             context.builder_.CreateMul(lhs, rhs);
+      return is_double ? context.builder_.CreateFMul(lhs, rhs)
+                       : context.builder_.CreateMul(lhs, rhs);
     case TokenValue::kDiv:
-      return is_double ? context.builder_.CreateFDiv(lhs, rhs) :
-             context.builder_.CreateSDiv(lhs, rhs);
+      return is_double ? context.builder_.CreateFDiv(lhs, rhs)
+                       : context.builder_.CreateSDiv(lhs, rhs);
     case TokenValue::kAnd:
-      return is_double ? ErrorReportAndExit(location_, "Double type has no AND operation"), nullptr :
-             context.builder_.CreateAnd(lhs, rhs);
+      return is_double ? ErrorReportAndExit(location_,
+                                            "Double type has no AND operation"),
+             nullptr : context.builder_.CreateAnd(lhs, rhs);
     case TokenValue::kOr:
-      return is_double ? ErrorReportAndExit(location_, "Double type has no OR operation"), nullptr :
-             context.builder_.CreateOr(lhs, rhs);
+      return is_double
+             ? ErrorReportAndExit(location_, "Double type has no OR operation"),
+             nullptr : context.builder_.CreateOr(lhs, rhs);
     case TokenValue::kXor:
-      return is_double ? ErrorReportAndExit(location_, "Double type has no XOR operation"), nullptr :
-             context.builder_.CreateXor(lhs, rhs);
+      return is_double ? ErrorReportAndExit(location_,
+                                            "Double type has no XOR operation"),
+             nullptr : context.builder_.CreateXor(lhs, rhs);
     case TokenValue::kShl:
-      return is_double ? ErrorReportAndExit(location_, "Double type has no SHL operation"), nullptr :
-             context.builder_.CreateShl(lhs, rhs);
+      return is_double ? ErrorReportAndExit(location_,
+                                            "Double type has no SHL operation"),
+             nullptr : context.builder_.CreateShl(lhs, rhs);
     case TokenValue::kShr:
-      return is_double ? ErrorReportAndExit(location_, "Double type has no SHR operation"), nullptr :
-             context.builder_.CreateAShr(lhs, rhs);
+      return is_double ? ErrorReportAndExit(location_,
+                                            "Double type has no SHR operation"),
+             nullptr : context.builder_.CreateAShr(lhs, rhs);
     case TokenValue::kLess:
-      return is_double ? (lhs = context.builder_.CreateFCmpULT(lhs, rhs),
-          context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_))) :
-             context.builder_.CreateICmpULT(lhs, rhs);
+      return is_double
+                 ? (lhs = context.builder_.CreateFCmpULT(lhs, rhs),
+                    context.builder_.CreateUIToFP(
+                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
+                 : context.builder_.CreateICmpULT(lhs, rhs);
     case TokenValue::kLessOrEqual:
-      return is_double ? (lhs = context.builder_.CreateFCmpOLE(lhs, rhs),
-          context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_))) :
-             context.builder_.CreateICmpSLE(lhs, rhs);
+      return is_double
+                 ? (lhs = context.builder_.CreateFCmpOLE(lhs, rhs),
+                    context.builder_.CreateUIToFP(
+                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
+                 : context.builder_.CreateICmpSLE(lhs, rhs);
     case TokenValue::kGreaterOrEqual:
-      return is_double ? (lhs = context.builder_.CreateFCmpOGE(lhs, rhs),
-          context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_))) :
-             context.builder_.CreateICmpSGE(lhs, rhs);
+      return is_double
+                 ? (lhs = context.builder_.CreateFCmpOGE(lhs, rhs),
+                    context.builder_.CreateUIToFP(
+                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
+                 : context.builder_.CreateICmpSGE(lhs, rhs);
     case TokenValue::kGreater:
-      return is_double ? (lhs = context.builder_.CreateFCmpOGT(lhs, rhs),
-          context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_))) :
-             context.builder_.CreateICmpSGT(lhs, rhs);
+      return is_double
+                 ? (lhs = context.builder_.CreateFCmpOGT(lhs, rhs),
+                    context.builder_.CreateUIToFP(
+                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
+                 : context.builder_.CreateICmpSGT(lhs, rhs);
     case TokenValue::kEqual:
-      return is_double ? context.builder_.CreateFCmpOEQ(lhs, rhs) :
-             context.builder_.CreateICmpEQ(lhs, rhs);
+      return is_double ? context.builder_.CreateFCmpOEQ(lhs, rhs)
+                       : context.builder_.CreateICmpEQ(lhs, rhs);
     case TokenValue::kNotEqual:
-      return is_double ? context.builder_.CreateFCmpONE(lhs, rhs) :
-             context.builder_.CreateICmpNE(lhs, rhs);
+      return is_double ? context.builder_.CreateFCmpONE(lhs, rhs)
+                       : context.builder_.CreateICmpNE(lhs, rhs);
     default: {
       ErrorReportAndExit(location_, "Unknown binary operator");
       return nullptr;
@@ -599,7 +652,7 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
       return nullptr;
     }
 
-    for (const auto &arg:*args_) {
+    for (const auto &arg : *args_) {
       args_value.push_back(arg->CodeGen(context));
       if (!args_value.back()) {
         ErrorReportAndExit(location_, "Function arg code generation failed");
@@ -652,7 +705,7 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
   std::vector<llvm::Type *> arg_types;
 
   if (args_) {
-    for (const auto &arg: *args_) {
+    for (const auto &arg : *args_) {
       arg_types.push_back(context.type_system_.GetType(*arg->type_));
     }
   }
@@ -660,14 +713,12 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
 
   // false 说明该函数不是变参数函数,该函数在 the_module_ 的符号表中注册
   auto func_type{llvm::FunctionType::get(ret_type, arg_types, false)};
-  auto func{llvm::Function::Create(func_type,
-                                   llvm::Function::ExternalLinkage,
-                                   name_->name_,
-                                   context.the_module_.get())};
+  auto func{llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
+                                   name_->name_, context.the_module_.get())};
 
   // 设置每个参数的名字,使IR更具有可读性,此步骤非必须
   std::int32_t count{};
-  for (auto &arg:func->args()) {
+  for (auto &arg : func->args()) {
     arg.setName((*args_)[count++]->name_->name_);
   }
 
@@ -681,19 +732,21 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
 
     if (args_) {
       auto origin_arg{std::begin(*args_)};
-      for (auto &arg: func->args()) {
+      for (auto &arg : func->args()) {
         arg.setName((*origin_arg)->name_->name_);
-        auto addr{context.CreateEntryBlockAlloca(func, arg.getType(), arg.getName())};
+        auto addr{
+            context.CreateEntryBlockAlloca(func, arg.getType(), arg.getName())};
         context.builder_.CreateStore(&arg, addr);
         context.SetSymbolValue((*origin_arg)->name_->name_, addr);
-        context.SetSymbolType((*origin_arg)->name_->name_, (*origin_arg)->type_);
+        context.SetSymbolType((*origin_arg)->name_->name_,
+                              (*origin_arg)->type_);
         ++origin_arg;
       }
     }
 
     body_->CodeGen(context);
 
-    if (auto ret{context.GetCurrentReturnValue()};ret) {
+    if (auto ret{context.GetCurrentReturnValue()}; ret) {
       context.builder_.CreateRet(ret);
     } else {
       context.builder_.CreateRetVoid();
@@ -729,13 +782,13 @@ Json::Value CharConstant::JsonGen() const {
 }
 
 llvm::Value *CharConstant::CodeGen(CodeGenContext &context) {
-  return llvm::ConstantInt::get(context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
+  return llvm::ConstantInt::get(
+      context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
 }
 
 Json::Value Int32Constant::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind())
-      + " " + std::to_string(value_);
+  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + std::to_string(value_);
 
   return root;
 }
@@ -743,13 +796,14 @@ Json::Value Int32Constant::JsonGen() const {
 // 整形常量用 ConstantInt 类表示,用APInt表示整型数值
 // 在LLVM IR中,常量都是唯一并且共享的
 llvm::Value *Int32Constant::CodeGen(CodeGenContext &context) {
-  return llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, static_cast<std::uint64_t>(value_)));
+  return llvm::ConstantInt::get(
+      context.the_context_,
+      llvm::APInt(32, static_cast<std::uint64_t>(value_)));
 }
 
 Json::Value DoubleConstant::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind())
-      + " " + std::to_string(value_);
+  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + std::to_string(value_);
   return root;
 }
 
@@ -761,8 +815,7 @@ llvm::Value *DoubleConstant::CodeGen(CodeGenContext &context) {
 
 Json::Value StringLiteral::JsonGen() const {
   Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind())
-      + " " + value_;
+  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + value_;
   return root;
 }
 
@@ -770,4 +823,4 @@ llvm::Value *StringLiteral::CodeGen(CodeGenContext &context) {
   return context.builder_.CreateGlobalString(value_);
 }
 
-}
+}  // namespace tcc

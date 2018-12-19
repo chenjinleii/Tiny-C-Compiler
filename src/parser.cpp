@@ -2,9 +2,9 @@
 // Created by kaiser on 18-12-8.
 //
 
-#include "location.h"
-#include "error.h"
 #include "parser.h"
+#include "error.h"
+#include "location.h"
 
 #include <cstdlib>
 
@@ -24,8 +24,8 @@ std::shared_ptr<CompoundStatement> Parser::Parse() {
   return root;
 }
 
-std::shared_ptr<CompoundStatement> Parser::Test(std::vector<Token> token_sequence,
-                                                std::ostream &os) {
+std::shared_ptr<CompoundStatement> Parser::Test(
+    std::vector<Token> token_sequence, std::ostream &os) {
   auto ast_root{Parser{std::move(token_sequence)}.Parse()};
   auto json_root{ast_root->JsonGen()};
 
@@ -69,7 +69,8 @@ bool Parser::Test(TokenValue value) {
 
 void Parser::Expect(TokenValue value) {
   if (!PeekNextToken().TokenValueIs(value)) {
-    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), value, PeekNextToken().GetTokenValue());
+    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), value,
+                       PeekNextToken().GetTokenValue());
   } else {
     GetNextToken();
   }
@@ -153,13 +154,15 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
 
   auto return_type{ParseTypeSpecifier()};
   if (!return_type) {
-    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "expect a type specifier");
+    ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                       "expect a type specifier");
   }
   function->return_type_ = return_type;
 
   auto function_name{ParseIdentifier()};
   if (!function_name) {
-    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "expect a identifier");
+    ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                       "expect a identifier");
   }
   function->name_ = function_name;
 
@@ -337,8 +340,8 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
   } else if (Try(TokenValue::kLeftParen)) {
     return ParseParenExpression();
   } else if (Test(TokenValue::kAdd) || Test(TokenValue::kSub) ||
-      Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
-      Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
+             Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
+             Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
     return ParseUnaryOpExpression();
   } else if (Try(TokenValue::kSizeof)) {
     return ParseSizeof();
@@ -351,7 +354,8 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
   auto op{GetNextToken()};
 
   if (PeekNextToken().IsIdentifier()) {
-    return MakeASTNode<UnaryOpExpression>(ParseIdentifierExpression(), op.GetTokenValue());
+    return MakeASTNode<UnaryOpExpression>(ParseIdentifierExpression(),
+                                          op.GetTokenValue());
   } else if (PeekNextToken().IsChar()) {
     if (op.TokenValueIs(TokenValue::kAdd)) {
       return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ + 1);
@@ -384,7 +388,8 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
     } else if (op.TokenValueIs(TokenValue::kSub)) {
       return MakeASTNode<DoubleConstant>(-ParseDoubleConstant()->value_);
     } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
-      return MakeASTNode<Int32Constant>(static_cast<bool> (ParseDoubleConstant()->value_));
+      return MakeASTNode<Int32Constant>(
+          static_cast<bool>(ParseDoubleConstant()->value_));
     } else {
       ErrorReportAndExit("Cannot apply inc, dec to constants");
       return nullptr;
@@ -453,17 +458,19 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
     Expect(TokenValue::kRightParen);
     return function_call;
   } else if (Try(TokenValue::kInc)) {
-    return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kInc);
+    return MakeASTNode<PostfixExpression>(std::move(identifier),
+                                          TokenValue::kInc);
   } else if (Try(TokenValue::kDec)) {
-    return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kDec);
+    return MakeASTNode<PostfixExpression>(std::move(identifier),
+                                          TokenValue::kDec);
   } else {
     return identifier;
   }
 }
 
 // precedence 表示该函数允许吃的最小运算符优先级
-std::shared_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
-                                                  std::shared_ptr<Expression> lhs) {
+std::shared_ptr<Expression> Parser::ParseBinOpRHS(
+    std::int32_t precedence, std::shared_ptr<Expression> lhs) {
   while (true) {
     std::int32_t curr_precedence = PeekNextToken().GetTokenPrecedence();
     if (curr_precedence < precedence) {
@@ -483,8 +490,8 @@ std::shared_ptr<Expression> Parser::ParseBinOpRHS(std::int32_t precedence,
       }
     }
 
-    lhs = std::make_shared<BinaryOpExpression>(std::move(lhs),
-                                               std::move(rhs), op);
+    lhs = std::make_shared<BinaryOpExpression>(std::move(lhs), std::move(rhs),
+                                               op);
   }
 }
 
@@ -508,4 +515,4 @@ std::shared_ptr<StringLiteral> Parser::ParseStringLiteral() {
   return result;
 }
 
-}
+}  // namespace tcc

@@ -2,13 +2,14 @@
 // Created by kaiser on 18-12-8.
 //
 
-#include "error.h"
-#include "scanner.h"
 #include "ast.h"
-#include "parser.h"
 #include "code_gen.h"
+#include "error.h"
 #include "obj_gen.h"
+#include "parser.h"
+#include "scanner.h"
 
+#include <sys/wait.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -16,9 +17,8 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <unordered_set>
 #include <sstream>
-#include <sys/wait.h>
+#include <unordered_set>
 
 void ShowHelpInfo();
 void ShowVersionInfo();
@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
       if (FileExists(argv[i])) {
         input_files.emplace(argv[i]);
       } else {
-        tcc::ErrorReportAndExit("error: {}: This file does not exist.\n", argv[i]);
+        tcc::ErrorReportAndExit("error: {}: This file does not exist.\n",
+                                argv[i]);
       }
     }
   }
@@ -77,9 +78,10 @@ int main(int argc, char *argv[]) {
 
   bool optimization{false};
 
-  for (const auto &arg:args) {
+  for (const auto &arg : args) {
     switch (arg[1]) {
-      case 'O':optimization = true;
+      case 'O':
+        optimization = true;
         break;
       default: {
         tcc::ErrorReportAndExit("Unknown compilation option.\n");
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (auto size{std::size(input_files)};size == 0) {
+  if (auto size{std::size(input_files)}; size == 0) {
     tcc::ErrorReportAndExit("fatal error: no input files.\n");
   } else if (size > 1) {
     tcc::ErrorReportAndExit("Do not support multiple files at this time.\n");
@@ -97,16 +99,16 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> files_to_delete;
   std::ostringstream obj_files;
 
-  for (const auto &input_file:input_files) {
+  for (const auto &input_file : input_files) {
     RunTcc(input_file, obj_files, files_to_delete, optimization);
   }
 
   std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
-  if (auto status{std::system(cmd.c_str())};!CommandSuccess(status)) {
+  if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Link Failed\n");
   }
 
-  for (const auto &file:files_to_delete) {
+  for (const auto &file : files_to_delete) {
     std::filesystem::remove(std::filesystem::path{file});
   }
 
@@ -131,9 +133,7 @@ void ShowHelpInfo() {
                "-t\t\t\tTest mode (developer use)\n";
 }
 
-void ShowVersionInfo() {
-  std::cout << "Tiny C Compiler by Kaiser.\n";
-}
+void ShowVersionInfo() { std::cout << "Tiny C Compiler by Kaiser.\n"; }
 
 bool FileExists(const std::string &file_name) {
   return std::filesystem::exists(std::filesystem::path{file_name});
@@ -153,7 +153,7 @@ void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
   files_to_delete.push_back(processed_file);
 
   std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
-  if (auto status{std::system(cmd.c_str())};!CommandSuccess(status)) {
+  if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Preprocessing Failure\n");
   }
 
@@ -174,11 +174,12 @@ void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
 
 void RunTest() {
   std::cout << "Test Mode\n";
-  std::string input_file("/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
+  std::string input_file(
+      "/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
 
   std::string processed_file(RemoveExtension(input_file) + ".i");
   std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
-  if (auto status{std::system(cmd.c_str())};!CommandSuccess(status)) {
+  if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Preprocessing Failure.\n");
   }
 
@@ -200,14 +201,16 @@ void RunTest() {
 
   tcc::ObjGen(context, "test.o");
 
-  if (auto status{std::system("gcc -std=c99 -o test test.o")};!CommandSuccess(status)) {
+  if (auto status{std::system("gcc -std=c99 -o test test.o")};
+      !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Link failed\n");
   }
 
   std::cout << "Compiled Successfully\n";
-  std::cout << "The program runs-----------------------------------------------\n\n";
+  std::cout
+      << "The program runs-----------------------------------------------\n\n";
 
-  if (auto status{std::system("./test")};!CommandSuccess(status)) {
+  if (auto status{std::system("./test")}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Program Startup Failed\n");
   }
 }

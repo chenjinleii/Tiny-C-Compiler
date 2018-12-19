@@ -11,17 +11,17 @@
 #include <llvm/Transforms/Utils.h>
 #include <boost/range/adaptor/reversed.hpp>
 
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 #include <system_error>
 #include <utility>
 
 namespace tcc {
 
-CodeGenContext::CodeGenContext(bool optimization) :
-    builder_{the_context_},
-    the_module_{std::make_unique<llvm::Module>("main", the_context_)},
-    type_system_{the_context_} {
+CodeGenContext::CodeGenContext(bool optimization)
+    : builder_{the_context_},
+      the_module_{std::make_unique<llvm::Module>("main", the_context_)},
+      type_system_{the_context_} {
   if (optimization) {
     InitializePassManager();
     optimization_ = optimization;
@@ -29,7 +29,8 @@ CodeGenContext::CodeGenContext(bool optimization) :
 }
 
 void CodeGenContext::InitializePassManager() {
-  the_FPM_ = std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
+  the_FPM_ =
+      std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
 
   // 优化
   the_FPM_->add(llvm::createInstructionCombiningPass());
@@ -41,20 +42,19 @@ void CodeGenContext::InitializePassManager() {
   the_FPM_->doInitialization();
 }
 
-llvm::AllocaInst *CodeGenContext::CreateEntryBlockAlloca(llvm::Function *parent, llvm::Type *type,
-                                                         const std::string &name) {
+llvm::AllocaInst *CodeGenContext::CreateEntryBlockAlloca(
+    llvm::Function *parent, llvm::Type *type, const std::string &name) {
   // 在栈中分配内存,确保在函数的入口块处创建 alloca
   // 调用 begin() 表示指向入口块的第一条指令
   llvm::IRBuilder<> temp{&parent->getEntryBlock(),
                          parent->getEntryBlock().begin()};
   return temp.CreateAlloca(type, nullptr, name);
-
 }
 
 void CodeGenContext::GenerateCode(CompoundStatement &root) {
   std::vector<llvm::Type *> system_args;
-  auto main_func_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(the_context_),
-                                              system_args, false)};
+  auto main_func_type{llvm::FunctionType::get(
+      llvm::Type::getInt32Ty(the_context_), system_args, false)};
 
   llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
   auto block{llvm::BasicBlock::Create(the_context_, "entry")};
@@ -63,10 +63,11 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
   PopBlock();
 }
 
-void CodeGenContext::Debug(CompoundStatement &root, const std::string &file_name) {
+void CodeGenContext::Debug(CompoundStatement &root,
+                           const std::string &file_name) {
   std::vector<llvm::Type *> system_args;
-  auto main_func_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(the_context_),
-                                              system_args, false)};
+  auto main_func_type{llvm::FunctionType::get(
+      llvm::Type::getInt32Ty(the_context_), system_args, false)};
 
   llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
 
@@ -92,16 +93,18 @@ llvm::Value *CodeGenContext::GetCurrentReturnValue() {
   return block_stack_.back()->return_value;
 }
 
-void CodeGenContext::SetSymbolValue(const std::string &name, llvm::AllocaInst *value) {
+void CodeGenContext::SetSymbolValue(const std::string &name,
+                                    llvm::AllocaInst *value) {
   block_stack_.back()->locals[name] = value;
 }
 
-void CodeGenContext::SetSymbolType(const std::string &name, std::shared_ptr<Type> type) {
+void CodeGenContext::SetSymbolType(const std::string &name,
+                                   std::shared_ptr<Type> type) {
   block_stack_.back()->types[name] = std::move(type);
 }
 
 llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
-  for (const auto &ele:block_stack_ | boost::adaptors::reversed) {
+  for (const auto &ele : block_stack_ | boost::adaptors::reversed) {
     if (ele->locals.find(name) != std::end(ele->locals)) {
       return ele->locals[name];
     }
@@ -109,7 +112,8 @@ llvm::Value *CodeGenContext::GetSymbolValue(const std::string &name) const {
   return nullptr;
 }
 
-std::shared_ptr<Type> CodeGenContext::GetSymbolType(const std::string &name) const {
+std::shared_ptr<Type> CodeGenContext::GetSymbolType(
+    const std::string &name) const {
   for (const auto &ele : block_stack_ | boost::adaptors::reversed) {
     if (ele->types.find(name) != std::end(ele->types)) {
       return ele->types[name];
@@ -125,12 +129,8 @@ void CodeGenContext::PushBlock(llvm::BasicBlock *block) {
   block_stack_.push_back(std::move(code_gen_block));
 }
 
-void CodeGenContext::PopBlock() {
-  block_stack_.pop_back();
-}
+void CodeGenContext::PopBlock() { block_stack_.pop_back(); }
 
-bool CodeGenContext::GetOptimization() const {
-  return optimization_;
-}
+bool CodeGenContext::GetOptimization() const { return optimization_; }
 
-}
+}  // namespace tcc

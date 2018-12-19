@@ -13,17 +13,19 @@ void ErrorReportAndExit(const std::string &msg) {
   std::exit(EXIT_FAILURE);
 }
 
-void ErrorReportAndExit(const SourceLocation &location, const std::string &msg) {
+void ErrorReportAndExit(const SourceLocation &location,
+                        const std::string &msg) {
   std::cerr << "At: " << location.ToString() << '\n';
   std::cerr << msg << '\n';
   std::exit(EXIT_FAILURE);
 }
 
-void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, TokenValue actually) {
+void ErrorReportAndExit(const SourceLocation &location, TokenValue expect,
+                        TokenValue actually) {
   std::cerr << "Grammatical errors: At: " << location.ToString() << '\n';
-  std::cerr << "Expect " << TokenTypes::ToString(expect) <<
-            " but actually " << TokenTypes::ToString(actually) << '\n';
+  std::cerr << "Expect " << TokenTypes::ToString(expect) << " but actually "
+            << TokenTypes::ToString(actually) << '\n';
   std::exit(EXIT_FAILURE);
 }
 
-}
+}  // namespace tcc

@@ -10,9 +10,9 @@
 
 #include <fmt/core.h>
 
-#include <string>
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 
 namespace tcc {
 
@@ -20,21 +20,23 @@ void ErrorReportAndExit(const std::string &msg);
 
 void ErrorReportAndExit(const SourceLocation &location, const std::string &msg);
 
-void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, TokenValue actually);
+void ErrorReportAndExit(const SourceLocation &location, TokenValue expect,
+                        TokenValue actually);
 
-template<typename... Args>
-void ErrorReportAndExit(const SourceLocation &location, const std::string &format_str, const Args &... args) {
+template <typename... Args>
+void ErrorReportAndExit(const SourceLocation &location,
+                        const std::string &format_str, const Args &... args) {
   std::cerr << "At: " << location.ToString() << '\n';
   fmt::print(format_str, args...);
   std::exit(EXIT_FAILURE);
 }
 
-template<typename... Args>
+template <typename... Args>
 void ErrorReportAndExit(const std::string &format_str, const Args &... args) {
   fmt::print(format_str, args...);
   std::exit(EXIT_FAILURE);
 }
 
-}
+}  // namespace tcc
 
-#endif //TINY_C_COMPILER_ERROR_H
+#endif  // TINY_C_COMPILER_ERROR_H
