@@ -33,3 +33,5 @@
 
 # IDE Files
 .idea
+cmake*
+build
