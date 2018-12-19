@@ -195,7 +195,7 @@ void RunTest() {
     auto ast_root{tcc::Parser::Test(token_sequence, ast)};
 
     tcc::CodeGenContext context(false);
-    context.Debug(*ast_root, "../test/ir");
+    context.Debug(*ast_root, "../test/ir.ll");
     std::cout << "LLVM IR Successfully Generate\n";
 
     tcc::ObjGen(context, "test.o");
