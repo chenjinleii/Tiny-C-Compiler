@@ -11,12 +11,12 @@
 namespace tcc {
 
 class SourceLocation {
-public:
-    std::string ToString() const;
+ public:
+  std::string ToString() const;
 
-    std::string file_name_;
-    std::int32_t row_{1};
-    std::int32_t column_{};
+  std::string file_name_;
+  std::int32_t row_{1};
+  std::int32_t column_{};
 };
 
 }

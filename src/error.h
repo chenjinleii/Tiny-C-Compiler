@@ -24,15 +24,15 @@ void ErrorReportAndExit(const SourceLocation &location, TokenValue expect, Token
 
 template<typename... Args>
 void ErrorReportAndExit(const SourceLocation &location, const std::string &format_str, const Args &... args) {
-    std::cerr << "At: " << location.ToString() << '\n';
-    fmt::print(format_str, args...);
-    std::exit(EXIT_FAILURE);
+  std::cerr << "At: " << location.ToString() << '\n';
+  fmt::print(format_str, args...);
+  std::exit(EXIT_FAILURE);
 }
 
 template<typename... Args>
 void ErrorReportAndExit(const std::string &format_str, const Args &... args) {
-    fmt::print(format_str, args...);
-    std::exit(EXIT_FAILURE);
+  fmt::print(format_str, args...);
+  std::exit(EXIT_FAILURE);
 }
 
 }

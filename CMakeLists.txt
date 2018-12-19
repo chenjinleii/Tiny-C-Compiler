@@ -20,15 +20,15 @@ file(GLOB cppsrc "src/*.h" "src/*.cpp")
 add_executable(${PROJECT_NAME} ${cppsrc})
 
 llvm_map_components_to_libnames(llvm_libs
-                                support
-                                core
-                                irreader
-                                ${LLVM_TARGETS_TO_BUILD})
+    support
+    core
+    irreader
+    ${LLVM_TARGETS_TO_BUILD})
 
 target_link_libraries(${PROJECT_NAME}
-                      Qt5::Core
-                      ${Boost_LIBRARIES}
-                      ${llvm_libs}
-                      fmt::fmt
-                      jsoncpp
-                      stdc++fs)
+    Qt5::Core
+    ${Boost_LIBRARIES}
+    ${llvm_libs}
+    fmt::fmt
+    jsoncpp
+    stdc++fs)
