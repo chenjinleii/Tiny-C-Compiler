@@ -68,7 +68,7 @@ class Parser {
   std::vector<Token> token_sequence_;
   std::vector<Token>::size_type index_{};
 
-  template <typename T, typename... Args>
+  template<typename T, typename... Args>
   std::shared_ptr<T> MakeASTNode(Args... args) {
     auto t{std::make_shared<T>(args...)};
     t->location_ = PeekNextToken().GetTokenLocation();

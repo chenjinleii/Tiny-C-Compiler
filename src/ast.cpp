@@ -8,6 +8,7 @@
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Verifier.h>
+#include <QtCore/QJsonArray>
 
 #include <cassert>
 #include <cstdint>
@@ -15,41 +16,45 @@
 
 namespace tcc {
 
-std::string ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
+QString ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
   return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type) + 1;
 }
 
-llvm::Value *ASTNode::CodeGen(CodeGenContext &) { return nullptr; }
+llvm::Value *ASTNode::CodeGen(CodeGenContext &) {
+  return nullptr;
+}
 
-Json::Value Type::JsonGen() const {
-  Json::Value root;
+QJsonObject Type::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
   return root;
 }
 
-Json::Value PrimitiveType::JsonGen() const {
-  Json::Value root;
-  root["name"] =
-      ASTNodeTypes::ToString(Kind()) + ' ' + TokenTypes::ToString(type_);
+QJsonObject PrimitiveType::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(TokenTypes::ToString(type_));
   return root;
 }
 
-Json::Value Statement::JsonGen() const {
-  Json::Value root;
+QJsonObject Statement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
   return root;
 }
 
-Json::Value CompoundStatement::JsonGen() const {
-  Json::Value root;
+QJsonObject CompoundStatement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
+  QJsonArray children;
 
   if (statements_) {
     for (const auto &it : *statements_) {
       assert(it != nullptr);
-      root["children"].append(it->JsonGen());
+      children.append(it->JsonGen());
     }
   }
+  root["children"] = children;
 
   return root;
 }
@@ -78,11 +83,15 @@ void CompoundStatement::AddStatement(std::shared_ptr<Statement> statement) {
   }
 }
 
-Json::Value ExpressionStatement::JsonGen() const {
-  Json::Value root;
+QJsonObject ExpressionStatement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
+  QJsonArray children;
+
   assert(expression_ != nullptr);
-  root["children"].append(expression_->JsonGen());
+  children.append(expression_->JsonGen());
+  root["children"] = children;
+
   return root;
 }
 
@@ -93,17 +102,19 @@ llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
   return expression_->CodeGen(context);
 }
 
-Json::Value IfStatement::JsonGen() const {
-  Json::Value root;
+QJsonObject IfStatement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
 
-  assert(condition_ != nullptr);
-  root["children"].append(condition_->JsonGen());
+  QJsonArray children;
 
-  root["children"].append(then_block_->JsonGen());
+  assert(condition_ != nullptr);
+  children.append(condition_->JsonGen());
+  children.append(then_block_->JsonGen());
   if (else_block_) {
-    root["children"].append(else_block_->JsonGen());
+    children.append(else_block_->JsonGen());
   }
+  root["children"] = children;
   return root;
 }
 
@@ -160,12 +171,16 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
   return nullptr;
 }
 
-Json::Value WhileStatement::JsonGen() const {
-  Json::Value root;
+QJsonObject WhileStatement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
+  QJsonArray children;
+
   assert(cond_ != nullptr);
-  root["children"].append(cond_->JsonGen());
-  root["children"].append(block_->JsonGen());
+  children.append(cond_->JsonGen());
+  children.append(block_->JsonGen());
+  root["children"] = children;
+
   return root;
 }
 
@@ -212,26 +227,28 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
   return nullptr;
 }
 
-Json::Value ForStatement::JsonGen() const {
-  Json::Value root;
+QJsonObject ForStatement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
+  QJsonArray children;
 
   if (init_) {
-    root["children"].append(init_->JsonGen());
+    children.append(init_->JsonGen());
   } else if (declaration_) {
-    root["children"].append(declaration_->JsonGen());
+    children.append(declaration_->JsonGen());
   }
 
   if (cond_) {
-    root["children"].append(cond_->JsonGen());
+    children.append(cond_->JsonGen());
   }
   if (increment_) {
-    root["children"].append(increment_->JsonGen());
+    children.append(increment_->JsonGen());
   }
   if (block_) {
-    root["children"].append(block_->JsonGen());
+    children.append(block_->JsonGen());
   }
 
+  root["children"] = children;
   return root;
 }
 
@@ -300,12 +317,15 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
   return nullptr;
 }
 
-Json::Value ReturnStatement::JsonGen() const {
-  Json::Value root;
+QJsonObject ReturnStatement::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
+  QJsonArray children;
+
   if (expression_) {
-    root["children"].append(expression_->JsonGen());
+    children.append(expression_->JsonGen());
   }
+  root["children"] = children;
 
   return root;
 }
@@ -322,19 +342,22 @@ llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
   }
 }
 
-Json::Value Declaration::JsonGen() const {
-  Json::Value root;
+QJsonObject Declaration::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
+  QJsonArray children;
 
   assert(type_ != nullptr);
-  root["children"].append(type_->JsonGen());
+  children.append(type_->JsonGen());
 
   assert(name_ != nullptr);
-  root["children"].append(name_->JsonGen());
+  children.append(name_->JsonGen());
 
   if (init_) {
-    root["children"].append(init_->JsonGen());
+    children.append(init_->JsonGen());
   }
+  root["children"] = children;
+
   return root;
 }
 
@@ -358,19 +381,21 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
   return addr;
 }
 
-Json::Value Expression::JsonGen() const {
-  Json::Value root;
+QJsonObject Expression::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
   return root;
 }
 
-Json::Value UnaryOpExpression::JsonGen() const {
-  Json::Value root;
-  root["name"] =
-      ASTNodeTypes::ToString(Kind()) + " " + TokenTypes::ToString(op_);
+QJsonObject UnaryOpExpression::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(TokenTypes::ToString(op_));
 
+  QJsonArray children;
   assert(object_ != nullptr);
-  root["children"].append(object_->JsonGen());
+  children.append(object_->JsonGen());
+  root["children"] = children;
 
   return root;
 }
@@ -395,13 +420,15 @@ llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
   }
 }
 
-Json::Value PostfixExpression::JsonGen() const {
-  Json::Value root;
-  root["name"] =
-      ASTNodeTypes::ToString(Kind()) + " " + TokenTypes::ToString(op_);
+QJsonObject PostfixExpression::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(TokenTypes::ToString(op_));
 
+  QJsonArray children;
   assert(object_ != nullptr);
-  root["children"].append(object_->JsonGen());
+  children.append(object_->JsonGen());
+  root["children"] = children;
 
   return root;
 }
@@ -417,15 +444,17 @@ llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
   return postfix.CodeGen(context);
 }
 
-Json::Value BinaryOpExpression::JsonGen() const {
-  Json::Value root;
-  root["name"] =
-      ASTNodeTypes::ToString(Kind()) + " " + TokenTypes::ToString(op_);
+QJsonObject BinaryOpExpression::JsonGen() const {
+  QJsonObject root;
+  root.insert("name", ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(TokenTypes::ToString(op_)));
+  QJsonArray children;
 
   assert(lhs_ != nullptr);
-  root["children"].append(lhs_->JsonGen());
+  children.append(lhs_->JsonGen());
   assert(rhs_ != nullptr);
-  root["children"].append(rhs_->JsonGen());
+  children.append(rhs_->JsonGen());
+  root["children"] = children;
 
   return root;
 }
@@ -551,47 +580,47 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     case TokenValue::kAnd:
       return is_double ? ErrorReportAndExit(location_,
                                             "Double type has no AND operation"),
-             nullptr : context.builder_.CreateAnd(lhs, rhs);
+          nullptr : context.builder_.CreateAnd(lhs, rhs);
     case TokenValue::kOr:
       return is_double
              ? ErrorReportAndExit(location_, "Double type has no OR operation"),
-             nullptr : context.builder_.CreateOr(lhs, rhs);
+                 nullptr : context.builder_.CreateOr(lhs, rhs);
     case TokenValue::kXor:
       return is_double ? ErrorReportAndExit(location_,
                                             "Double type has no XOR operation"),
-             nullptr : context.builder_.CreateXor(lhs, rhs);
+          nullptr : context.builder_.CreateXor(lhs, rhs);
     case TokenValue::kShl:
       return is_double ? ErrorReportAndExit(location_,
                                             "Double type has no SHL operation"),
-             nullptr : context.builder_.CreateShl(lhs, rhs);
+          nullptr : context.builder_.CreateShl(lhs, rhs);
     case TokenValue::kShr:
       return is_double ? ErrorReportAndExit(location_,
                                             "Double type has no SHR operation"),
-             nullptr : context.builder_.CreateAShr(lhs, rhs);
+          nullptr : context.builder_.CreateAShr(lhs, rhs);
     case TokenValue::kLess:
       return is_double
-                 ? (lhs = context.builder_.CreateFCmpULT(lhs, rhs),
-                    context.builder_.CreateUIToFP(
-                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
-                 : context.builder_.CreateICmpULT(lhs, rhs);
+             ? (lhs = context.builder_.CreateFCmpULT(lhs, rhs),
+              context.builder_.CreateUIToFP(
+                  lhs, llvm::Type::getDoubleTy(context.the_context_)))
+             : context.builder_.CreateICmpULT(lhs, rhs);
     case TokenValue::kLessOrEqual:
       return is_double
-                 ? (lhs = context.builder_.CreateFCmpOLE(lhs, rhs),
-                    context.builder_.CreateUIToFP(
-                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
-                 : context.builder_.CreateICmpSLE(lhs, rhs);
+             ? (lhs = context.builder_.CreateFCmpOLE(lhs, rhs),
+              context.builder_.CreateUIToFP(
+                  lhs, llvm::Type::getDoubleTy(context.the_context_)))
+             : context.builder_.CreateICmpSLE(lhs, rhs);
     case TokenValue::kGreaterOrEqual:
       return is_double
-                 ? (lhs = context.builder_.CreateFCmpOGE(lhs, rhs),
-                    context.builder_.CreateUIToFP(
-                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
-                 : context.builder_.CreateICmpSGE(lhs, rhs);
+             ? (lhs = context.builder_.CreateFCmpOGE(lhs, rhs),
+              context.builder_.CreateUIToFP(
+                  lhs, llvm::Type::getDoubleTy(context.the_context_)))
+             : context.builder_.CreateICmpSGE(lhs, rhs);
     case TokenValue::kGreater:
       return is_double
-                 ? (lhs = context.builder_.CreateFCmpOGT(lhs, rhs),
-                    context.builder_.CreateUIToFP(
-                        lhs, llvm::Type::getDoubleTy(context.the_context_)))
-                 : context.builder_.CreateICmpSGT(lhs, rhs);
+             ? (lhs = context.builder_.CreateFCmpOGT(lhs, rhs),
+              context.builder_.CreateUIToFP(
+                  lhs, llvm::Type::getDoubleTy(context.the_context_)))
+             : context.builder_.CreateICmpSGT(lhs, rhs);
     case TokenValue::kEqual:
       return is_double ? context.builder_.CreateFCmpOEQ(lhs, rhs)
                        : context.builder_.CreateICmpEQ(lhs, rhs);
@@ -605,9 +634,10 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
   }
 }
 
-Json::Value Identifier::JsonGen() const {
-  Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + name_;
+QJsonObject Identifier::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(QString::fromStdString(name_));
   return root;
 }
 
@@ -621,17 +651,20 @@ llvm::Value *Identifier::CodeGen(CodeGenContext &context) {
   return context.builder_.CreateLoad(value, name_);
 }
 
-Json::Value FunctionCall::JsonGen() const {
-  Json::Value root;
+QJsonObject FunctionCall::JsonGen() const {
+  QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
-  root["children"].append(name_->JsonGen());
+
+  QJsonArray children;
+  children.append(name_->JsonGen());
 
   if (args_) {
-    for (const auto &it : *args_) {
-      assert(it != nullptr);
-      root["children"].append(it->JsonGen());
+    for (const auto &arg : *args_) {
+      assert(arg != nullptr);
+      children.append(arg->JsonGen());
     }
   }
+  root["children"] = children;
 
   return root;
 }
@@ -681,22 +714,24 @@ ASTNodeType FunctionDeclaration::Kind() const {
   }
 }
 
-Json::Value FunctionDeclaration::JsonGen() const {
-  Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind());
-  root["children"].append(return_type_->JsonGen());
-  root["children"].append(name_->JsonGen());
+QJsonObject FunctionDeclaration::JsonGen() const {
+  QJsonObject root;
+  root.insert("name", ASTNodeTypes::ToString(Kind()));
+  QJsonArray children;
+  children.append(return_type_->JsonGen());
+  children.append(name_->JsonGen());
 
   if (args_) {
     for (auto &it : *args_) {
       assert(it != nullptr);
-      root["children"].append(it->JsonGen());
+      children.append(it->JsonGen());
     }
   }
 
   if (body_) {
-    root["children"].append(body_->JsonGen());
+    children.append(body_->JsonGen());
   }
+  root["children"] = children;
 
   return root;
 }
@@ -775,9 +810,10 @@ void FunctionDeclaration::AddArg(std::shared_ptr<Declaration> arg) {
   }
 }
 
-Json::Value CharConstant::JsonGen() const {
-  Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + value_;
+QJsonObject CharConstant::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(value_);
   return root;
 }
 
@@ -786,10 +822,10 @@ llvm::Value *CharConstant::CodeGen(CodeGenContext &context) {
       context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
 }
 
-Json::Value Int32Constant::JsonGen() const {
-  Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + std::to_string(value_);
-
+QJsonObject Int32Constant::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(QString::fromStdString(std::to_string(value_)));
   return root;
 }
 
@@ -801,9 +837,10 @@ llvm::Value *Int32Constant::CodeGen(CodeGenContext &context) {
       llvm::APInt(32, static_cast<std::uint64_t>(value_)));
 }
 
-Json::Value DoubleConstant::JsonGen() const {
-  Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + std::to_string(value_);
+QJsonObject DoubleConstant::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(QString::fromStdString(std::to_string(value_)));
   return root;
 }
 
@@ -813,9 +850,10 @@ llvm::Value *DoubleConstant::CodeGen(CodeGenContext &context) {
   return llvm::ConstantFP::get(context.the_context_, llvm::APFloat(value_));
 }
 
-Json::Value StringLiteral::JsonGen() const {
-  Json::Value root;
-  root["name"] = ASTNodeTypes::ToString(Kind()) + " " + value_;
+QJsonObject StringLiteral::JsonGen() const {
+  QJsonObject root;
+  root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
+      .append(QString::fromStdString(value_));
   return root;
 }
 

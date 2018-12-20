@@ -39,18 +39,12 @@ llvm::Value *TypeSystem::Cast(llvm::Value *value, llvm::Type *type,
 
 llvm::Type *TypeSystem::GetType(const Type &type) {
   switch (type.type_) {
-    case TokenValue::kInt:
-      return int32_type_;
-    case TokenValue::kChar:
-      return char_type_;
-    case TokenValue::kDouble:
-      return double_type_;
-    case TokenValue::kVoid:
-      return void_type_;
-    case TokenValue::kStringLiteral:
-      return string_type_;
-    default:
-      return nullptr;
+    case TokenValue::kInt:return int32_type_;
+    case TokenValue::kChar:return char_type_;
+    case TokenValue::kDouble:return double_type_;
+    case TokenValue::kVoid:return void_type_;
+    case TokenValue::kStringLiteral:return string_type_;
+    default:return nullptr;
   }
 }
 
@@ -65,7 +59,7 @@ llvm::Value *TypeSystem::CastToBool(CodeGenContext &context,
           llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_), 0,
                                  true));
     } else if (condition_value->getType()->getTypeID() ==
-               llvm::Type::DoubleTyID) {
+        llvm::Type::DoubleTyID) {
       return context.builder_.CreateFCmpONE(
           condition_value,
           llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)));

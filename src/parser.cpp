@@ -6,6 +6,8 @@
 #include "error.h"
 #include "location.h"
 
+#include <QtCore/QJsonDocument>
+
 #include <cstdlib>
 
 namespace tcc {
@@ -29,7 +31,9 @@ std::shared_ptr<CompoundStatement> Parser::Test(
   auto ast_root{Parser{std::move(token_sequence)}.Parse()};
   auto json_root{ast_root->JsonGen()};
 
-  os << json_root;
+  QJsonDocument document{json_root};
+  os << document.toJson().toStdString();
+
   std::cout << "AST Successfully Written\n";
   return ast_root;
 }
@@ -340,8 +344,8 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
   } else if (Try(TokenValue::kLeftParen)) {
     return ParseParenExpression();
   } else if (Test(TokenValue::kAdd) || Test(TokenValue::kSub) ||
-             Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
-             Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
+      Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
+      Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
     return ParseUnaryOpExpression();
   } else if (Try(TokenValue::kSizeof)) {
     return ParseSizeof();

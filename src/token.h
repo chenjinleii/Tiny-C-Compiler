@@ -8,6 +8,7 @@
 #include "location.h"
 
 #include <QtCore/QObject>
+#include <QtCore/QString>
 
 #include <cstdint>
 #include <string>
@@ -16,7 +17,7 @@
 namespace tcc {
 
 class TokenTypes : public QObject {
-  Q_OBJECT
+ Q_OBJECT
  public:
   enum Types {
     kCharConstant,
@@ -123,7 +124,7 @@ class TokenTypes : public QObject {
   };
   Q_ENUM(Types)
 
-  static std::string ToString(Types Type);
+  static QString ToString(Types Type);
 };
 
 using TokenValue = TokenTypes::Types;

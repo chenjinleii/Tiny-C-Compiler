@@ -63,8 +63,8 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
   PopBlock();
 }
 
-void CodeGenContext::Debug(CompoundStatement &root,
-                           const std::string &file_name) {
+void CodeGenContext::Test(CompoundStatement &root,
+                          const std::string &file_name) {
   std::vector<llvm::Type *> system_args;
   auto main_func_type{llvm::FunctionType::get(
       llvm::Type::getInt32Ty(the_context_), system_args, false)};

@@ -23,7 +23,7 @@ void ErrorReportAndExit(const SourceLocation &location, const std::string &msg);
 void ErrorReportAndExit(const SourceLocation &location, TokenValue expect,
                         TokenValue actually);
 
-template <typename... Args>
+template<typename... Args>
 void ErrorReportAndExit(const SourceLocation &location,
                         const std::string &format_str, const Args &... args) {
   std::cerr << "At: " << location.ToString() << '\n';
@@ -31,7 +31,7 @@ void ErrorReportAndExit(const SourceLocation &location,
   std::exit(EXIT_FAILURE);
 }
 
-template <typename... Args>
+template<typename... Args>
 void ErrorReportAndExit(const std::string &format_str, const Args &... args) {
   fmt::print(format_str, args...);
   std::exit(EXIT_FAILURE);

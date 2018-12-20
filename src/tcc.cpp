@@ -80,8 +80,7 @@ int main(int argc, char *argv[]) {
 
   for (const auto &arg : args) {
     switch (arg[1]) {
-      case 'O':
-        optimization = true;
+      case 'O':optimization = true;
         break;
       default: {
         tcc::ErrorReportAndExit("Unknown compilation option.\n");
@@ -196,7 +195,7 @@ void RunTest() {
   auto ast_root{tcc::Parser::Test(token_sequence, ast)};
 
   tcc::CodeGenContext context(false);
-  context.Debug(*ast_root, "../test/ir.ll");
+  context.Test(*ast_root, "../test/ir.ll");
   std::cout << "LLVM IR Successfully Generate\n";
 
   tcc::ObjGen(context, "test.o");

@@ -10,7 +10,7 @@
 
 namespace tcc {
 
-std::string TokenTypes::ToString(TokenTypes::Types Type) {
+QString TokenTypes::ToString(TokenTypes::Types Type) {
   return QMetaEnum::fromType<TokenTypes::Types>().valueToKey(Type) + 1;
 }
 
@@ -103,7 +103,7 @@ std::string Token::ToString() const {
   }
 
   std::string str(location_.ToString() + sp1 +
-                  "type: " + TokenTypes::ToString(value_) + sp2);
+      "type: " + TokenTypes::ToString(value_).toStdString() + sp2);
 
   if (IsChar()) {
     str += "value: " + std::to_string(GetCharValue());
@@ -130,7 +130,7 @@ bool Token::IsString() const { return value_ == TokenValue::kStringLiteral; }
 
 bool Token::IsTypeSpecifier() const {
   return value_ == TokenValue::kChar || value_ == TokenValue::kInt ||
-         value_ == TokenValue::kDouble || value_ == TokenValue::kVoid;
+      value_ == TokenValue::kDouble || value_ == TokenValue::kVoid;
 }
 
 bool Token::IsIdentifier() const { return value_ == TokenValue::kIdentifier; }

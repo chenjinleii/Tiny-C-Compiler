@@ -65,7 +65,7 @@ Scanner::Scanner(const std::string &processed_file,
   std::ifstream ifs{processed_file};
   if (!ifs) {
     ErrorReportAndExit("When trying to open file " + input_file +
-                       ", occurred error.");
+        ", occurred error.");
   }
 
   std::ostringstream ost;
@@ -133,28 +133,17 @@ Token Scanner::GetNextToken() {
       SkipComment();
       return GetNextToken();
     }
-    case ':':
-      return MakeToken(TokenValue::KColon);
-    case '(':
-      return MakeToken(TokenValue::kLeftParen);
-    case ')':
-      return MakeToken(TokenValue::kRightParen);
-    case '[':
-      return MakeToken(TokenValue::kLeftSquare);
-    case ']':
-      return MakeToken(TokenValue::kRightSquare);
-    case '{':
-      return MakeToken(TokenValue::kLeftCurly);
-    case '}':
-      return MakeToken(TokenValue::kRightCurly);
-    case '?':
-      return MakeToken(TokenValue::kQuestionMark);
-    case ',':
-      return MakeToken(TokenValue::kComma);
-    case '~':
-      return MakeToken(TokenValue::kNeg);
-    case ';':
-      return MakeToken(TokenValue::kSemicolon);
+    case ':':return MakeToken(TokenValue::KColon);
+    case '(':return MakeToken(TokenValue::kLeftParen);
+    case ')':return MakeToken(TokenValue::kRightParen);
+    case '[':return MakeToken(TokenValue::kLeftSquare);
+    case ']':return MakeToken(TokenValue::kRightSquare);
+    case '{':return MakeToken(TokenValue::kLeftCurly);
+    case '}':return MakeToken(TokenValue::kRightCurly);
+    case '?':return MakeToken(TokenValue::kQuestionMark);
+    case ',':return MakeToken(TokenValue::kComma);
+    case '~':return MakeToken(TokenValue::kNeg);
+    case ';':return MakeToken(TokenValue::kSemicolon);
     case '-': {
       if (Try('>')) {
         return MakeToken(TokenValue::kArrow);
@@ -265,8 +254,8 @@ Token Scanner::GetNextToken() {
       if (std::isdigit(PeekNextChar())) {
         buffer_.push_back(ch);
         return HandleNumber();
-      } else if (auto [next, next_two]{PeekNextTwoChar()};
-                 next == '.' && next_two == '.') {
+      } else if (auto[next, next_two]{PeekNextTwoChar()};
+          next == '.' && next_two == '.') {
         return MakeToken(TokenValue::kEllipsis);
       } else {
         return MakeToken(TokenValue::kPeriod);
@@ -276,18 +265,15 @@ Token Scanner::GetNextToken() {
       buffer_.push_back(ch);
       return HandleNumber();
     }
-    case '\'':
-      return HandleChar();
-    case '\"':
-      return HandleString();
+    case '\'':return HandleChar();
+    case '\"':return HandleString();
     case 'a' ... 'z':
     case 'A' ... 'Z':
     case '_': {
       buffer_.push_back(ch);
       return HandleIdentifierOrKeyword();
     }
-    case EOF:
-      return MakeToken(TokenValue::kEof);
+    case EOF:return MakeToken(TokenValue::kEof);
     default: {
       ErrorReportAndExit(location_, "Unknown character.");
       return MakeToken(TokenValue::kNone);
@@ -423,27 +409,17 @@ char Scanner::HandleEscape() {
     case '\\':
     case '\'':
     case '\"':
-    case '\?':
-      return ch;
-    case 'a':
-      return '\a';
-    case 'b':
-      return '\b';
-    case 'f':
-      return '\f';
-    case 'n':
-      return '\n';
-    case 'r':
-      return '\r';
-    case 't':
-      return '\t';
-    case 'v':
-      return '\v';
+    case '\?':return ch;
+    case 'a':return '\a';
+    case 'b':return '\b';
+    case 'f':return '\f';
+    case 'n':return '\n';
+    case 'r':return '\r';
+    case 't':return '\t';
+    case 'v':return '\v';
     case 'X':
-    case 'x':
-      return HandleHexEscape();
-    case '0' ... '7':
-      return HandleOctEscape(ch);
+    case 'x':return HandleHexEscape();
+    case '0' ... '7':return HandleOctEscape(ch);
     default: {
       ErrorReportAndExit(location_, "unrecognized escape character '{}'", ch);
       return EOF;

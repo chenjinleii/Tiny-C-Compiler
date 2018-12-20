@@ -12,7 +12,6 @@ find_package(Qt5Core REQUIRED CONFIG)
 find_package(Boost 1.69 REQUIRED COMPONENTS)
 find_package(LLVM REQUIRED CONFIG)
 find_package(fmt)
-find_package(jsoncpp)
 
 add_definitions(${LLVM_DEFINITIONS})
 
@@ -30,5 +29,4 @@ target_link_libraries(${PROJECT_NAME}
     ${Boost_LIBRARIES}
     ${llvm_libs}
     fmt::fmt
-    jsoncpp
     stdc++fs)

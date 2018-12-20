@@ -54,7 +54,7 @@ class CodeGenContext {
   TypeSystem type_system_;
   bool GetOptimization() const;
   void GenerateCode(CompoundStatement &root);
-  void Debug(CompoundStatement &root, const std::string &file_name);
+  void Test(CompoundStatement &root, const std::string &file_name);
   void SetCurrentReturnValue(llvm::Value *value);
   llvm::Value *GetCurrentReturnValue();
   void SetSymbolValue(const std::string &name, llvm::AllocaInst *value);
