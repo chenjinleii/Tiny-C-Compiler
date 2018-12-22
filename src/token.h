@@ -65,49 +65,49 @@ class TokenTypes : public QObject {
     kComplex,
     kImaginary,
 
-    kAssign,     // =
-    kAddAssign,  // +=
-    kSubAssign,  // -=
-    kMulAssign,  // *=
-    kDivAssign,  // /=
-    kModAssign,  // %=
-    kAndAssign,  // &=
-    kOrAssign,   // |=
-    kXorAssign,  // ^=
-    kShlAssign,  // <<=
-    kShrAssign,  // >>=
+    kAssign,       // =
+    kAddAssign,    // +=
+    kSubAssign,    // -=
+    kMulAssign,    // *=
+    kDivAssign,    // /=
+    kModAssign,    // %=
+    kAndAssign,    // &=
+    kOrAssign,     // |=
+    kXorAssign,    // ^=
+    kShlAssign,    // <<=
+    kShrAssign,    // >>=
 
-    kInc,  // ++
-    kDec,  // --
+    kInc,          // ++
+    kDec,          // --
 
-    kAdd,  // +
-    kSub,  // -
-    kMul,  // *
-    kDiv,  // /
-    kMod,  // %
-    kNeg,  // ~
-    kAnd,  // &
-    kOr,   // |
-    kXor,  // ^
-    kShl,  // <<
-    kShr,  // >>
+    kAdd,          // +
+    kSub,          // -
+    kMul,          // *
+    kDiv,          // /
+    kMod,          // %
+    kNeg,          // ~
+    kAnd,          // &
+    kOr,           // |
+    kXor,          // ^
+    kShl,          // <<
+    kShr,          // >>
 
-    kLogicNeg,  // !
-    kLogicAnd,  // &&
-    kLogicOr,   // ||
+    kLogicNeg,     // !
+    kLogicAnd,     // &&
+    kLogicOr,      // ||
 
-    kEqual,           // ==
-    kNotEqual,        // !=
-    kLess,            // <
-    kGreater,         // >
-    kLessOrEqual,     // <=
-    kGreaterOrEqual,  // >=
+    kEqual,        // ==
+    kNotEqual,     // !=
+    kLess,         // <
+    kGreater,      // >
+    kLessEqual,    // <=
+    kGreaterEqual, // >=
 
-    kArrow,   // ->
-    kPeriod,  // .
+    kArrow,        // ->
+    kPeriod,       // .
 
-    kQuestionMark,  // ?
-    kComma,         // ,
+    kQuestionMark, // ?
+    kComma,        // ,
 
     kLeftParen,    // (
     kRightParen,   // )
@@ -142,8 +142,7 @@ class Token {
  public:
   Token() = default;
   Token(const SourceLocation &location, TokenValue value);
-  Token(const SourceLocation &location, TokenValue value,
-        const std::string &name);
+  Token(const SourceLocation &location, TokenValue value, const std::string &name);
   Token(const SourceLocation &location, char char_value);
   Token(const SourceLocation &location, std::int32_t int32_value);
   Token(const SourceLocation &location, double double_value);
@@ -155,11 +154,12 @@ class Token {
   bool IsInt32() const;
   bool IsDouble() const;
   bool IsString() const;
-
+  
   bool IsTypeSpecifier() const;
   bool IsIdentifier() const;
 
   bool TokenValueIs(TokenValue value) const;
+  
   SourceLocation GetTokenLocation() const;
   TokenValue GetTokenValue() const;
   std::string GetTokenName() const;
@@ -169,6 +169,7 @@ class Token {
   std::int32_t GetInt32Value() const;
   double GetDoubleValue() const;
   std::string GetStringValue() const;
+  
   void AppendStringValue(const std::string &str);
 
  private:

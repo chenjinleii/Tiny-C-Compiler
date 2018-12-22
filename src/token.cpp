@@ -33,9 +33,9 @@ PrecedenceDictionary::PrecedenceDictionary() {
   precedence_.insert({TokenTypes::kAnd, 80});
   precedence_.insert({TokenTypes::kEqual, 90});
   precedence_.insert({TokenTypes::kNotEqual, 90});
-  precedence_.insert({TokenTypes::kLessOrEqual, 100});
+  precedence_.insert({TokenTypes::kLessEqual, 100});
   precedence_.insert({TokenTypes::kLess, 100});
-  precedence_.insert({TokenTypes::kGreaterOrEqual, 100});
+  precedence_.insert({TokenTypes::kGreaterEqual, 100});
   precedence_.insert({TokenTypes::kGreater, 100});
   precedence_.insert({TokenTypes::kShl, 110});
   precedence_.insert({TokenTypes::kShr, 110});
@@ -94,7 +94,7 @@ std::string Token::ToString() const {
     sp1.assign(20, ' ');
   }
 
-  auto sp2_count{std::size(TokenTypes::ToString(value_))};
+  auto sp2_count{std::size(TokenTypes::ToString(value_).toStdString())};
   std::string sp2;
   if (sp2_count < 20) {
     sp2.assign(20 - sp2_count, ' ');
@@ -120,39 +120,69 @@ std::string Token::ToString() const {
   return str;
 }
 
-bool Token::IsChar() const { return value_ == TokenValue::kCharConstant; }
+bool Token::IsChar() const {
+  return value_ == TokenValue::kCharConstant;
+}
 
-bool Token::IsInt32() const { return value_ == TokenValue::kIntConstant; }
+bool Token::IsInt32() const {
+  return value_ == TokenValue::kIntConstant;
+}
 
-bool Token::IsDouble() const { return value_ == TokenValue::kDoubleConstant; }
+bool Token::IsDouble() const {
+  return value_ == TokenValue::kDoubleConstant;
+}
 
-bool Token::IsString() const { return value_ == TokenValue::kStringLiteral; }
+bool Token::IsString() const {
+  return value_ == TokenValue::kStringLiteral;
+}
 
 bool Token::IsTypeSpecifier() const {
   return value_ == TokenValue::kChar || value_ == TokenValue::kInt ||
       value_ == TokenValue::kDouble || value_ == TokenValue::kVoid;
 }
 
-bool Token::IsIdentifier() const { return value_ == TokenValue::kIdentifier; }
+bool Token::IsIdentifier() const {
+  return value_ == TokenValue::kIdentifier;
+}
 
-bool Token::TokenValueIs(TokenValue value) const { return value_ == value; }
+bool Token::TokenValueIs(TokenValue value) const {
+  return value_ == value;
+}
 
-TokenValue Token::GetTokenValue() const { return value_; }
+TokenValue Token::GetTokenValue() const {
+  return value_;
+}
 
-std::string Token::GetTokenName() const { return name_; }
+std::string Token::GetTokenName() const {
+  return name_;
+}
 
-std::int32_t Token::GetTokenPrecedence() const { return precedence_; }
+std::int32_t Token::GetTokenPrecedence() const {
+  return precedence_;
+}
 
-char Token::GetCharValue() const { return char_value_; }
+char Token::GetCharValue() const {
+  return char_value_;
+}
 
-std::int32_t Token::GetInt32Value() const { return int32_value_; }
+std::int32_t Token::GetInt32Value() const {
+  return int32_value_;
+}
 
-double Token::GetDoubleValue() const { return double_value_; }
+double Token::GetDoubleValue() const {
+  return double_value_;
+}
 
-std::string Token::GetStringValue() const { return string_value_; }
+std::string Token::GetStringValue() const {
+  return string_value_;
+}
 
-SourceLocation Token::GetTokenLocation() const { return location_; }
+SourceLocation Token::GetTokenLocation() const {
+  return location_;
+}
 
-void Token::AppendStringValue(const std::string &str) { string_value_ += str; }
+void Token::AppendStringValue(const std::string &str) {
+  string_value_ += str;
+}
 
 }  // namespace tcc

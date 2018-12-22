@@ -611,13 +611,13 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
               context.builder_.CreateUIToFP(
                   lhs, llvm::Type::getDoubleTy(context.the_context_)))
              : context.builder_.CreateICmpULT(lhs, rhs);
-    case TokenValue::kLessOrEqual:
+    case TokenValue::kLessEqual:
       return is_double
              ? (lhs = context.builder_.CreateFCmpOLE(lhs, rhs),
               context.builder_.CreateUIToFP(
                   lhs, llvm::Type::getDoubleTy(context.the_context_)))
              : context.builder_.CreateICmpSLE(lhs, rhs);
-    case TokenValue::kGreaterOrEqual:
+    case TokenValue::kGreaterEqual:
       return is_double
              ? (lhs = context.builder_.CreateFCmpOGE(lhs, rhs),
               context.builder_.CreateUIToFP(

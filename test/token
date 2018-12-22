@@ -74,7 +74,7 @@ test.c:7:33:        type: Mul
 test.c:7:35:        type: Identifier          name:  y
 test.c:7:37:        type: Mul                 
 test.c:7:39:        type: Identifier          name:  y
-test.c:7:42:        type: LessOrEqual         
+test.c:7:42:        type: LessEqual           
 test.c:7:46:        type: DoubleConstant      value: 0.000000
 test.c:7:47:        type: RightParen          
 test.c:7:49:        type: LeftCurly           

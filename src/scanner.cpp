@@ -64,8 +64,7 @@ Scanner::Scanner(const std::string &processed_file,
                  const std::string &input_file) {
   std::ifstream ifs{processed_file};
   if (!ifs) {
-    ErrorReportAndExit("When trying to open file " + input_file +
-        ", occurred error.");
+    ErrorReportAndExit("When trying to open file " + input_file + ", occurred error.");
   }
 
   std::ostringstream ost;
@@ -76,9 +75,11 @@ Scanner::Scanner(const std::string &processed_file,
 
   input_ = ost.str();
   if (std::size(input_) == 0) {
-    ErrorReportAndExit("File is empty");
+    ErrorReportAndExit("Input file is empty.");
   }
 
+  // 删除末尾非有效字符
+  // 注意不能使用 std::isspace,在 locale 头文件中有同名函数,会产生冲突
   auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
   input_.erase(iter.base(), std::end(input_));
 
@@ -172,7 +173,7 @@ Token Scanner::GetNextToken() {
           return MakeToken(TokenValue::kShl);
         }
       } else if (Try('=')) {
-        return MakeToken(TokenValue::kLessOrEqual);
+        return MakeToken(TokenValue::kLessEqual);
       } else {
         return MakeToken(TokenValue::kLess);
       }
@@ -185,7 +186,7 @@ Token Scanner::GetNextToken() {
           return MakeToken(TokenValue::kShr);
         }
       } else if (Try('=')) {
-        return MakeToken(TokenValue::kGreaterOrEqual);
+        return MakeToken(TokenValue::kGreaterEqual);
       } else {
         return MakeToken(TokenValue::kGreater);
       }
@@ -277,7 +278,8 @@ Token Scanner::GetNextToken() {
     }
     case EOF:return MakeToken(TokenValue::kEof);
     default: {
-      ErrorReportAndExit(location_, "Unknown character.");
+      ErrorReportAndExit(location_, "Unknown character {}.",
+                         static_cast<std::int32_t>(ch));
       return MakeToken(TokenValue::kNone);
     }
   }
@@ -291,8 +293,7 @@ Token Scanner::HandleIdentifierOrKeyword() {
   }
   PutBack();
 
-  auto token{keywords_dictionary_.Find(buffer_)};
-  return MakeToken(token, buffer_);
+  return MakeToken(keywords_dictionary_.Find(buffer_), buffer_);
 }
 
 Token Scanner::HandleNumber() {
@@ -303,12 +304,15 @@ Token Scanner::HandleNumber() {
       ch = GetNextChar();
     }
     PutBack();
+
     return MakeToken(std::stod(buffer_));
   }
 
   if (buffer_.front() == '0') {
     auto ch{GetNextChar()};
+
     if (ch == 'x' || ch == 'X') {
+      buffer_.push_back(ch);
       return MakeToken(HandleHexNumber());
     } else if (IsOctDigit(ch)) {
       buffer_.push_back(ch);
@@ -318,6 +322,18 @@ Token Scanner::HandleNumber() {
         buffer_.push_back(ch);
         ch = GetNextChar();
       } while (std::isdigit(ch));
+      PutBack();
+
+      std::int32_t dot_count{};
+      auto ch{GetNextChar()};
+      while (std::isdigit(ch) || ch == '.') {
+        if (ch == '.') {
+          ++dot_count;
+        }
+        buffer_.push_back(ch);
+        ch = GetNextChar();
+      }
+
       PutBack();
       return MakeToken(std::stod(buffer_));
     } else {
@@ -465,11 +481,14 @@ void Scanner::SkipSpace() {
 }
 
 void Scanner::SkipComment() {
-  std::string buff;
+  std::string buffer;
+
+  // 跳过 # 后的空格
   GetNextChar();
+
   char ch = GetNextChar();
   while (HasNextChar() && std::isdigit(ch)) {
-    buff.push_back(ch);
+    buffer.push_back(ch);
     ch = GetNextChar();
   }
   PutBack();
@@ -477,8 +496,8 @@ void Scanner::SkipComment() {
   while (HasNextChar() && PeekNextChar() != '\n') {
     GetNextChar();
   }
-  GetNextChar();
-  location_.row_ = std::stoi(buff);
+
+  location_.row_ = std::stoi(buffer);
 }
 
 char Scanner::GetNextChar() {
