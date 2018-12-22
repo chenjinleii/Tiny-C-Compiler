@@ -17,8 +17,6 @@
 
 namespace tcc {
 
-// TODO 更多类型检查
-
 class TypeSystem {
  public:
   explicit TypeSystem(llvm::LLVMContext &context);

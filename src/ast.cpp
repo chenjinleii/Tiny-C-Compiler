@@ -20,14 +20,34 @@ QString ASTNodeTypes::ToString(ASTNodeTypes::Type type) {
   return QMetaEnum::fromType<ASTNodeTypes::Type>().valueToKey(type) + 1;
 }
 
+ASTNodeType ASTNode::Kind() const {
+  return ASTNodeType::kASTNode;
+}
+
+QJsonObject ASTNode::JsonGen() const {
+  return QJsonObject{};
+}
+
 llvm::Value *ASTNode::CodeGen(CodeGenContext &) {
   return nullptr;
+}
+
+Type::Type(TokenValue type) : type_{type} {}
+
+ASTNodeType Type::Kind() const {
+  return ASTNodeType::kType;
 }
 
 QJsonObject Type::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
   return root;
+}
+
+PrimitiveType::PrimitiveType(TokenValue type) : Type{type} {}
+
+ASTNodeType PrimitiveType::Kind() const {
+  return ASTNodeType::kPrimitiveType;
 }
 
 QJsonObject PrimitiveType::JsonGen() const {
@@ -37,10 +57,30 @@ QJsonObject PrimitiveType::JsonGen() const {
   return root;
 }
 
+ASTNodeType Statement::Kind() const {
+  return ASTNodeType::kStatement;
+}
+
 QJsonObject Statement::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
   return root;
+}
+
+CompoundStatement::CompoundStatement(std::shared_ptr<StatementList> statements)
+    : statements_{std::move(statements)} {}
+
+ASTNodeType CompoundStatement::Kind() const {
+  return ASTNodeType::kCompoundStatement;
+}
+
+void CompoundStatement::AddStatement(std::shared_ptr<Statement> statement) {
+  if (statements_) {
+    statements_->push_back(std::move(statement));
+  } else {
+    statements_ = std::make_shared<StatementList>();
+    statements_->push_back(std::move(statement));
+  }
 }
 
 QJsonObject CompoundStatement::JsonGen() const {
@@ -64,7 +104,7 @@ llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
   if (statements_) {
     for (auto &it : *statements_) {
       if (!it) {
-        ErrorReportAndExit(location_, "The statement is empty");
+        ErrorReportAndExit(location_, "The statement is empty.");
       }
       last = it->CodeGen(context);
     }
@@ -74,13 +114,11 @@ llvm::Value *CompoundStatement::CodeGen(CodeGenContext &context) {
   return last;
 }
 
-void CompoundStatement::AddStatement(std::shared_ptr<Statement> statement) {
-  if (statements_) {
-    statements_->push_back(std::move(statement));
-  } else {
-    statements_ = std::make_shared<StatementList>();
-    statements_->push_back(std::move(statement));
-  }
+ExpressionStatement::ExpressionStatement(std::shared_ptr<Expression> expression)
+    : expression_{std::move(expression)} {}
+
+ASTNodeType ExpressionStatement::Kind() const {
+  return ASTNodeType::kExpressionStatement;
 }
 
 QJsonObject ExpressionStatement::JsonGen() const {
@@ -97,50 +135,59 @@ QJsonObject ExpressionStatement::JsonGen() const {
 
 llvm::Value *ExpressionStatement::CodeGen(CodeGenContext &context) {
   if (!expression_) {
-    ErrorReportAndExit(location_, "The expression is empty");
+    ErrorReportAndExit(location_, "The expression is empty.");
   }
   return expression_->CodeGen(context);
+}
+
+IfStatement::IfStatement(std::shared_ptr<Expression> cond_,
+                         std::shared_ptr<Statement> then_block,
+                         std::shared_ptr<Statement> else_block)
+    : cond_{std::move(cond_)},
+      then_block_{std::move(then_block)},
+      else_block_{std::move(else_block)} {}
+
+ASTNodeType IfStatement::Kind() const {
+  return ASTNodeType::kIfStatement;
 }
 
 QJsonObject IfStatement::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
-
   QJsonArray children;
 
-  assert(condition_ != nullptr);
-  children.append(condition_->JsonGen());
+  assert(cond_ != nullptr);
+  children.append(cond_->JsonGen());
   children.append(then_block_->JsonGen());
   if (else_block_) {
     children.append(else_block_->JsonGen());
   }
   root["children"] = children;
+
   return root;
 }
 
 llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
-  if (!condition_) {
-    ErrorReportAndExit(location_,
-                       "The condition of the if statement cannot be empty");
+  if (!cond_) {
+    ErrorReportAndExit(location_, "The condition of the if statement cannot be empty.");
   }
 
-  auto condition_value{condition_->CodeGen(context)};
-  if (!condition_value) {
-    ErrorReportAndExit(location_, "If condition code generation failed");
+  auto cond_value{cond_->CodeGen(context)};
+  if (!cond_value) {
+    ErrorReportAndExit(location_, "If condition code generation failed.");
     return nullptr;
   }
-  condition_value = context.type_system_.CastToBool(context, condition_value);
+  cond_value = context.type_system_.CastToBool(context, cond_value);
 
   auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-  auto then_block =
-      llvm::BasicBlock::Create(context.the_context_, "if_then", parent_func);
+  auto then_block = llvm::BasicBlock::Create(context.the_context_, "if_then", parent_func);
   auto else_block = llvm::BasicBlock::Create(context.the_context_, "if_else");
   auto after_block = llvm::BasicBlock::Create(context.the_context_, "if_after");
 
   if (else_block_) {
-    context.builder_.CreateCondBr(condition_value, then_block, else_block);
+    context.builder_.CreateCondBr(cond_value, then_block, else_block);
   } else {
-    context.builder_.CreateCondBr(condition_value, then_block, after_block);
+    context.builder_.CreateCondBr(cond_value, then_block, after_block);
   }
 
   context.builder_.SetInsertPoint(then_block);
@@ -171,6 +218,13 @@ llvm::Value *IfStatement::CodeGen(CodeGenContext &context) {
   return nullptr;
 }
 
+WhileStatement::WhileStatement(std::shared_ptr<Expression> condition, std::shared_ptr<Statement> block)
+    : cond_{std::move(condition)}, block_{std::move(block)} {}
+
+ASTNodeType WhileStatement::Kind() const {
+  return ASTNodeType::kWhileStatement;
+}
+
 QJsonObject WhileStatement::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
@@ -186,22 +240,19 @@ QJsonObject WhileStatement::JsonGen() const {
 
 llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
   if (!cond_) {
-    ErrorReportAndExit(location_,
-                       "The condition of the while statement cannot be empty");
+    ErrorReportAndExit(location_, "The condition of the while statement cannot be empty.");
   }
 
   llvm::Value *cond_value{cond_->CodeGen(context)};
   if (!cond_value) {
-    ErrorReportAndExit(location_, "While condition code generation failed");
+    ErrorReportAndExit(location_, "While condition code generation failed.");
     return nullptr;
   }
   cond_value = context.type_system_.CastToBool(context, cond_value);
 
   auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-  auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop",
-                                           parent_func)};
-  auto after_block{
-      llvm::BasicBlock::Create(context.the_context_, "while_after")};
+  auto loop_block{llvm::BasicBlock::Create(context.the_context_, "while_loop", parent_func)};
+  auto after_block{llvm::BasicBlock::Create(context.the_context_, "while_after")};
 
   context.builder_.CreateCondBr(cond_value, loop_block, after_block);
   context.builder_.SetInsertPoint(loop_block);
@@ -219,12 +270,28 @@ llvm::Value *WhileStatement::CodeGen(CodeGenContext &context) {
     return nullptr;
   }
   cond_value = context.type_system_.CastToBool(context, cond_value);
+
   context.builder_.CreateCondBr(cond_value, loop_block, after_block);
 
   parent_func->getBasicBlockList().push_back(after_block);
   context.builder_.SetInsertPoint(after_block);
 
   return nullptr;
+}
+
+ForStatement::ForStatement(std::shared_ptr<Expression> init,
+                           std::shared_ptr<Expression> cond,
+                           std::shared_ptr<Expression> increment,
+                           std::shared_ptr<Statement> block,
+                           std::shared_ptr<Declaration> declaration)
+    : init_{std::move(init)},
+      cond_{std::move(cond)},
+      increment_{std::move(increment)},
+      block_{std::move(block)},
+      declaration_{std::move(declaration)} {}
+
+ASTNodeType ForStatement::Kind() const {
+  return ASTNodeType::kForStatement;
 }
 
 QJsonObject ForStatement::JsonGen() const {
@@ -244,11 +311,10 @@ QJsonObject ForStatement::JsonGen() const {
   if (increment_) {
     children.append(increment_->JsonGen());
   }
-  if (block_) {
-    children.append(block_->JsonGen());
-  }
+  children.append(block_->JsonGen());
 
   root["children"] = children;
+
   return root;
 }
 
@@ -271,8 +337,7 @@ QJsonObject ForStatement::JsonGen() const {
 
 llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
   auto parent_func{context.builder_.GetInsertBlock()->getParent()};
-  auto loop_block{
-      llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
+  auto loop_block{llvm::BasicBlock::Create(context.the_context_, "for_loop", parent_func)};
   auto after_block{llvm::BasicBlock::Create(context.the_context_, "for_after")};
 
   context.PushBlock(loop_block);
@@ -317,6 +382,13 @@ llvm::Value *ForStatement::CodeGen(CodeGenContext &context) {
   return nullptr;
 }
 
+ReturnStatement::ReturnStatement(std::shared_ptr<Expression> expression)
+    : expression_{std::move(expression)} {}
+
+ASTNodeType ReturnStatement::Kind() const {
+  return ASTNodeType::kReturnStatement;
+}
+
 QJsonObject ReturnStatement::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
@@ -340,6 +412,17 @@ llvm::Value *ReturnStatement::CodeGen(CodeGenContext &context) {
     context.SetCurrentReturnValue(nullptr);
     return nullptr;
   }
+}
+
+Declaration::Declaration(std::shared_ptr<PrimitiveType> type,
+                         std::shared_ptr<Identifier> name,
+                         std::shared_ptr<Expression> init)
+    : type_{std::move(type)},
+      name_{std::move(name)},
+      init_{std::move(init)} {}
+
+ASTNodeType Declaration::Kind() const {
+  return ASTNodeType::kDeclaration;
 }
 
 QJsonObject Declaration::JsonGen() const {
@@ -367,12 +450,12 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
   auto addr{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
   // 默认初始化为 0
-  if (type->isIntegerTy(32)) {
-    context.builder_.CreateStore(
-        llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
-  } else if (type->isIntegerTy(8)) {
+  if (type->isIntegerTy(8)) {
     context.builder_.CreateStore(
         llvm::ConstantInt::get(context.the_context_, llvm::APInt(8, 0)), addr);
+  } else if (type->isIntegerTy(32)) {
+    context.builder_.CreateStore(
+        llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
   } else if (type->isDoubleTy()) {
     context.builder_.CreateStore(
         llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)), addr);
@@ -382,17 +465,27 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
   context.SetSymbolValue(name_->name_, addr);
 
   if (init_) {
-    BinaryOpExpression assignment(name_, init_, TokenValue::kAssign);
-    assignment.CodeGen(context);
+    BinaryOpExpression{name_, init_, TokenValue::kAssign}.CodeGen(context);
   }
 
   return addr;
+}
+
+ASTNodeType Expression::Kind() const {
+  return ASTNodeType::kExpression;
 }
 
 QJsonObject Expression::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind());
   return root;
+}
+
+UnaryOpExpression::UnaryOpExpression(std::shared_ptr<Expression> object, TokenValue op)
+    : object_{std::move(object)}, op_{op} {}
+
+ASTNodeType UnaryOpExpression::Kind() const {
+  return ASTNodeType::kUnaryOpExpression;
 }
 
 QJsonObject UnaryOpExpression::JsonGen() const {
@@ -409,23 +502,25 @@ QJsonObject UnaryOpExpression::JsonGen() const {
 }
 
 // ++/--/~/!
+// TODO 验证!,类型转换
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
   if (op_ == TokenValue::kInc || op_ == TokenValue::kDec) {
     return PostfixExpression{object_, op_}.CodeGen(context);
   } else if (op_ == TokenValue::kLogicNeg) {
-    // TODO 迷之错误
-    auto value{
-        context.type_system_.CastToBool(context, object_->CodeGen(context))};
-    return context.builder_.CreateICmpNE(
-        value,
-        llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_),
-                               static_cast<uint64_t>(false)));
+    return context.builder_.CreateNot(object_->CodeGen(context));
   } else if (op_ == TokenValue::kNeg) {
     return context.builder_.CreateNeg(object_->CodeGen(context));
   } else {
-    ErrorReportAndExit(location_, "Unknown unary prefix operator");
+    ErrorReportAndExit(location_, "Unknown unary prefix operator.");
     return nullptr;
   }
+}
+
+PostfixExpression::PostfixExpression(std::shared_ptr<Expression> object, TokenValue op)
+    : object_{std::move(object)}, op_{op} {}
+
+ASTNodeType PostfixExpression::Kind() const {
+  return ASTNodeType::kPostfixExpression;
 }
 
 QJsonObject PostfixExpression::JsonGen() const {
@@ -442,6 +537,7 @@ QJsonObject PostfixExpression::JsonGen() const {
 }
 
 // ++/--
+// TODO 类型转换
 llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
   BinaryOpExpression postfix{
       object_,
@@ -450,6 +546,13 @@ llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
           op_ == TokenValue::kInc ? TokenValue::kAdd : TokenValue::kSub),
       TokenValue::kAssign};
   return postfix.CodeGen(context);
+}
+
+BinaryOpExpression::BinaryOpExpression(std::shared_ptr<Expression> lhs, std::shared_ptr<Expression> rhs, TokenValue op)
+    : lhs_{std::move(lhs)}, rhs_{std::move(rhs)}, op_{op} {}
+
+ASTNodeType BinaryOpExpression::Kind() const {
+  return ASTNodeType::kBinaryOpExpression;
 }
 
 QJsonObject BinaryOpExpression::JsonGen() const {
@@ -467,85 +570,67 @@ QJsonObject BinaryOpExpression::JsonGen() const {
   return root;
 }
 
+// TODO 类型转换
 llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
   if (op_ == TokenValue::kAssign) {
-    auto lhs{dynamic_cast<Identifier *>(lhs_.get())};
+    auto lhs{std::dynamic_pointer_cast<Identifier>(lhs_)};
     if (!lhs) {
-      ErrorReportAndExit(location_, "destination of '=' must be a variable");
+      ErrorReportAndExit(location_, "Destination of '=' must be a variable.");
       return nullptr;
     }
+
     auto rhs_value{rhs_->CodeGen(context)};
     if (!rhs_value) {
-      ErrorReportAndExit(location_,
-                         "The code to the right of "
-                         "the assignment operator failed to generate");
+      ErrorReportAndExit(location_, "The code to the right of the assignment operator failed to generate.");
       return nullptr;
     }
+
     auto var{context.GetSymbolValue(lhs->name_)};
     if (!var) {
       ErrorReportAndExit(location_, "Unknown variable name {}.", lhs->name_);
     }
-
     context.builder_.CreateStore(rhs_value, var);
+
     return rhs_value;
   } else if (op_ == TokenValue::kAddAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kAdd),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kAdd), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kSubAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kSub),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kSub), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kMulAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kMul),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kMul), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kDivAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kDiv),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kDiv), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kModAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kMod),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kMod), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kAndAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kAnd),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kAnd), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kOrAssign) {
     return BinaryOpExpression{
-        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kOr),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kOr), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kXorAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kXor),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kXor), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kShlAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kShl),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kShl), TokenValue::kAssign}
         .CodeGen(context);
   } else if (op_ == TokenValue::kShrAssign) {
     return BinaryOpExpression{
-        lhs_,
-        std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kShr),
-        TokenValue::kAssign}
+        lhs_, std::make_shared<BinaryOpExpression>(lhs_, rhs_, TokenValue::kShr), TokenValue::kAssign}
         .CodeGen(context);
   }
 
@@ -553,16 +638,14 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
   auto rhs{rhs_->CodeGen(context)};
   bool is_double{false};
 
-  if ((lhs->getType()->getTypeID() == llvm::Type::DoubleTyID) ||
-      (rhs->getType()->getTypeID() == llvm::Type::DoubleTyID)) {
+  if ((lhs->getType()->getTypeID() == llvm::Type::DoubleTyID)
+      || (rhs->getType()->getTypeID() == llvm::Type::DoubleTyID)) {
     is_double = true;
     if ((rhs->getType()->getTypeID() != llvm::Type::DoubleTyID)) {
-      rhs = context.builder_.CreateUIToFP(
-          rhs, llvm::Type::getDoubleTy(context.the_context_));
+      rhs = context.builder_.CreateUIToFP(rhs, llvm::Type::getDoubleTy(context.the_context_));
     }
     if ((lhs->getType()->getTypeID() != llvm::Type::DoubleTyID)) {
-      lhs = context.builder_.CreateUIToFP(
-          lhs, llvm::Type::getDoubleTy(context.the_context_));
+      lhs = context.builder_.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context.the_context_));
     }
   }
 
@@ -658,6 +741,8 @@ llvm::Value *Identifier::CodeGen(CodeGenContext &context) {
   // 从栈中加载
   return context.builder_.CreateLoad(value, name_);
 }
+Identifier::Identifier(std::string name) : name_{std::move(name)} {}
+ASTNodeType Identifier::Kind() const { return ASTNodeType::kIdentifier; }
 
 QJsonObject FunctionCall::JsonGen() const {
   QJsonObject root;
@@ -718,6 +803,9 @@ void FunctionCall::AddArg(std::shared_ptr<Expression> arg) {
     args_->push_back(std::move(arg));
   }
 }
+FunctionCall::FunctionCall(std::shared_ptr<Identifier> name, std::shared_ptr<ExpressionList> args)
+    : name_{std::move(name)}, args_{std::move(args)} {}
+ASTNodeType FunctionCall::Kind() const { return ASTNodeType::kFunctionCall; }
 
 ASTNodeType FunctionDeclaration::Kind() const {
   if (body_) {
@@ -822,6 +910,14 @@ void FunctionDeclaration::AddArg(std::shared_ptr<Declaration> arg) {
     args_->push_back(std::move(arg));
   }
 }
+FunctionDeclaration::FunctionDeclaration(std::shared_ptr<Type> return_type,
+                                         std::shared_ptr<Identifier> name,
+                                         std::shared_ptr<DeclarationList> args,
+                                         std::shared_ptr<CompoundStatement> body)
+    : return_type_{std::move(return_type)},
+      name_{std::move(name)},
+      args_{std::move(args)},
+      body_{std::move(body)} {}
 
 QJsonObject CharConstant::JsonGen() const {
   QJsonObject root;
@@ -834,6 +930,8 @@ llvm::Value *CharConstant::CodeGen(CodeGenContext &context) {
   return llvm::ConstantInt::get(
       context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
 }
+CharConstant::CharConstant(char value) : value_{value} {}
+ASTNodeType CharConstant::Kind() const { return ASTNodeType::kCharConstant; }
 
 QJsonObject Int32Constant::JsonGen() const {
   QJsonObject root;
@@ -849,6 +947,8 @@ llvm::Value *Int32Constant::CodeGen(CodeGenContext &context) {
       context.the_context_,
       llvm::APInt(32, static_cast<std::uint64_t>(value_)));
 }
+Int32Constant::Int32Constant(std::int32_t value) : value_{value} {}
+ASTNodeType Int32Constant::Kind() const { return ASTNodeType::kInt32Constant; }
 
 QJsonObject DoubleConstant::JsonGen() const {
   QJsonObject root;
@@ -862,6 +962,8 @@ QJsonObject DoubleConstant::JsonGen() const {
 llvm::Value *DoubleConstant::CodeGen(CodeGenContext &context) {
   return llvm::ConstantFP::get(context.the_context_, llvm::APFloat(value_));
 }
+DoubleConstant::DoubleConstant(double value) : value_{value} {}
+ASTNodeType DoubleConstant::Kind() const { return ASTNodeType::kDoubleConstant; }
 
 QJsonObject StringLiteral::JsonGen() const {
   QJsonObject root;
@@ -873,5 +975,7 @@ QJsonObject StringLiteral::JsonGen() const {
 llvm::Value *StringLiteral::CodeGen(CodeGenContext &context) {
   return context.builder_.CreateGlobalString(value_);
 }
+StringLiteral::StringLiteral(std::string value) : value_{std::move(value)} {}
+ASTNodeType StringLiteral::Kind() const { return ASTNodeType::kStringLiteral; }
 
 }  // namespace tcc

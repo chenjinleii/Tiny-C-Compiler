@@ -73,10 +73,8 @@ class ASTNode {
  public:
   ASTNode() = default;
   virtual ~ASTNode() = default;
-
-  virtual ASTNodeType Kind() const { return ASTNodeType::kASTNode; }
-
-  virtual QJsonObject JsonGen() const { return QJsonObject{}; }
+  virtual ASTNodeType Kind() const;
+  virtual QJsonObject JsonGen() const;
   // 该方法表示为该AST节点生成IR所依赖的所有内容
   // llvm::Value 是用于表示LLVM中SSA值的类
   virtual llvm::Value *CodeGen(CodeGenContext &context);
@@ -87,8 +85,8 @@ class ASTNode {
 class Type : public ASTNode {
  public:
   Type() = default;
-  explicit Type(TokenValue type) : type_{type} {}
-  ASTNodeType Kind() const override { return ASTNodeType::kType; }
+  explicit Type(TokenValue type);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
 
   TokenValue type_{TokenValue::kNone};
@@ -97,27 +95,23 @@ class Type : public ASTNode {
 class PrimitiveType : public Type {
  public:
   PrimitiveType() = default;
-  explicit PrimitiveType(TokenValue type) : Type{type} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
+  explicit PrimitiveType(TokenValue type);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
 };
 
 class Statement : public ASTNode {
  public:
-  ASTNodeType Kind() const override { return ASTNodeType::kStatement; }
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
 };
 
 class CompoundStatement : public Statement {
  public:
   CompoundStatement() = default;
-  explicit CompoundStatement(std::shared_ptr<StatementList> statements)
-      : statements_{std::move(statements)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kCompoundStatement; }
+  explicit CompoundStatement(std::shared_ptr<StatementList> statements);
+  ASTNodeType Kind() const override;
   void AddStatement(std::shared_ptr<Statement> statement);
-
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -127,13 +121,8 @@ class CompoundStatement : public Statement {
 class ExpressionStatement : public Statement {
  public:
   ExpressionStatement() = default;
-  explicit ExpressionStatement(std::shared_ptr<Expression> expression)
-      : expression_{std::move(expression)} {}
-
-  ASTNodeType Kind() const override {
-    return ASTNodeType::kExpressionStatement;
-  }
-
+  explicit ExpressionStatement(std::shared_ptr<Expression> expression);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -143,19 +132,14 @@ class ExpressionStatement : public Statement {
 class IfStatement : public Statement {
  public:
   IfStatement() = default;
-  IfStatement(std::shared_ptr<Expression> condition_,
+  IfStatement(std::shared_ptr<Expression> cond_,
               std::shared_ptr<Statement> then_block,
-              std::shared_ptr<Statement> else_block)
-      : condition_{std::move(condition_)},
-        then_block_{std::move(then_block)},
-        else_block_{std::move(else_block)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kIfStatement; }
-
+              std::shared_ptr<Statement> else_block);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
-  std::shared_ptr<Expression> condition_;
+  std::shared_ptr<Expression> cond_;
   std::shared_ptr<Statement> then_block_;
   std::shared_ptr<Statement> else_block_;
 };
@@ -163,12 +147,9 @@ class IfStatement : public Statement {
 class WhileStatement : public Statement {
  public:
   WhileStatement() = default;
-  WhileStatement(std::shared_ptr<Expression> condition,
-                 std::shared_ptr<Statement> block)
-      : cond_{std::move(condition)}, block_{std::move(block)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kWhileStatement; }
-
+  WhileStatement(std::shared_ptr<Expression> cond,
+                 std::shared_ptr<Statement> block);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -180,18 +161,11 @@ class ForStatement : public Statement {
  public:
   ForStatement() = default;
   ForStatement(std::shared_ptr<Expression> init,
-               std::shared_ptr<Expression> condition,
+               std::shared_ptr<Expression> cond,
                std::shared_ptr<Expression> increment,
                std::shared_ptr<Statement> block,
-               std::shared_ptr<Declaration> declaration)
-      : init_{std::move(init)},
-        cond_{std::move(condition)},
-        increment_{std::move(increment)},
-        block_{std::move(block)},
-        declaration_{std::move(declaration)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kForStatement; }
-
+               std::shared_ptr<Declaration> declaration);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -203,11 +177,8 @@ class ForStatement : public Statement {
 class ReturnStatement : public Statement {
  public:
   ReturnStatement() = default;
-  explicit ReturnStatement(std::shared_ptr<Expression> expression)
-      : expression_{std::move(expression)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kReturnStatement; }
-
+  explicit ReturnStatement(std::shared_ptr<Expression> expression);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -221,13 +192,8 @@ class Declaration : public Statement {
   Declaration() = default;
   Declaration(std::shared_ptr<PrimitiveType> type,
               std::shared_ptr<Identifier> name,
-              std::shared_ptr<Expression> init = nullptr)
-      : type_{std::move(type)},
-        name_{std::move(name)},
-        init_{std::move(init)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kDeclaration; }
-
+              std::shared_ptr<Expression> init = nullptr);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -238,18 +204,15 @@ class Declaration : public Statement {
 
 class Expression : public ASTNode {
  public:
-  ASTNodeType Kind() const override { return ASTNodeType::kExpression; }
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
 };
 
 class UnaryOpExpression : public Expression {
  public:
   UnaryOpExpression() = default;
-  UnaryOpExpression(std::shared_ptr<Expression> object, TokenValue op)
-      : object_{std::move(object)}, op_{op} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kUnaryOpExpression; }
-
+  UnaryOpExpression(std::shared_ptr<Expression> object, TokenValue op);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -260,11 +223,8 @@ class UnaryOpExpression : public Expression {
 class PostfixExpression : public Expression {
  public:
   PostfixExpression() = default;
-  PostfixExpression(std::shared_ptr<Expression> object, TokenValue op)
-      : object_{std::move(object)}, op_{op} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kPostfixExpression; }
-
+  PostfixExpression(std::shared_ptr<Expression> object, TokenValue op);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -276,11 +236,8 @@ class BinaryOpExpression : public Expression {
  public:
   BinaryOpExpression() = default;
   BinaryOpExpression(std::shared_ptr<Expression> lhs,
-                     std::shared_ptr<Expression> rhs, TokenValue op)
-      : lhs_{std::move(lhs)}, rhs_{std::move(rhs)}, op_{op} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kBinaryOpExpression; }
-
+                     std::shared_ptr<Expression> rhs, TokenValue op);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -292,10 +249,8 @@ class BinaryOpExpression : public Expression {
 class Identifier : public Expression {
  public:
   Identifier() = default;
-  explicit Identifier(std::string name) : name_{std::move(name)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kIdentifier; }
-
+  explicit Identifier(std::string name);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -306,12 +261,9 @@ class FunctionCall : public Expression {
  public:
   FunctionCall() = default;
   explicit FunctionCall(std::shared_ptr<Identifier> name,
-                        std::shared_ptr<ExpressionList> args = nullptr)
-      : name_{std::move(name)}, args_{std::move(args)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kFunctionCall; }
+                        std::shared_ptr<ExpressionList> args = nullptr);
+  ASTNodeType Kind() const override;
   void AddArg(std::shared_ptr<Expression> arg);
-
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -324,32 +276,35 @@ class FunctionDeclaration : public Statement {
   FunctionDeclaration() = default;
   FunctionDeclaration(std::shared_ptr<Type> return_type,
                       std::shared_ptr<Identifier> name,
-                      std::shared_ptr<DeclarationList> args,
-                      std::shared_ptr<CompoundStatement> body)
-      : return_type_{std::move(return_type)},
-        name_{std::move(name)},
-        args_{std::move(args)},
-        body_{std::move(body)} {}
-
+                      std::shared_ptr<DeclarationList> args);
   ASTNodeType Kind() const override;
   void AddArg(std::shared_ptr<Declaration> arg);
-
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
   std::shared_ptr<Type> return_type_;
   std::shared_ptr<Identifier> name_;
   std::shared_ptr<DeclarationList> args_;
+};
+
+class FunctionDefinition : public Statement {
+ public:
+  FunctionDefinition() = default;
+  FunctionDefinition(std::shared_ptr<FunctionDeclaration> declaration_,
+                     std::shared_ptr<CompoundStatement> body);
+  ASTNodeType Kind() const override;
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<FunctionDeclaration> declaration_;
   std::shared_ptr<Statement> body_;
 };
 
 class CharConstant : public Expression {
  public:
   CharConstant() = default;
-  explicit CharConstant(char value) : value_{value} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kCharConstant; }
-
+  explicit CharConstant(char value);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -359,10 +314,8 @@ class CharConstant : public Expression {
 class Int32Constant : public Expression {
  public:
   Int32Constant() = default;
-  explicit Int32Constant(std::int32_t value) : value_{value} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kInt32Constant; }
-
+  explicit Int32Constant(std::int32_t value);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -372,10 +325,8 @@ class Int32Constant : public Expression {
 class DoubleConstant : public Expression {
  public:
   DoubleConstant() = default;
-  explicit DoubleConstant(double value) : value_{value} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kDoubleConstant; }
-
+  explicit DoubleConstant(double value);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
@@ -385,10 +336,8 @@ class DoubleConstant : public Expression {
 class StringLiteral : public Expression {
  public:
   StringLiteral() = default;
-  explicit StringLiteral(std::string value) : value_{std::move(value)} {}
-
-  ASTNodeType Kind() const override { return ASTNodeType::kStringLiteral; }
-
+  explicit StringLiteral(std::string value);
+  ASTNodeType Kind() const override;
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 

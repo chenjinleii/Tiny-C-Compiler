@@ -16,7 +16,7 @@ std::shared_ptr<CompoundStatement> Parser::Parse() {
   auto root{MakeASTNode<CompoundStatement>()};
 
   if (std::size(token_sequence_) == 0) {
-    ErrorReportAndExit("no token");
+    ErrorReportAndExit("No token.");
   }
 
   while (HasNextToken()) {
@@ -71,10 +71,10 @@ bool Parser::Test(TokenValue value) {
   return PeekNextToken().TokenValueIs(value);
 }
 
-void Parser::Expect(TokenValue value) {
-  if (!PeekNextToken().TokenValueIs(value)) {
-    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), value,
-                       PeekNextToken().GetTokenValue());
+void Parser::Expect(TokenValue expect) {
+  auto next{PeekNextToken()};
+  if (!next.TokenValueIs(expect)) {
+    ErrorReportAndExit(next.GetTokenLocation(), expect, next.GetTokenValue());
   } else {
     GetNextToken();
   }
@@ -96,20 +96,20 @@ std::shared_ptr<Statement> Parser::ParseGlobal() {
 }
 
 std::shared_ptr<Statement> Parser::ParseDeclaration() {
-  auto declaration_no_init{ParseDeclarationWithoutInit()};
+  auto declaration_without_init{ParseDeclarationWithoutInit()};
 
   if (Try(TokenValue::kLeftParen)) {
-    auto function{ParseFunctionDeclaration()};
-    function->return_type_ = std::move(declaration_no_init->type_);
-    function->name_ = std::move(declaration_no_init->name_);
+    auto function{std::dynamic_pointer_cast<FunctionDefinition>(ParseFunction())};
+    function->declaration_->return_type_ = std::move(declaration_without_init->type_);
+    function->declaration_->name_ = std::move(declaration_without_init->name_);
     return function;
-  } else if (Try(TokenValue::kAssign)) {
-    auto initialization_expression{ParseExpression()};
-    declaration_no_init->init_ = std::move(initialization_expression);
-    return declaration_no_init;
-  } else {
-    return declaration_no_init;
   }
+
+  if (Try(TokenValue::kAssign)) {
+    declaration_without_init->init_ = ParseExpression();
+  }
+
+  return declaration_without_init;
 }
 
 std::shared_ptr<PrimitiveType> Parser::ParseTypeSpecifier() {
@@ -130,11 +130,11 @@ std::shared_ptr<Identifier> Parser::ParseIdentifier() {
   }
 }
 
-std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
-  auto function{MakeASTNode<FunctionDeclaration>()};
+std::shared_ptr<Statement> Parser::ParseFunction() {
+  auto func_declaration{MakeASTNode<FunctionDeclaration>()};
 
   while (!Test(TokenValue::kRightParen)) {
-    function->AddArg(ParseDeclarationWithoutInit());
+    func_declaration->AddArg(ParseDeclarationWithoutInit());
     if (!Test(TokenValue::kRightParen)) {
       Expect(TokenValue::kComma);
     } else {
@@ -145,12 +145,14 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
   Expect(TokenValue::kRightParen);
 
   if (Try(TokenValue::kLeftCurly)) {
-    function->body_ = ParseCompound(true);
+    auto func_definition{MakeASTNode<FunctionDefinition>()};
+    func_definition->declaration_ = std::move(func_declaration);
+    func_definition->body_ = ParseCompound(true);
     Expect(TokenValue::kRightCurly);
-    return function;
-  } else {
-    return function;
+    return func_definition;
   }
+
+  return func_declaration;
 }
 
 std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
@@ -158,17 +160,15 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
 
   auto return_type{ParseTypeSpecifier()};
   if (!return_type) {
-    ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
-                       "expect a type specifier");
+    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "Expect a type specifier.");
   }
-  function->return_type_ = return_type;
+  function->return_type_ = std::move(return_type);
 
   auto function_name{ParseIdentifier()};
   if (!function_name) {
-    ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
-                       "expect a identifier");
+    ErrorReportAndExit(PeekNextToken().GetTokenLocation(), "Expect a identifier.");
   }
-  function->name_ = function_name;
+  function->name_ = std::move(function_name);
 
   Expect(TokenValue::kLeftParen);
 
@@ -194,6 +194,7 @@ std::shared_ptr<Statement> Parser::ParseCompound(bool is_func) {
         compound->AddStatement(ParseStatement());
       }
       Expect(TokenValue::kRightCurly);
+
       return compound;
     } else {
       return ParseStatement();
@@ -217,18 +218,18 @@ std::shared_ptr<Declaration> Parser::ParseDeclarationWithoutInit() {
   if (!identifier) {
     ErrorReportAndExit("expect a identifier");
   }
-  return MakeASTNode<Declaration>(type, identifier);
+  return MakeASTNode<Declaration>(std::move(type), std::move(identifier));
 }
 
-std::shared_ptr<Declaration> Parser::ParDeclarationWithInit() {
-  auto var_declaration_no_init{ParseDeclarationWithoutInit()};
+std::shared_ptr<Declaration> Parser::ParseDeclarationWithInit() {
+  auto declaration_without_init{ParseDeclarationWithoutInit()};
 
   if (Try(TokenValue::kAssign)) {
-    var_declaration_no_init->init_ = ParseExpression();
+    declaration_without_init->init_ = ParseExpression();
   }
   Expect(TokenValue::kSemicolon);
 
-  return var_declaration_no_init;
+  return declaration_without_init;
 }
 
 std::shared_ptr<Statement> Parser::ParseStatement() {
@@ -241,7 +242,7 @@ std::shared_ptr<Statement> Parser::ParseStatement() {
   } else if (Try(TokenValue::kReturn)) {
     return ParseReturnStatement();
   } else if (PeekNextToken().IsTypeSpecifier()) {
-    return ParDeclarationWithInit();
+    return ParseDeclarationWithInit();
   } else if (Test(TokenValue::kLeftCurly)) {
     auto compound{ParseCompound(false)};
     return compound;
@@ -254,7 +255,7 @@ std::shared_ptr<IfStatement> Parser::ParseIfStatement() {
   auto if_statement{MakeASTNode<IfStatement>()};
 
   Expect(TokenValue::kLeftParen);
-  if_statement->condition_ = ParseExpression();
+  if_statement->cond_ = ParseExpression();
   Expect(TokenValue::kRightParen);
 
   if_statement->then_block_ = ParseCompound(false);
@@ -284,7 +285,7 @@ std::shared_ptr<ForStatement> Parser::ParseForStatement() {
   Expect(TokenValue::kLeftParen);
 
   if (PeekNextToken().IsTypeSpecifier()) {
-    for_statement->declaration_ = ParDeclarationWithInit();
+    for_statement->declaration_ = ParseDeclarationWithInit();
   } else {
     for_statement->init_ = ParseExpression();
     Expect(TokenValue::kSemicolon);
@@ -354,17 +355,17 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
   }
 }
 
+// +/-/++/--/~/!
 std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
   auto op{GetNextToken()};
 
   if (PeekNextToken().IsIdentifier()) {
-    return MakeASTNode<UnaryOpExpression>(ParseIdentifierExpression(),
-                                          op.GetTokenValue());
+    return MakeASTNode<UnaryOpExpression>(ParseIdentifierExpression(), op.GetTokenValue());
   } else if (PeekNextToken().IsChar()) {
     if (op.TokenValueIs(TokenValue::kAdd)) {
-      return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ + 1);
+      return MakeASTNode<Int32Constant>(+ParseCharConstant()->value_);
     } else if (op.TokenValueIs(TokenValue::kSub)) {
-      return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ - 1);
+      return MakeASTNode<Int32Constant>(-ParseCharConstant()->value_);
     } else if (op.TokenValueIs(TokenValue::kNeg)) {
       return MakeASTNode<Int32Constant>(~(ParseCharConstant()->value_));
     } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
@@ -399,7 +400,9 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
       return nullptr;
     }
   } else {
-    ErrorReportAndExit("Cannot apply");
+    ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                       "Cannot apply unary operator to {}",
+                       PeekNextToken().ToString());
     return nullptr;
   }
 }
@@ -409,9 +412,10 @@ std::shared_ptr<Int32Constant> Parser::ParseSizeof() {
   Expect(TokenValue::kLeftParen);
   auto type{ParseTypeSpecifier()};
   if (!type) {
-    ErrorReportAndExit("expect a type name");
+    ErrorReportAndExit("Expect a type name.");
   }
   Expect(TokenValue::kRightParen);
+
   if (type->type_ == TokenValue::kInt) {
     return MakeASTNode<Int32Constant>(4);
   } else if (type->type_ == TokenValue::kDouble) {
@@ -419,7 +423,7 @@ std::shared_ptr<Int32Constant> Parser::ParseSizeof() {
   } else if (type->type_ == TokenValue::kChar) {
     return MakeASTNode<Int32Constant>(1);
   } else {
-    ErrorReportAndExit("Unknown type");
+    ErrorReportAndExit("Unknown type.");
     return nullptr;
   }
 }
@@ -441,6 +445,7 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
     auto function_call{MakeASTNode<FunctionCall>()};
     function_call->name_ = std::move(identifier);
     function_call->args_ = std::make_shared<ExpressionList>();
+
     if (!Test(TokenValue::kRightParen)) {
       while (true) {
         if (auto arg{ParseExpression()}) {
@@ -454,19 +459,18 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
         }
 
         if (!Test(TokenValue::kComma)) {
-          ErrorReportAndExit("expect ) or ,");
+          ErrorReportAndExit("Expect ) or ,");
         }
         GetNextToken();
       }
     }
     Expect(TokenValue::kRightParen);
+
     return function_call;
   } else if (Try(TokenValue::kInc)) {
-    return MakeASTNode<PostfixExpression>(std::move(identifier),
-                                          TokenValue::kInc);
+    return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kInc);
   } else if (Try(TokenValue::kDec)) {
-    return MakeASTNode<PostfixExpression>(std::move(identifier),
-                                          TokenValue::kDec);
+    return MakeASTNode<PostfixExpression>(std::move(identifier), TokenValue::kDec);
   } else {
     return identifier;
   }
@@ -494,8 +498,7 @@ std::shared_ptr<Expression> Parser::ParseBinOpRHS(
       }
     }
 
-    lhs = std::make_shared<BinaryOpExpression>(std::move(lhs), std::move(rhs),
-                                               op);
+    lhs = std::make_shared<BinaryOpExpression>(std::move(lhs), std::move(rhs), op);
   }
 }
 

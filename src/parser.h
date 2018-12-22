@@ -31,18 +31,18 @@ class Parser {
   bool HasNextToken() const;
   bool Try(TokenValue value);
   bool Test(TokenValue value);
-  void Expect(TokenValue value);
+  void Expect(TokenValue expect);
 
   std::shared_ptr<Statement> ParseGlobal();
   std::shared_ptr<Statement> ParseDeclaration();
   std::shared_ptr<PrimitiveType> ParseTypeSpecifier();
   std::shared_ptr<Identifier> ParseIdentifier();
-  std::shared_ptr<FunctionDeclaration> ParseFunctionDeclaration();
+  std::shared_ptr<Statement> ParseFunction();
   std::shared_ptr<FunctionDeclaration> ParseExtern();
 
   std::shared_ptr<Statement> ParseCompound(bool is_func);
   std::shared_ptr<Declaration> ParseDeclarationWithoutInit();
-  std::shared_ptr<Declaration> ParDeclarationWithInit();
+  std::shared_ptr<Declaration> ParseDeclarationWithInit();
   std::shared_ptr<Statement> ParseStatement();
   std::shared_ptr<IfStatement> ParseIfStatement();
   std::shared_ptr<WhileStatement> ParseWhileStatement();

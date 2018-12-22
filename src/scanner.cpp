@@ -320,21 +320,12 @@ Token Scanner::HandleNumber() {
     } else if (ch == '.') {
       do {
         buffer_.push_back(ch);
-        ch = GetNextChar();
+        if ((ch = GetNextChar()) == '.') {
+          ErrorReportAndExit(location_, "No more than one decimal point");
+        }
       } while (std::isdigit(ch));
       PutBack();
 
-      std::int32_t dot_count{};
-      auto ch{GetNextChar()};
-      while (std::isdigit(ch) || ch == '.') {
-        if (ch == '.') {
-          ++dot_count;
-        }
-        buffer_.push_back(ch);
-        ch = GetNextChar();
-      }
-
-      PutBack();
       return MakeToken(std::stod(buffer_));
     } else {
       PutBack();
@@ -370,6 +361,7 @@ std::int32_t Scanner::HandleOctNumber() {
     next = GetNextChar();
   }
   PutBack();
+
   return std::stoi(buffer_, nullptr, 8);
 }
 
@@ -380,6 +372,7 @@ std::int32_t Scanner::HandleHexNumber() {
     next = GetNextChar();
   }
   PutBack();
+
   return std::stoi(buffer_, nullptr, 16);
 }
 
@@ -393,7 +386,7 @@ Token Scanner::HandleChar() {
     return MakeToken(TokenTypes::kEof);
   }
 
-  if (auto next{GetNextChar()}; next != '\'') {
+  if (GetNextChar() != '\'') {
     ErrorReportAndExit(location_, "miss '");
     return MakeToken(TokenTypes::kNone);
   }
@@ -446,32 +439,32 @@ char Scanner::HandleEscape() {
 }
 
 char Scanner::HandleOctEscape(char ch) {
-  std::string buf;
-  buf.push_back(ch);
+  std::string buffer;
+  buffer.push_back(ch);
 
   for (std::int32_t i{0}; i < 2; ++i) {
     if (char next{GetNextChar()}; IsOctDigit(next)) {
-      buf.push_back(next);
+      buffer.push_back(next);
     } else {
       PutBack();
       break;
     }
   }
-  return static_cast<char>(std::stoi(buf, nullptr, 8));
+  return static_cast<char>(std::stoi(buffer, nullptr, 8));
 }
 
 char Scanner::HandleHexEscape() {
-  std::string buf;
+  std::string buffer;
 
   for (std::int32_t i{0}; i < 2; ++i) {
     if (char next{GetNextChar()}; std::isxdigit(next)) {
-      buf.push_back(next);
+      buffer.push_back(next);
     } else {
       PutBack();
       break;
     }
   }
-  return static_cast<char>(std::stoi(buf, nullptr, 16));
+  return static_cast<char>(std::stoi(buffer, nullptr, 16));
 }
 
 void Scanner::SkipSpace() {
@@ -496,6 +489,9 @@ void Scanner::SkipComment() {
   while (HasNextChar() && PeekNextChar() != '\n') {
     GetNextChar();
   }
+
+  // eat '\n'
+  GetNextChar();
 
   location_.row_ = std::stoi(buffer);
 }
@@ -544,7 +540,9 @@ void Scanner::PutBack() {
   }
 }
 
-bool Scanner::HasNextChar() const { return index_ < std::size(input_); }
+bool Scanner::HasNextChar() const {
+  return index_ < std::size(input_);
+}
 
 bool Scanner::Try(char ch) {
   if (PeekNextChar() == ch) {
@@ -555,9 +553,13 @@ bool Scanner::Try(char ch) {
   }
 }
 
-bool Scanner::Test(char ch) const { return PeekNextChar() == ch; }
+bool Scanner::Test(char ch) const {
+  return PeekNextChar() == ch;
+}
 
-Token Scanner::MakeToken(TokenValue value) { return Token{location_, value}; }
+Token Scanner::MakeToken(TokenValue value) {
+  return Token{location_, value};
+}
 
 Token Scanner::MakeToken(TokenValue value, const std::string &name) {
   return Token{location_, value, name};
@@ -579,6 +581,8 @@ Token Scanner::MakeToken(const std::string &string_value) {
   return Token{location_, string_value};
 }
 
-bool IsOctDigit(char ch) { return ch >= '0' && ch < '8'; }
+bool IsOctDigit(char ch) {
+  return ch >= '0' && ch < '8';
+}
 
 }  // namespace tcc
