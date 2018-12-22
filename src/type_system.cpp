@@ -14,6 +14,7 @@ TypeSystem::TypeSystem(llvm::LLVMContext &context) : the_context_{context} {
   AddCast(int32_type_, double_type_, llvm::CastInst::SIToFP);
   AddCast(double_type_, int32_type_, llvm::CastInst::FPToSI);
   AddCast(bool_type_, double_type_, llvm::CastInst::SIToFP);
+  AddCast(char_type_, int32_type_, llvm::CastInst::SExt);
 }
 
 llvm::Value *TypeSystem::Cast(llvm::Value *value, llvm::Type *type,

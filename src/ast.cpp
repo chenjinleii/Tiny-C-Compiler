@@ -367,8 +367,16 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
   auto addr{context.CreateEntryBlockAlloca(parent_func, type, name_->name_)};
 
   // 默认初始化为 0
-  context.builder_.CreateStore(
-      llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
+  if (type->isIntegerTy(32)) {
+    context.builder_.CreateStore(
+        llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, 0)), addr);
+  } else if (type->isIntegerTy(8)) {
+    context.builder_.CreateStore(
+        llvm::ConstantInt::get(context.the_context_, llvm::APInt(8, 0)), addr);
+  } else if (type->isDoubleTy()) {
+    context.builder_.CreateStore(
+        llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)), addr);
+  }
 
   context.SetSymbolType(name_->name_, type_);
   context.SetSymbolValue(name_->name_, addr);
@@ -673,7 +681,7 @@ QJsonObject FunctionCall::JsonGen() const {
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
   auto function{context.the_module_->getFunction(name_->name_)};
   if (!function) {
-    ErrorReportAndExit(location_, "Unknown function referenced");
+    ErrorReportAndExit(location_, "Unknown function referenced.");
     return nullptr;
   }
 
@@ -686,7 +694,12 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
     }
 
     for (const auto &arg : *args_) {
-      args_value.push_back(arg->CodeGen(context));
+      auto value{arg->CodeGen(context)};
+      if (value->getType()->isIntegerTy(8)) {
+        value = context.type_system_.Cast(value, context.type_system_.int32_type_,
+                                          context.builder_.GetInsertBlock());
+      }
+      args_value.push_back(value);
       if (!args_value.back()) {
         ErrorReportAndExit(location_, "Function arg code generation failed");
         return nullptr;

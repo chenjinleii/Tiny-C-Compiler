@@ -31,8 +31,7 @@ void RunTest();
 
 int main(int argc, char *argv[]) {
 #ifndef __linux
-  std::cerr << "Only support linux system\n";
-  std::exit(EXIT_FAILURE);
+  tcc::ErrorReportAndExit("Only support linux system.\n");
 #else
   if (argc == 1) {
     ShowHelpInfo();
@@ -59,8 +58,7 @@ int main(int argc, char *argv[]) {
       if (FileExists(argv[i])) {
         input_files.emplace(argv[i]);
       } else {
-        tcc::ErrorReportAndExit("error: {}: This file does not exist.\n",
-                                argv[i]);
+        tcc::ErrorReportAndExit("error: {}: This file does not exist.\n", argv[i]);
       }
     }
   }
@@ -83,14 +81,14 @@ int main(int argc, char *argv[]) {
       case 'O':optimization = true;
         break;
       default: {
-        tcc::ErrorReportAndExit("Unknown compilation option.\n");
+        tcc::ErrorReportAndExit("error: Unknown compilation option.\n");
         break;
       }
     }
   }
 
   if (auto size{std::size(input_files)}; size == 0) {
-    tcc::ErrorReportAndExit("fatal error: no input files.\n");
+    tcc::ErrorReportAndExit("error: no input files.\n");
   } else if (size > 1) {
     tcc::ErrorReportAndExit("Do not support multiple files at this time.\n");
   }
@@ -112,27 +110,26 @@ int main(int argc, char *argv[]) {
   }
 
   if (FileExists(program_name)) {
-    std::cout << "Compiled Successfully\n";
-    std::cout << "The name of the executable is " + program_name << '\n';
     std::exit(EXIT_SUCCESS);
   } else {
     tcc::ErrorReportAndExit("Compile Failed\n");
   }
-
 #endif
 }
 
 void ShowHelpInfo() {
   std::cout << "Usage: tcc [options] a file\n"
-               "Options: \n"
-               "-h\t\t\tDisplay Display help information\n"
+               "Options:\n"
+               "-h\t\t\tDisplay Display help information.\n"
                "-v\t\t\tDisplay version information.\n"
-               "-o\t\t\tSpecify program name\n"
-               "-O\t\t\tTurn on optimization\n"
-               "-t\t\t\tTest mode (developer use)\n";
+               "-o\t\t\tSpecify program name.\n"
+               "-O\t\t\tTurn on optimization.\n"
+               "-t\t\t\tTest mode (developer use).\n";
 }
 
-void ShowVersionInfo() { std::cout << "Tiny C Compiler by Kaiser.\n"; }
+void ShowVersionInfo() {
+  std::cout << "Tiny C Compiler by Kaiser.\n";
+}
 
 bool FileExists(const std::string &file_name) {
   return std::filesystem::exists(std::filesystem::path{file_name});
@@ -148,10 +145,10 @@ bool CommandSuccess(std::int32_t status) {
 
 void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
             std::vector<std::string> &files_to_delete, bool optimization) {
-  std::string processed_file(RemoveExtension(input_file) + ".i");
+  auto processed_file(RemoveExtension(input_file) + ".i");
   files_to_delete.push_back(processed_file);
 
-  std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+  auto cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
   if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Preprocessing Failure\n");
   }
@@ -164,7 +161,7 @@ void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
   tcc::CodeGenContext context(optimization);
   context.GenerateCode(*root);
 
-  std::string obj_file(RemoveExtension(input_file) + ".o");
+  auto obj_file(RemoveExtension(input_file) + ".o");
   files_to_delete.push_back(obj_file);
   obj_files << ' ' << obj_file;
 
@@ -173,30 +170,40 @@ void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
 
 void RunTest() {
   std::cout << "Test Mode\n";
-  std::string input_file(
-      "/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
+  std::string input_file("../test/test.c");
 
-  std::string processed_file(RemoveExtension(input_file) + ".i");
-  std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+  auto processed_file(RemoveExtension(input_file) + ".i");
+  auto cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
   if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Preprocessing Failure.\n");
   }
 
-  std::ofstream ofs{"../test/token"};
-  if (!ofs) {
+  std::ofstream token_file{"../test/token"};
+  if (!token_file) {
     tcc::ErrorReportAndExit("Can not open token file.\n");
   }
-  auto token_sequence{tcc::Scanner::Test(processed_file, input_file, ofs)};
+  auto token_sequence{tcc::Scanner::Test(processed_file, input_file, token_file)};
 
-  std::ofstream ast{"../test/ast.json"};
-  if (!ast) {
+  std::ofstream ast_file{"../test/test.json"};
+  if (!ast_file) {
     tcc::ErrorReportAndExit("Can not open json file.\n");
   }
-  auto ast_root{tcc::Parser::Test(token_sequence, ast)};
+  auto root{tcc::Parser::Test(token_sequence, ast_file)};
 
   tcc::CodeGenContext context(false);
-  context.Test(*ast_root, "../test/ir.ll");
-  std::cout << "LLVM IR Successfully Generate\n";
+  context.Test(*root, "../test/test.ll");
+  std::cout << "LLVM IR Successfully Generate.\n";
+
+  std::ofstream asm_file{"../test/test.s"};
+  if (!asm_file) {
+    tcc::ErrorReportAndExit("Can not open asm file.\n");
+  }
+  if (auto status{std::system("llc ../test/test.ll -o ../test/test.s")};
+      !CommandSuccess(status)) {
+    tcc::ErrorReportAndExit("Assembly generation failed.\n");
+  } else {
+    std::cout << "Assembly Successfully Generate.\n";
+  }
 
   tcc::ObjGen(context, "test.o");
 
@@ -206,8 +213,7 @@ void RunTest() {
   }
 
   std::cout << "Compiled Successfully\n";
-  std::cout
-      << "The program runs-----------------------------------------------\n\n";
+  std::cout << "The program runs-----------------------------------------------\n";
 
   if (auto status{std::system("./test")}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Program Startup Failed\n");
