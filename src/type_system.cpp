@@ -51,22 +51,17 @@ llvm::Type *TypeSystem::GetType(const Type &type) {
 
 llvm::Value *TypeSystem::CastToBool(CodeGenContext &context,
                                     llvm::Value *condition_value) {
-  {
-    if (condition_value->getType()->getTypeID() == llvm::Type::IntegerTyID) {
-      condition_value = context.builder_.CreateIntCast(
-          condition_value, llvm::Type::getInt1Ty(context.the_context_), true);
-      return context.builder_.CreateICmpNE(
-          condition_value,
-          llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.the_context_), 0,
-                                 true));
-    } else if (condition_value->getType()->getTypeID() ==
-        llvm::Type::DoubleTyID) {
-      return context.builder_.CreateFCmpONE(
-          condition_value,
-          llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)));
-    } else {
-      return condition_value;
-    }
+  if (condition_value->getType()->isIntegerTy(32)) {
+    return context.builder_.CreateICmpNE(
+        condition_value,
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(context.the_context_), 0, true));
+  } else if (condition_value->getType()->isDoubleTy()) {
+    return context.builder_.CreateFCmpONE(
+        condition_value,
+        llvm::ConstantFP::get(context.the_context_, llvm::APFloat(0.0)),
+        "cond");
+  } else {
+    return condition_value;
   }
 }
 

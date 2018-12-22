@@ -343,7 +343,7 @@ std::shared_ptr<Expression> Parser::ParsePrimary() {
     return ParseParenExpression();
   } else if (Test(TokenValue::kAdd) || Test(TokenValue::kSub) ||
       Test(TokenValue::kInc) || Test(TokenValue::kDec) ||
-      Test(TokenValue::kNeg) || Test(TokenValue::kLogicNeg)) {
+      Test(TokenValue::kNot) || Test(TokenValue::kLogicNot)) {
     return ParseUnaryOpExpression();
   } else if (Try(TokenValue::kSizeof)) {
     return ParseSizeof();
@@ -363,12 +363,13 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
       return MakeASTNode<Int32Constant>(+ParseCharConstant()->value_);
     } else if (op.TokenValueIs(TokenValue::kSub)) {
       return MakeASTNode<Int32Constant>(-ParseCharConstant()->value_);
-    } else if (op.TokenValueIs(TokenValue::kNeg)) {
+    } else if (op.TokenValueIs(TokenValue::kNot)) {
       return MakeASTNode<Int32Constant>(~(ParseCharConstant()->value_));
-    } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
-      return MakeASTNode<Int32Constant>(ParseCharConstant()->value_ ? 0 : 1);
+    } else if (op.TokenValueIs(TokenValue::kLogicNot)) {
+      return MakeASTNode<Int32Constant>(!ParseCharConstant()->value_);
     } else {
-      ErrorReportAndExit("Cannot apply inc, dec to constants");
+      ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                         "Cannot apply inc, dec to constants");
       return nullptr;
     }
   } else if (PeekNextToken().IsInt32()) {
@@ -376,12 +377,13 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
       return MakeASTNode<Int32Constant>(+ParseInt32Constant()->value_);
     } else if (op.TokenValueIs(TokenValue::kSub)) {
       return MakeASTNode<Int32Constant>(-ParseInt32Constant()->value_);
-    } else if (op.TokenValueIs(TokenValue::kNeg)) {
+    } else if (op.TokenValueIs(TokenValue::kNot)) {
       return MakeASTNode<Int32Constant>(~(ParseInt32Constant()->value_));
-    } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
-      return MakeASTNode<Int32Constant>(ParseInt32Constant()->value_ ? 0 : 1);
+    } else if (op.TokenValueIs(TokenValue::kLogicNot)) {
+      return MakeASTNode<Int32Constant>(!ParseInt32Constant()->value_);
     } else {
-      ErrorReportAndExit("Cannot apply inc, dec to constants");
+      ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                         "Cannot apply inc, dec to constants");
       return nullptr;
     }
   } else if (PeekNextToken().IsDouble()) {
@@ -389,11 +391,16 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
       return MakeASTNode<DoubleConstant>(+ParseDoubleConstant()->value_);
     } else if (op.TokenValueIs(TokenValue::kSub)) {
       return MakeASTNode<DoubleConstant>(-ParseDoubleConstant()->value_);
-    } else if (op.TokenValueIs(TokenValue::kLogicNeg)) {
+    } else if (op.TokenValueIs(TokenValue::kLogicNot)) {
       return MakeASTNode<Int32Constant>(
-          static_cast<bool>(ParseDoubleConstant()->value_));
+          !static_cast<std::int32_t >(ParseDoubleConstant()->value_));
+    } else if (op.TokenValueIs(TokenValue::kNot)) {
+      ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                         "Cannot apply neg to double.");
+      return nullptr;
     } else {
-      ErrorReportAndExit("Cannot apply inc, dec to constants");
+      ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
+                         "Cannot apply inc, dec to constants");
       return nullptr;
     }
   } else {

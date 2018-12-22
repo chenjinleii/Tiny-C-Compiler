@@ -85,14 +85,14 @@ class TokenTypes : public QObject {
     kMul,          // *
     kDiv,          // /
     kMod,          // %
-    kNeg,          // ~
+    kNot,          // ~
     kAnd,          // &
     kOr,           // |
     kXor,          // ^
     kShl,          // <<
     kShr,          // >>
 
-    kLogicNeg,     // !
+    kLogicNot,     // !
     kLogicAnd,     // &&
     kLogicOr,      // ||
 

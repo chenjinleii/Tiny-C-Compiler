@@ -3,8 +3,17 @@ source_filename = "main"
 
 declare i32 @putchar(i32)
 
+define i32 @fuck(i32 %i) {
+entry:
+  %i1 = alloca i32
+  store i32 %i, i32* %i1
+  %i2 = load i32, i32* %i1
+  ret i32 %i2
+}
+
 define i32 @main() {
 entry:
+  %i = alloca i32
   %a = alloca double
   %x = alloca double
   %y = alloca double
@@ -13,81 +22,135 @@ entry:
   %y1 = load double, double* %y
   %0 = fcmp ogt double %y1, -1.500000e+00
   %1 = uitofp i1 %0 to double
-  %2 = fcmp one double %1, 0.000000e+00
-  br i1 %2, label %for_loop, label %for_after22
+  %cond = fcmp one double %1, 0.000000e+00
+  br i1 %cond, label %for_loop, label %for_after26
 
 for_loop:                                         ; preds = %for_after, %entry
   store double 0.000000e+00, double* %x
   store double -1.500000e+00, double* %x
   %x3 = load double, double* %x
-  %3 = fcmp ult double %x3, 1.500000e+00
-  %4 = uitofp i1 %3 to double
-  %5 = fcmp one double %4, 0.000000e+00
-  br i1 %5, label %for_loop2, label %for_after
+  %2 = fcmp ult double %x3, 1.500000e+00
+  %3 = uitofp i1 %2 to double
+  %cond4 = fcmp one double %3, 0.000000e+00
+  br i1 %cond4, label %for_loop2, label %for_after
 
 for_loop2:                                        ; preds = %if_after, %for_loop
   store double 0.000000e+00, double* %a
-  %x4 = load double, double* %x
   %x5 = load double, double* %x
-  %6 = fmul double %x4, %x5
-  %y6 = load double, double* %y
+  %x6 = load double, double* %x
+  %4 = fmul double %x5, %x6
   %y7 = load double, double* %y
-  %7 = fmul double %y6, %y7
-  %8 = fadd double %6, %7
-  %9 = fsub double %8, 1.000000e+00
-  store double %9, double* %a
-  %a8 = load double, double* %a
+  %y8 = load double, double* %y
+  %5 = fmul double %y7, %y8
+  %6 = fadd double %4, %5
+  %7 = fsub double %6, 1.000000e+00
+  store double %7, double* %a
   %a9 = load double, double* %a
-  %10 = fmul double %a8, %a9
   %a10 = load double, double* %a
-  %11 = fmul double %10, %a10
-  %x11 = load double, double* %x
+  %8 = fmul double %a9, %a10
+  %a11 = load double, double* %a
+  %9 = fmul double %8, %a11
   %x12 = load double, double* %x
-  %12 = fmul double %x11, %x12
-  %y13 = load double, double* %y
-  %13 = fmul double %12, %y13
+  %x13 = load double, double* %x
+  %10 = fmul double %x12, %x13
   %y14 = load double, double* %y
-  %14 = fmul double %13, %y14
+  %11 = fmul double %10, %y14
   %y15 = load double, double* %y
-  %15 = fmul double %14, %y15
-  %16 = fsub double %11, %15
-  %17 = fcmp ole double %16, 0.000000e+00
-  %18 = uitofp i1 %17 to double
-  %19 = fcmp one double %18, 0.000000e+00
-  br i1 %19, label %if_then, label %if_else
+  %12 = fmul double %11, %y15
+  %y16 = load double, double* %y
+  %13 = fmul double %12, %y16
+  %14 = fsub double %9, %13
+  %15 = fcmp ole double %14, 0.000000e+00
+  %16 = uitofp i1 %15 to double
+  %cond17 = fcmp one double %16, 0.000000e+00
+  br i1 %cond17, label %if_then, label %if_else
 
 if_then:                                          ; preds = %for_loop2
   %cast = sext i8 42 to i32
-  %20 = call i32 @putchar(i32 %cast)
+  %17 = call i32 @putchar(i32 %cast)
   br label %if_after
 
 if_else:                                          ; preds = %for_loop2
-  %cast16 = sext i8 32 to i32
-  %21 = call i32 @putchar(i32 %cast16)
+  %cast18 = sext i8 32 to i32
+  %18 = call i32 @putchar(i32 %cast18)
   br label %if_after
 
 if_after:                                         ; preds = %if_else, %if_then
-  %x17 = load double, double* %x
-  %22 = fadd double %x17, 5.000000e-02
-  store double %22, double* %x
-  %x18 = load double, double* %x
-  %23 = fcmp ult double %x18, 1.500000e+00
-  %24 = uitofp i1 %23 to double
-  %25 = fcmp one double %24, 0.000000e+00
-  br i1 %25, label %for_loop2, label %for_after
+  %x19 = load double, double* %x
+  %19 = fadd double %x19, 5.000000e-02
+  store double %19, double* %x
+  %x20 = load double, double* %x
+  %20 = fcmp ult double %x20, 1.500000e+00
+  %21 = uitofp i1 %20 to double
+  %cond21 = fcmp one double %21, 0.000000e+00
+  br i1 %cond21, label %for_loop2, label %for_after
 
 for_after:                                        ; preds = %if_after, %for_loop
-  %cast19 = sext i8 10 to i32
-  %26 = call i32 @putchar(i32 %cast19)
-  %y20 = load double, double* %y
-  %27 = fsub double %y20, 1.000000e-01
-  store double %27, double* %y
-  %y21 = load double, double* %y
-  %28 = fcmp ogt double %y21, -1.500000e+00
-  %29 = uitofp i1 %28 to double
-  %30 = fcmp one double %29, 0.000000e+00
-  br i1 %30, label %for_loop, label %for_after22
+  %cast22 = sext i8 10 to i32
+  %22 = call i32 @putchar(i32 %cast22)
+  %y23 = load double, double* %y
+  %23 = fsub double %y23, 1.000000e-01
+  store double %23, double* %y
+  %y24 = load double, double* %y
+  %24 = fcmp ogt double %y24, -1.500000e+00
+  %25 = uitofp i1 %24 to double
+  %cond25 = fcmp one double %25, 0.000000e+00
+  br i1 %cond25, label %for_loop, label %for_after26
 
-for_after22:                                      ; preds = %for_after, %entry
+for_after26:                                      ; preds = %for_after, %entry
+  %26 = call i32 @fuck(i32 0)
+  %27 = icmp ne i32 %26, 0
+  %28 = icmp ne i1 %27, true
+  br i1 %28, label %if_then27, label %if_after28
+
+if_then27:                                        ; preds = %for_after26
+  %29 = call i32 @putchar(i32 48)
+  br label %if_after28
+
+if_after28:                                       ; preds = %if_then27, %for_after26
+  %30 = call i32 @fuck(i32 2)
+  %31 = icmp ne i32 %30, 0
+  br i1 %31, label %if_then29, label %if_after30
+
+if_then29:                                        ; preds = %if_after28
+  %32 = call i32 @putchar(i32 49)
+  br label %if_after30
+
+if_after30:                                       ; preds = %if_then29, %if_after28
+  %33 = call i32 @fuck(i32 2)
+  %34 = xor i32 %33, -1
+  %35 = icmp ne i32 %34, 0
+  br i1 %35, label %if_then31, label %if_after32
+
+if_then31:                                        ; preds = %if_after30
+  %36 = call i32 @putchar(i32 50)
+  br label %if_after32
+
+if_after32:                                       ; preds = %if_then31, %if_after30
+  %37 = call i32 @fuck(i32 48)
+  %38 = call i32 @putchar(i32 %37)
+  %39 = call i32 @putchar(i32 -3)
+  %40 = call i32 @putchar(i32 2)
+  %41 = call i32 @putchar(i32 0)
+  %42 = call i32 @putchar(i32 0)
+  %43 = call i32 @putchar(i32 10)
+  store i32 0, i32* %i
+  store i32 9, i32* %i
+  %i33 = load i32, i32* %i
+  %44 = icmp sgt i32 %i33, 0
+  br i1 %44, label %while_loop, label %while_after
+
+while_loop:                                       ; preds = %while_loop, %if_after32
+  %i34 = load i32, i32* %i
+  %45 = add i32 %i34, 48
+  %46 = call i32 @putchar(i32 %45)
+  %i35 = load i32, i32* %i
+  %47 = sub i32 %i35, 1
+  store i32 %47, i32* %i
+  %i36 = load i32, i32* %i
+  %48 = icmp sgt i32 %i36, 0
+  br i1 %48, label %while_loop, label %while_after
+
+while_after:                                      ; preds = %while_loop, %if_after32
   ret i32 0
 }

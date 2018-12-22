@@ -502,14 +502,18 @@ QJsonObject UnaryOpExpression::JsonGen() const {
 }
 
 // ++/--/~/!
-// TODO 验证!,类型转换
+// TODO 类型转换
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
   if (op_ == TokenValue::kInc || op_ == TokenValue::kDec) {
     return PostfixExpression{object_, op_}.CodeGen(context);
-  } else if (op_ == TokenValue::kLogicNeg) {
+  } else if (op_ == TokenValue::kLogicNot) {
+    auto value{context.type_system_.CastToBool(context, object_->CodeGen(context))};
+    return context.builder_.CreateICmpNE(
+        value,
+        llvm::ConstantInt::get(context.the_context_,
+                               llvm::APInt(1, true)));
+  } else if (op_ == TokenValue::kNot) {
     return context.builder_.CreateNot(object_->CodeGen(context));
-  } else if (op_ == TokenValue::kNeg) {
-    return context.builder_.CreateNeg(object_->CodeGen(context));
   } else {
     ErrorReportAndExit(location_, "Unknown unary prefix operator.");
     return nullptr;
@@ -948,7 +952,8 @@ QJsonObject CharConstant::JsonGen() const {
 }
 
 llvm::Value *CharConstant::CodeGen(CodeGenContext &context) {
-  return llvm::ConstantInt::get(context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
+  return llvm::ConstantInt::get(context.the_context_,
+                                llvm::APInt(8, static_cast<std::uint64_t>(value_)));
 }
 
 Int32Constant::Int32Constant(std::int32_t value)
@@ -968,7 +973,8 @@ QJsonObject Int32Constant::JsonGen() const {
 // 整形常量用 ConstantInt 类表示,用APInt表示整型数值
 // 在LLVM IR中,常量都是唯一并且共享的
 llvm::Value *Int32Constant::CodeGen(CodeGenContext &context) {
-  return llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, static_cast<std::uint64_t>(value_)));
+  return llvm::ConstantInt::get(context.the_context_,
+                                llvm::APInt(32, static_cast<std::uint64_t>(value_)));
 }
 
 DoubleConstant::DoubleConstant(double value)

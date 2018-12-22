@@ -143,7 +143,7 @@ Token Scanner::GetNextToken() {
     case '}':return MakeToken(TokenValue::kRightCurly);
     case '?':return MakeToken(TokenValue::kQuestionMark);
     case ',':return MakeToken(TokenValue::kComma);
-    case '~':return MakeToken(TokenValue::kNeg);
+    case '~':return MakeToken(TokenValue::kNot);
     case ';':return MakeToken(TokenValue::kSemicolon);
     case '-': {
       if (Try('>')) {
@@ -209,7 +209,7 @@ Token Scanner::GetNextToken() {
       if (Try('=')) {
         return MakeToken(TokenValue::kNotEqual);
       } else {
-        return MakeToken(TokenValue::kLogicNeg);
+        return MakeToken(TokenValue::kLogicNot);
       }
     }
     case '&': {

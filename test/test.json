@@ -28,6 +28,41 @@
                     "name": "PrimitiveType Int"
                 },
                 {
+                    "name": "Identifier fuck"
+                },
+                {
+                    "children": [
+                        {
+                            "name": "PrimitiveType Int"
+                        },
+                        {
+                            "name": "Identifier i"
+                        }
+                    ],
+                    "name": "Declaration"
+                },
+                {
+                    "children": [
+                        {
+                            "children": [
+                                {
+                                    "name": "Identifier i"
+                                }
+                            ],
+                            "name": "ReturnStatement"
+                        }
+                    ],
+                    "name": "CompoundStatement"
+                }
+            ],
+            "name": "FunctionDefinition"
+        },
+        {
+            "children": [
+                {
+                    "name": "PrimitiveType Int"
+                },
+                {
                     "name": "Identifier main"
                 },
                 {
@@ -299,6 +334,288 @@
                                 }
                             ],
                             "name": "ForStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "name": "Identifier fuck"
+                                                },
+                                                {
+                                                    "name": "Int32Constant 0"
+                                                }
+                                            ],
+                                            "name": "FunctionCall"
+                                        }
+                                    ],
+                                    "name": "UnaryOpExpression LogicNot"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "name": "Identifier putchar"
+                                                },
+                                                {
+                                                    "name": "Int32Constant 48"
+                                                }
+                                            ],
+                                            "name": "FunctionCall"
+                                        }
+                                    ],
+                                    "name": "ExpressionStatement"
+                                }
+                            ],
+                            "name": "IfStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier fuck"
+                                        },
+                                        {
+                                            "name": "Int32Constant 2"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "name": "Identifier putchar"
+                                                },
+                                                {
+                                                    "name": "Int32Constant 49"
+                                                }
+                                            ],
+                                            "name": "FunctionCall"
+                                        }
+                                    ],
+                                    "name": "ExpressionStatement"
+                                }
+                            ],
+                            "name": "IfStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "name": "Identifier fuck"
+                                                },
+                                                {
+                                                    "name": "Int32Constant 2"
+                                                }
+                                            ],
+                                            "name": "FunctionCall"
+                                        }
+                                    ],
+                                    "name": "UnaryOpExpression Not"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "name": "Identifier putchar"
+                                                },
+                                                {
+                                                    "name": "Int32Constant 50"
+                                                }
+                                            ],
+                                            "name": "FunctionCall"
+                                        }
+                                    ],
+                                    "name": "ExpressionStatement"
+                                }
+                            ],
+                            "name": "IfStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "children": [
+                                                {
+                                                    "name": "Identifier fuck"
+                                                },
+                                                {
+                                                    "name": "Int32Constant 48"
+                                                }
+                                            ],
+                                            "name": "FunctionCall"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "name": "Int32Constant -3"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "name": "Int32Constant 2"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "name": "Int32Constant 0"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "name": "Int32Constant 0"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "name": "Int32Constant 10"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "name": "PrimitiveType Int"
+                                },
+                                {
+                                    "name": "Identifier i"
+                                },
+                                {
+                                    "name": "Int32Constant 9"
+                                }
+                            ],
+                            "name": "Declaration"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier i"
+                                        },
+                                        {
+                                            "name": "Int32Constant 0"
+                                        }
+                                    ],
+                                    "name": "BinaryOpExpression Greater"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "name": "Identifier putchar"
+                                                        },
+                                                        {
+                                                            "children": [
+                                                                {
+                                                                    "name": "Identifier i"
+                                                                },
+                                                                {
+                                                                    "name": "Int32Constant 48"
+                                                                }
+                                                            ],
+                                                            "name": "BinaryOpExpression Add"
+                                                        }
+                                                    ],
+                                                    "name": "FunctionCall"
+                                                }
+                                            ],
+                                            "name": "ExpressionStatement"
+                                        },
+                                        {
+                                            "children": [
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "name": "Identifier i"
+                                                        }
+                                                    ],
+                                                    "name": "UnaryOpExpression Dec"
+                                                }
+                                            ],
+                                            "name": "ExpressionStatement"
+                                        }
+                                    ],
+                                    "name": "CompoundStatement"
+                                }
+                            ],
+                            "name": "WhileStatement"
                         },
                         {
                             "children": [
