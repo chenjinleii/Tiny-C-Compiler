@@ -57,7 +57,7 @@ class CodeGenContext {
   void Test(CompoundStatement &root, const std::string &file_name);
   void SetCurrentReturnValue(llvm::Value *value);
   llvm::Value *GetCurrentReturnValue();
-  void SetSymbolValue(const std::string &name, llvm::AllocaInst *value);
+  void SetSymbolAddr(const std::string &name, llvm::AllocaInst *value);
   void SetSymbolType(const std::string &name, std::shared_ptr<Type> type);
   llvm::Value *GetSymbolValue(const std::string &name) const;
   std::shared_ptr<Type> GetSymbolType(const std::string &name) const;

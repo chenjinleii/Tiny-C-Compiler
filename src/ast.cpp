@@ -462,7 +462,7 @@ llvm::Value *Declaration::CodeGen(CodeGenContext &context) {
   }
 
   context.SetSymbolType(name_->name_, type_);
-  context.SetSymbolValue(name_->name_, addr);
+  context.SetSymbolAddr(name_->name_, addr);
 
   if (init_) {
     BinaryOpExpression{name_, init_, TokenValue::kAssign}.CodeGen(context);
@@ -725,6 +725,13 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
   }
 }
 
+Identifier::Identifier(std::string name)
+    : name_{std::move(name)} {}
+
+ASTNodeType Identifier::Kind() const {
+  return ASTNodeType::kIdentifier;
+}
+
 QJsonObject Identifier::JsonGen() const {
   QJsonObject root;
   root["name"] = ASTNodeTypes::ToString(Kind()).append(' ')
@@ -733,16 +740,30 @@ QJsonObject Identifier::JsonGen() const {
 }
 
 llvm::Value *Identifier::CodeGen(CodeGenContext &context) {
-  auto value{context.GetSymbolValue(name_)};
-  if (!value) {
-    ErrorReportAndExit(location_, "Unknown variable name");
+  auto addr{context.GetSymbolValue(name_)};
+  if (!addr) {
+    ErrorReportAndExit(location_, "Unknown variable name.");
     return nullptr;
   }
   // 从栈中加载
-  return context.builder_.CreateLoad(value, name_);
+  return context.builder_.CreateLoad(addr, name_);
 }
-Identifier::Identifier(std::string name) : name_{std::move(name)} {}
-ASTNodeType Identifier::Kind() const { return ASTNodeType::kIdentifier; }
+
+FunctionCall::FunctionCall(std::shared_ptr<Identifier> name, std::shared_ptr<ExpressionList> args)
+    : name_{std::move(name)}, args_{std::move(args)} {}
+
+ASTNodeType FunctionCall::Kind() const {
+  return ASTNodeType::kFunctionCall;
+}
+
+void FunctionCall::AddArg(std::shared_ptr<Expression> arg) {
+  if (args_) {
+    args_->push_back(std::move(arg));
+  } else {
+    args_ = std::make_shared<ExpressionList>();
+    args_->push_back(std::move(arg));
+  }
+}
 
 QJsonObject FunctionCall::JsonGen() const {
   QJsonObject root;
@@ -763,9 +784,10 @@ QJsonObject FunctionCall::JsonGen() const {
 }
 
 // LLVM 默认使用本机C调用约定
+// TODO 类型转换
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
-  auto function{context.the_module_->getFunction(name_->name_)};
-  if (!function) {
+  auto func{context.the_module_->getFunction(name_->name_)};
+  if (!func) {
     ErrorReportAndExit(location_, "Unknown function referenced.");
     return nullptr;
   }
@@ -773,8 +795,8 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
   std::vector<llvm::Value *> args_value;
 
   if (args_) {
-    if (function->arg_size() != std::size(*args_)) {
-      ErrorReportAndExit(location_, "Incorrect arguments passed");
+    if (func->arg_size() != std::size(*args_)) {
+      ErrorReportAndExit(location_, "Incorrect arguments passed.");
       return nullptr;
     }
 
@@ -786,26 +808,23 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
       }
       args_value.push_back(value);
       if (!args_value.back()) {
-        ErrorReportAndExit(location_, "Function arg code generation failed");
+        ErrorReportAndExit(location_, "Function parameter code generation failed.");
         return nullptr;
       }
     }
   }
 
-  return context.builder_.CreateCall(function, args_value);
+  return context.builder_.CreateCall(func, args_value);
 }
 
-void FunctionCall::AddArg(std::shared_ptr<Expression> arg) {
-  if (args_) {
-    args_->push_back(std::move(arg));
-  } else {
-    args_ = std::make_shared<ExpressionList>();
-    args_->push_back(std::move(arg));
-  }
-}
-FunctionCall::FunctionCall(std::shared_ptr<Identifier> name, std::shared_ptr<ExpressionList> args)
-    : name_{std::move(name)}, args_{std::move(args)} {}
-ASTNodeType FunctionCall::Kind() const { return ASTNodeType::kFunctionCall; }
+FunctionDeclaration::FunctionDeclaration(std::shared_ptr<Type> return_type,
+                                         std::shared_ptr<Identifier> name,
+                                         std::shared_ptr<DeclarationList> args,
+                                         std::shared_ptr<CompoundStatement> body)
+    : return_type_{std::move(return_type)},
+      name_{std::move(name)},
+      args_{std::move(args)},
+      body_{std::move(body)} {}
 
 ASTNodeType FunctionDeclaration::Kind() const {
   if (body_) {
@@ -859,6 +878,11 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
   }
 
   if (body_) {
+    if (!func->empty()) {
+      ErrorReportAndExit(location_, "Function cannot be redefined.");
+      return nullptr;
+    }
+
     // 创建了一个名为entry的基本块,并且插入到 func 中
     auto entry{llvm::BasicBlock::Create(context.the_context_, "entry", func)};
 
@@ -867,16 +891,14 @@ llvm::Value *FunctionDeclaration::CodeGen(CodeGenContext &context) {
     context.PushBlock(entry);
 
     if (args_) {
-      auto origin_arg{std::begin(*args_)};
+      auto origin_arg_iter{std::begin(*args_)};
       for (auto &arg : func->args()) {
-        arg.setName((*origin_arg)->name_->name_);
-        auto addr{
-            context.CreateEntryBlockAlloca(func, arg.getType(), arg.getName())};
+        arg.setName((*origin_arg_iter)->name_->name_);
+        auto addr{context.CreateEntryBlockAlloca(func, arg.getType(), arg.getName())};
         context.builder_.CreateStore(&arg, addr);
-        context.SetSymbolValue((*origin_arg)->name_->name_, addr);
-        context.SetSymbolType((*origin_arg)->name_->name_,
-                              (*origin_arg)->type_);
-        ++origin_arg;
+        context.SetSymbolAddr((*origin_arg_iter)->name_->name_, addr);
+        context.SetSymbolType((*origin_arg_iter)->name_->name_, (*origin_arg_iter)->type_);
+        ++origin_arg_iter;
       }
     }
 
@@ -910,14 +932,13 @@ void FunctionDeclaration::AddArg(std::shared_ptr<Declaration> arg) {
     args_->push_back(std::move(arg));
   }
 }
-FunctionDeclaration::FunctionDeclaration(std::shared_ptr<Type> return_type,
-                                         std::shared_ptr<Identifier> name,
-                                         std::shared_ptr<DeclarationList> args,
-                                         std::shared_ptr<CompoundStatement> body)
-    : return_type_{std::move(return_type)},
-      name_{std::move(name)},
-      args_{std::move(args)},
-      body_{std::move(body)} {}
+
+CharConstant::CharConstant(char value)
+    : value_{value} {}
+
+ASTNodeType CharConstant::Kind() const {
+  return ASTNodeType::kCharConstant;
+}
 
 QJsonObject CharConstant::JsonGen() const {
   QJsonObject root;
@@ -927,11 +948,15 @@ QJsonObject CharConstant::JsonGen() const {
 }
 
 llvm::Value *CharConstant::CodeGen(CodeGenContext &context) {
-  return llvm::ConstantInt::get(
-      context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
+  return llvm::ConstantInt::get(context.the_context_, llvm::APInt(8, static_cast<std::uint64_t>(value_)));
 }
-CharConstant::CharConstant(char value) : value_{value} {}
-ASTNodeType CharConstant::Kind() const { return ASTNodeType::kCharConstant; }
+
+Int32Constant::Int32Constant(std::int32_t value)
+    : value_{value} {}
+
+ASTNodeType Int32Constant::Kind() const {
+  return ASTNodeType::kInt32Constant;
+}
 
 QJsonObject Int32Constant::JsonGen() const {
   QJsonObject root;
@@ -943,12 +968,15 @@ QJsonObject Int32Constant::JsonGen() const {
 // 整形常量用 ConstantInt 类表示,用APInt表示整型数值
 // 在LLVM IR中,常量都是唯一并且共享的
 llvm::Value *Int32Constant::CodeGen(CodeGenContext &context) {
-  return llvm::ConstantInt::get(
-      context.the_context_,
-      llvm::APInt(32, static_cast<std::uint64_t>(value_)));
+  return llvm::ConstantInt::get(context.the_context_, llvm::APInt(32, static_cast<std::uint64_t>(value_)));
 }
-Int32Constant::Int32Constant(std::int32_t value) : value_{value} {}
-ASTNodeType Int32Constant::Kind() const { return ASTNodeType::kInt32Constant; }
+
+DoubleConstant::DoubleConstant(double value)
+    : value_{value} {}
+
+ASTNodeType DoubleConstant::Kind() const {
+  return ASTNodeType::kDoubleConstant;
+}
 
 QJsonObject DoubleConstant::JsonGen() const {
   QJsonObject root;
@@ -962,8 +990,13 @@ QJsonObject DoubleConstant::JsonGen() const {
 llvm::Value *DoubleConstant::CodeGen(CodeGenContext &context) {
   return llvm::ConstantFP::get(context.the_context_, llvm::APFloat(value_));
 }
-DoubleConstant::DoubleConstant(double value) : value_{value} {}
-ASTNodeType DoubleConstant::Kind() const { return ASTNodeType::kDoubleConstant; }
+
+StringLiteral::StringLiteral(std::string value)
+    : value_{std::move(value)} {}
+
+ASTNodeType StringLiteral::Kind() const {
+  return ASTNodeType::kStringLiteral;
+}
 
 QJsonObject StringLiteral::JsonGen() const {
   QJsonObject root;
@@ -975,7 +1008,5 @@ QJsonObject StringLiteral::JsonGen() const {
 llvm::Value *StringLiteral::CodeGen(CodeGenContext &context) {
   return context.builder_.CreateGlobalString(value_);
 }
-StringLiteral::StringLiteral(std::string value) : value_{std::move(value)} {}
-ASTNodeType StringLiteral::Kind() const { return ASTNodeType::kStringLiteral; }
 
 }  // namespace tcc

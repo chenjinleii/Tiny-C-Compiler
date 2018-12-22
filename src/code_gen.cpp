@@ -29,8 +29,7 @@ CodeGenContext::CodeGenContext(bool optimization)
 }
 
 void CodeGenContext::InitializePassManager() {
-  the_FPM_ =
-      std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
+  the_FPM_ = std::make_unique<llvm::legacy::FunctionPassManager>(the_module_.get());
 
   // 优化
   the_FPM_->add(llvm::createInstructionCombiningPass());
@@ -93,8 +92,8 @@ llvm::Value *CodeGenContext::GetCurrentReturnValue() {
   return block_stack_.back()->return_value;
 }
 
-void CodeGenContext::SetSymbolValue(const std::string &name,
-                                    llvm::AllocaInst *value) {
+void CodeGenContext::SetSymbolAddr(const std::string &name,
+                                   llvm::AllocaInst *value) {
   block_stack_.back()->locals[name] = value;
 }
 

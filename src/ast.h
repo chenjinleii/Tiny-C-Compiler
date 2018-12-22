@@ -276,27 +276,18 @@ class FunctionDeclaration : public Statement {
   FunctionDeclaration() = default;
   FunctionDeclaration(std::shared_ptr<Type> return_type,
                       std::shared_ptr<Identifier> name,
-                      std::shared_ptr<DeclarationList> args);
+                      std::shared_ptr<DeclarationList> args,
+                      std::shared_ptr<CompoundStatement> body);
+
   ASTNodeType Kind() const override;
   void AddArg(std::shared_ptr<Declaration> arg);
+
   QJsonObject JsonGen() const override;
   llvm::Value *CodeGen(CodeGenContext &context) override;
 
   std::shared_ptr<Type> return_type_;
   std::shared_ptr<Identifier> name_;
   std::shared_ptr<DeclarationList> args_;
-};
-
-class FunctionDefinition : public Statement {
- public:
-  FunctionDefinition() = default;
-  FunctionDefinition(std::shared_ptr<FunctionDeclaration> declaration_,
-                     std::shared_ptr<CompoundStatement> body);
-  ASTNodeType Kind() const override;
-  QJsonObject JsonGen() const override;
-  llvm::Value *CodeGen(CodeGenContext &context) override;
-
-  std::shared_ptr<FunctionDeclaration> declaration_;
   std::shared_ptr<Statement> body_;
 };
 

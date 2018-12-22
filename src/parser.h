@@ -37,7 +37,7 @@ class Parser {
   std::shared_ptr<Statement> ParseDeclaration();
   std::shared_ptr<PrimitiveType> ParseTypeSpecifier();
   std::shared_ptr<Identifier> ParseIdentifier();
-  std::shared_ptr<Statement> ParseFunction();
+  std::shared_ptr<FunctionDeclaration> ParseFunction();
   std::shared_ptr<FunctionDeclaration> ParseExtern();
 
   std::shared_ptr<Statement> ParseCompound(bool is_func);

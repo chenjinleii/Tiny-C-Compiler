@@ -99,9 +99,9 @@ std::shared_ptr<Statement> Parser::ParseDeclaration() {
   auto declaration_without_init{ParseDeclarationWithoutInit()};
 
   if (Try(TokenValue::kLeftParen)) {
-    auto function{std::dynamic_pointer_cast<FunctionDefinition>(ParseFunction())};
-    function->declaration_->return_type_ = std::move(declaration_without_init->type_);
-    function->declaration_->name_ = std::move(declaration_without_init->name_);
+    auto function{ParseFunction()};
+    function->return_type_ = std::move(declaration_without_init->type_);
+    function->name_ = std::move(declaration_without_init->name_);
     return function;
   }
 
@@ -130,7 +130,7 @@ std::shared_ptr<Identifier> Parser::ParseIdentifier() {
   }
 }
 
-std::shared_ptr<Statement> Parser::ParseFunction() {
+std::shared_ptr<FunctionDeclaration> Parser::ParseFunction() {
   auto func_declaration{MakeASTNode<FunctionDeclaration>()};
 
   while (!Test(TokenValue::kRightParen)) {
@@ -145,11 +145,8 @@ std::shared_ptr<Statement> Parser::ParseFunction() {
   Expect(TokenValue::kRightParen);
 
   if (Try(TokenValue::kLeftCurly)) {
-    auto func_definition{MakeASTNode<FunctionDefinition>()};
-    func_definition->declaration_ = std::move(func_declaration);
-    func_definition->body_ = ParseCompound(true);
+    func_declaration->body_ = ParseCompound(true);
     Expect(TokenValue::kRightCurly);
-    return func_definition;
   }
 
   return func_declaration;
