@@ -33,8 +33,6 @@ struct CodeGenBlock {
   std::unordered_map<std::string, std::shared_ptr<Type>> types;
 };
 
-// TODO printf
-
 class CodeGenContext {
  public:
   explicit CodeGenContext(bool optimization);
