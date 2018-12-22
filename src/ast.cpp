@@ -790,6 +790,28 @@ QJsonObject FunctionCall::JsonGen() const {
 // LLVM 默认使用本机C调用约定
 // TODO 类型转换
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
+  if (name_->name_ == "printf") {
+    std::vector<llvm::Type *> printf_args;
+    printf_args.push_back(llvm::Type::getInt8PtrTy(context.the_context_));
+    auto printf_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(context.the_context_),
+                                             printf_args, true)};
+    auto func{llvm::Function::Create(printf_type, llvm::Function::ExternalLinkage,
+                                     "printf", context.the_module_.get())};
+    std::vector<llvm::Value *> args_value;
+
+    if (args_) {
+      for (const auto &arg : *args_) {
+        args_value.push_back(arg->CodeGen(context));
+        if (!args_value.back()) {
+          ErrorReportAndExit(location_, "Function parameter code generation failed.");
+          return nullptr;
+        }
+      }
+    }
+
+    return context.builder_.CreateCall(func, args_value);
+  }
+
   auto func{context.the_module_->getFunction(name_->name_)};
   if (!func) {
     ErrorReportAndExit(location_, "Unknown function referenced.");
@@ -1012,7 +1034,7 @@ QJsonObject StringLiteral::JsonGen() const {
 }
 
 llvm::Value *StringLiteral::CodeGen(CodeGenContext &context) {
-  return context.builder_.CreateGlobalString(value_);
+  return context.builder_.CreateGlobalStringPtr(value_);
 }
 
 }  // namespace tcc

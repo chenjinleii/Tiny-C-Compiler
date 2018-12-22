@@ -55,7 +55,7 @@ void CodeGenContext::GenerateCode(CompoundStatement &root) {
   auto main_func_type{llvm::FunctionType::get(
       llvm::Type::getInt32Ty(the_context_), system_args, false)};
 
-  llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage);
+  llvm::Function::Create(main_func_type, llvm::Function::ExternalLinkage, "main");
   auto block{llvm::BasicBlock::Create(the_context_, "entry")};
   PushBlock(block);
   root.CodeGen(*this);
@@ -128,8 +128,12 @@ void CodeGenContext::PushBlock(llvm::BasicBlock *block) {
   block_stack_.push_back(std::move(code_gen_block));
 }
 
-void CodeGenContext::PopBlock() { block_stack_.pop_back(); }
+void CodeGenContext::PopBlock() {
+  block_stack_.pop_back();
+}
 
-bool CodeGenContext::GetOptimization() const { return optimization_; }
+bool CodeGenContext::GetOptimization() const {
+  return optimization_;
+}
 
 }  // namespace tcc

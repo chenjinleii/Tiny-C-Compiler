@@ -40,10 +40,14 @@ main:                                   # @main
 	.cfi_def_cfa_offset 64
 	.cfi_offset %rbx, -24
 	.cfi_offset %rbp, -16
+	xorl	%ebx, %ebx
+	movl	$.L__unnamed_1, %edi
+	movl	$42, %esi
+	xorl	%eax, %eax
+	callq	printf
 	movabsq	$4609434218613702656, %rax # imm = 0x3FF8000000000000
 	movq	%rax, 16(%rsp)
-	xorl	%eax, %eax
-	testb	%al, %al
+	testb	%bl, %bl
 	jne	.LBB1_8
 # %bb.1:                                # %for_loop.preheader
 	movabsq	$-4613937818241073152, %rbx # imm = 0xBFF8000000000000
@@ -182,5 +186,12 @@ main:                                   # @main
 	.size	main, .Lfunc_end1-main
 	.cfi_endproc
                                         # -- End function
+	.type	.L__unnamed_1,@object   # @0
+	.section	.rodata.str1.16,"aMS",@progbits,1
+	.p2align	4
+.L__unnamed_1:
+	.asciz	"Hello World! %d\n"
+	.size	.L__unnamed_1, 17
+
 
 	.section	".note.GNU-stack","",@progbits

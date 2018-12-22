@@ -72,6 +72,25 @@
                                 {
                                     "children": [
                                         {
+                                            "name": "Identifier printf"
+                                        },
+                                        {
+                                            "name": "StringLiteral Hello World! %d\n"
+                                        },
+                                        {
+                                            "name": "Int32Constant 42"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
                                             "name": "PrimitiveType Double"
                                         },
                                         {

@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     RunTcc(input_file, obj_files, files_to_delete, optimization);
   }
 
-  std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
+  std::string cmd("clang -std=c99 -o " + program_name + obj_files.str());
   if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Link Failed\n");
   }
@@ -148,7 +148,7 @@ void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
   auto processed_file(RemoveExtension(input_file) + ".i");
   files_to_delete.push_back(processed_file);
 
-  auto cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+  auto cmd("clang -std=c99 -o " + processed_file + " -E " + input_file);
   if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Preprocessing Failure\n");
   }
@@ -173,7 +173,7 @@ void RunTest() {
   std::string input_file("../test/test.c");
 
   auto processed_file(RemoveExtension(input_file) + ".i");
-  auto cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+  auto cmd("clang -std=c99 -o " + processed_file + " -E " + input_file);
   if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Preprocessing Failure.\n");
   }
@@ -207,7 +207,7 @@ void RunTest() {
 
   tcc::ObjGen(context, "test.o");
 
-  if (auto status{std::system("gcc -std=c99 -o test test.o")};
+  if (auto status{std::system("clang -std=c99 -o test test.o")};
       !CommandSuccess(status)) {
     tcc::ErrorReportAndExit("Link failed\n");
   }
