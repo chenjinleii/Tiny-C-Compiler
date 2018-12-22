@@ -136,7 +136,7 @@ bool FileExists(const std::string &file_name) {
 }
 
 std::string RemoveExtension(const std::string &file_name) {
-  return file_name.substr(0, file_name.find('.'));
+  return file_name.substr(0, file_name.rfind('.'));
 }
 
 bool CommandSuccess(std::int32_t status) {

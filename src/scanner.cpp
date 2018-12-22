@@ -256,6 +256,8 @@ Token Scanner::GetNextToken() {
         return HandleNumber();
       } else if (auto[next, next_two]{PeekNextTwoChar()};
           next == '.' && next_two == '.') {
+        GetNextChar();
+        GetNextChar();
         return MakeToken(TokenValue::kEllipsis);
       } else {
         return MakeToken(TokenValue::kPeriod);

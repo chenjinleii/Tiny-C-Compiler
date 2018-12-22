@@ -96,7 +96,7 @@ std::shared_ptr<Statement> Parser::ParseGlobal() {
 }
 
 std::shared_ptr<Statement> Parser::ParseDeclaration() {
-  auto declaration_no_init{ParDeclarationWithoutInit()};
+  auto declaration_no_init{ParseDeclarationWithoutInit()};
 
   if (Try(TokenValue::kLeftParen)) {
     auto function{ParseFunctionDeclaration()};
@@ -134,7 +134,7 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseFunctionDeclaration() {
   auto function{MakeASTNode<FunctionDeclaration>()};
 
   while (!Test(TokenValue::kRightParen)) {
-    function->AddArg(ParDeclarationWithoutInit());
+    function->AddArg(ParseDeclarationWithoutInit());
     if (!Test(TokenValue::kRightParen)) {
       Expect(TokenValue::kComma);
     } else {
@@ -173,7 +173,7 @@ std::shared_ptr<FunctionDeclaration> Parser::ParseExtern() {
   Expect(TokenValue::kLeftParen);
 
   while (!Test(TokenValue::kRightParen)) {
-    function->AddArg(ParDeclarationWithoutInit());
+    function->AddArg(ParseDeclarationWithoutInit());
     if (!Test(TokenValue::kRightParen)) {
       Expect(TokenValue::kComma);
     } else {
@@ -207,7 +207,7 @@ std::shared_ptr<Statement> Parser::ParseCompound(bool is_func) {
   }
 }
 
-std::shared_ptr<Declaration> Parser::ParDeclarationWithoutInit() {
+std::shared_ptr<Declaration> Parser::ParseDeclarationWithoutInit() {
   auto type{ParseTypeSpecifier()};
   if (!type) {
     ErrorReportAndExit("expect a type specifier");
@@ -221,7 +221,7 @@ std::shared_ptr<Declaration> Parser::ParDeclarationWithoutInit() {
 }
 
 std::shared_ptr<Declaration> Parser::ParDeclarationWithInit() {
-  auto var_declaration_no_init{ParDeclarationWithoutInit()};
+  auto var_declaration_no_init{ParseDeclarationWithoutInit()};
 
   if (Try(TokenValue::kAssign)) {
     var_declaration_no_init->init_ = ParseExpression();

@@ -2,8 +2,6 @@
 // Created by kaiser on 18-12-8.
 //
 
-// TODO continue break switch
-
 #ifndef TINY_C_COMPILER_PARSER_H
 #define TINY_C_COMPILER_PARSER_H
 
@@ -43,7 +41,7 @@ class Parser {
   std::shared_ptr<FunctionDeclaration> ParseExtern();
 
   std::shared_ptr<Statement> ParseCompound(bool is_func);
-  std::shared_ptr<Declaration> ParDeclarationWithoutInit();
+  std::shared_ptr<Declaration> ParseDeclarationWithoutInit();
   std::shared_ptr<Declaration> ParDeclarationWithInit();
   std::shared_ptr<Statement> ParseStatement();
   std::shared_ptr<IfStatement> ParseIfStatement();
