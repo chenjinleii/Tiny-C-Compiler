@@ -1,0 +1,34 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}",
+                "/usr/lib/gcc/x86_64-linux-gnu/8/include",
+                "/usr/include/c++/8",
+                "/home/kaiser/Qt5.12.0/5.12.0/gcc_64/include",
+                "/usr/local/include",
+                "/usr/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64",
+            "configurationProvider": "vector-of-bool.cmake-tools",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "/usr/lib/gcc/x86_64-linux-gnu/8/include",
+                    "/usr/include/c++/8",
+                    "/home/kaiser/Qt5.12.0/5.12.0/gcc_64/include",
+                    "/usr/local/include",
+                    "/usr/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        }
+    ],
+    "version": 4
+}

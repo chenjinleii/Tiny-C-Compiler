@@ -2,604 +2,562 @@
 // Created by kaiser on 18-12-8.
 //
 
-//TODO 各种类型后缀
 #include "scanner.h"
-#include <fstream>
-#include <cstdlib>
-#include <iterator>
-#include <iostream>
+#include "error.h"
+
+#include <algorithm>
 #include <cctype>
-#include <filesystem>
+#include <fstream>
 #include <sstream>
 
-Scanner::Scanner(const std::string &file_name) {
-    std::ifstream ifs{file_name};
-    if (!ifs) {
-        ErrorReport("When trying to open file " + file_name + ", occurred error.");
-    }
+namespace tcc {
 
-    std::ostringstream ost;
-    std::string line;
-    while (std::getline(ifs, line)) {
-        ost << line << '\n';
-    }
-
-    input_ = ost.str();
+KeywordsDictionary::KeywordsDictionary() {
+  keywords_.insert({"auto", TokenValue::kAuto});
+  keywords_.insert({"break", TokenValue::kBreak});
+  keywords_.insert({"case", TokenValue::kCase});
+  keywords_.insert({"char", TokenValue::kChar});
+  keywords_.insert({"const", TokenValue::kConst});
+  keywords_.insert({"continue", TokenValue::kContinue});
+  keywords_.insert({"default", TokenValue::kDefault});
+  keywords_.insert({"do", TokenValue::kDo});
+  keywords_.insert({"double", TokenValue::kDouble});
+  keywords_.insert({"else", TokenValue::kElse});
+  keywords_.insert({"enum", TokenValue::kEnum});
+  keywords_.insert({"extern", TokenValue::kExtern});
+  keywords_.insert({"float", TokenValue::kFloat});
+  keywords_.insert({"for", TokenValue::kFor});
+  keywords_.insert({"goto", TokenValue::kGoto});
+  keywords_.insert({"if", TokenValue::kIf});
+  keywords_.insert({"inline", TokenValue::kInline});
+  keywords_.insert({"int", TokenValue::kInt});
+  keywords_.insert({"long", TokenValue::kLong});
+  keywords_.insert({"register", TokenValue::kRegister});
+  keywords_.insert({"restrict", TokenValue::kRestrict});
+  keywords_.insert({"return", TokenValue::kReturn});
+  keywords_.insert({"short", TokenValue::kShort});
+  keywords_.insert({"signed", TokenValue::kSigned});
+  keywords_.insert({"sizeof", TokenValue::kSizeof});
+  keywords_.insert({"static", TokenValue::kStatic});
+  keywords_.insert({"struct", TokenValue::kStruct});
+  keywords_.insert({"switch", TokenValue::kSwitch});
+  keywords_.insert({"typedef", TokenValue::kTypedef});
+  keywords_.insert({"union", TokenValue::kUnion});
+  keywords_.insert({"unsigned", TokenValue::kUnsigned});
+  keywords_.insert({"void", TokenValue::kVoid});
+  keywords_.insert({"volatile", TokenValue::kVolatile});
+  keywords_.insert({"while", TokenValue::kWhile});
+  keywords_.insert({"_Bool", TokenValue::kBool});
+  keywords_.insert({"_Complex", TokenValue::kComplex});
+  keywords_.insert({"_Imaginary", TokenValue::kImaginary});
 }
 
-std::vector<Token> Scanner::GetTokenSequence() {
-    std::vector<Token> ret;
+TokenValue KeywordsDictionary::Find(const std::string &name) const {
+  if (auto iter{keywords_.find(name)}; iter != std::end(keywords_)) {
+    return iter->second;
+  } else {
+    return TokenTypes::kIdentifier;
+  }
+}
 
-    GetNextToken();
-    while (token_.GetTokenType() != TokenType::kEof) {
-        ret.push_back(token_);
-        GetNextToken();
+Scanner::Scanner(const std::string &processed_file,
+                 const std::string &input_file) {
+  std::ifstream ifs{processed_file};
+  if (!ifs) {
+    ErrorReportAndExit("When trying to open file " + input_file +
+        ", occurred error.");
+  }
+
+  std::ostringstream ost;
+  std::string line;
+  while (std::getline(ifs, line)) {
+    ost << line << '\n';
+  }
+
+  input_ = ost.str();
+  if (std::size(input_) == 0) {
+    ErrorReportAndExit("File is empty");
+  }
+
+  auto iter{std::find_if_not(std::rbegin(input_), std::rend(input_), isspace)};
+  input_.erase(iter.base(), std::end(input_));
+
+  auto index{input_file.rfind('/')};
+  if (index != std::string::npos && index + 1 < std::size(input_file)) {
+    location_.file_name_ = input_file.substr(index + 1);
+  } else {
+    location_.file_name_ = input_file;
+  }
+}
+
+std::vector<Token> Scanner::Scan() {
+  std::vector<Token> token_sequence;
+
+  while (HasNextChar()) {
+    if (auto token{GetNextToken()}; !token.TokenValueIs(TokenTypes::kNone)) {
+      if (token.TokenValueIs(TokenTypes::kEof)) {
+        break;
+      }
+      if (token.IsString() && std::size(token_sequence) > 0 &&
+          token_sequence.back().IsString()) {
+        token_sequence.back().AppendStringValue(token.GetStringValue());
+      } else {
+        token_sequence.push_back(token);
+      }
     }
-    return ret;
-}
-
-char Scanner::GetChar() {
-    if (index_ == std::size(input_)) {
-        current_char_ = EOF;
-    } else {
-        current_char_ = input_[index_++];
-    }
-
-    return current_char_;
-}
-
-char Scanner::PeekChar() const {
-    if (index_ == std::size(input_)) {
-        return EOF;
-    } else {
-        return input_[index_];
-    }
-}
-
-void Scanner::PutBack() {
-    --index_;
-    current_char_ = input_[index_ - 1];
-}
-
-void Scanner::Clear() {
     buffer_.clear();
-    state_ = State::kNone;
+  }
+
+  return token_sequence;
+}
+
+std::vector<Token> Scanner::Test(const std::string &processed_file,
+                                 const std::string &input_file,
+                                 std::ostream &os) {
+  Scanner scanner{processed_file, input_file};
+  auto token_sequence{scanner.Scan()};
+  for (const auto &token : token_sequence) {
+    os << token.ToString() << '\n';
+  }
+  std::cout << "Token Successfully Written\n";
+
+  return token_sequence;
 }
 
 Token Scanner::GetNextToken() {
-    bool matched = false;
+  SkipSpace();
 
-    try {
-        do {
-            if (state_ != State::kNone) {
-                matched = true;
-            }
-
-            switch (state_) {
-                case State::kNone:GetChar();
-                    break;
-
-                case State::kIdentifier:HandleIdentifierOrKeyword();
-                    break;
-
-                case State::kNumber:HandleNumber();
-                    break;
-
-                case State::kString:HandleString();
-                    break;
-
-                case State::kCharacter:HandleChar();
-                    break;
-
-                case State::kOperators:HandleOperatorOrDelimiter();
-                    break;
-
-                default:ErrorReport("Match token state error.");
-            }
-
-            if (state_ == State::kNone) {
-                Skip();
-
-                if (current_char_ == EOF) {
-                    MakeToken(TokenType::kEof, TokenValue::kUnreserved, "end of file", -1);
-                    Clear();
-                    return token_;
-                } else {
-                    if (std::isalpha(current_char_) || current_char_ == '_') {
-                        state_ = State::kIdentifier;
-                    } else if (std::isdigit(current_char_) || (current_char_ == '.' && std::isdigit(PeekChar()))) {
-                        state_ = State::kNumber;
-                    } else if (current_char_ == '\"') {
-                        state_ = State::kString;
-                    } else if (current_char_ == '\'') {
-                        state_ = State::kCharacter;
-                    } else {
-                        state_ = State::kOperators;
-                    }
-                }
-            }
-        } while (!matched);
-    } catch (const std::out_of_range &err) {
-        MakeToken(TokenType::kEof, TokenValue::kUnreserved, "end of file", -1);
-        Clear();
-        return token_;
+  char ch{GetNextChar()};
+  switch (ch) {
+    case '#': {
+      SkipComment();
+      return GetNextToken();
     }
-
-    Clear();
-    return token_;
-}
-
-void Scanner::ErrorReport(const std::string &msg) {
-    std::cerr << "Token error: " << msg << '\n';
-    exit(EXIT_FAILURE);
-}
-
-void Scanner::Skip() {
-    do {
-        while (std::isspace(current_char_)) {
-            GetChar();
-        }
-        HandleWell();
-    } while (std::isspace(current_char_));
-}
-
-void Scanner::HandleWell() {
-    if (current_char_ == '#') {
-        while (current_char_ != '\n') {
-            if (GetChar() == EOF) {
-                throw std::out_of_range("eof");
-            }
-        }
+    case ':':return MakeToken(TokenValue::KColon);
+    case '(':return MakeToken(TokenValue::kLeftParen);
+    case ')':return MakeToken(TokenValue::kRightParen);
+    case '[':return MakeToken(TokenValue::kLeftSquare);
+    case ']':return MakeToken(TokenValue::kRightSquare);
+    case '{':return MakeToken(TokenValue::kLeftCurly);
+    case '}':return MakeToken(TokenValue::kRightCurly);
+    case '?':return MakeToken(TokenValue::kQuestionMark);
+    case ',':return MakeToken(TokenValue::kComma);
+    case '~':return MakeToken(TokenValue::kNeg);
+    case ';':return MakeToken(TokenValue::kSemicolon);
+    case '-': {
+      if (Try('>')) {
+        return MakeToken(TokenValue::kArrow);
+      } else if (Try('-')) {
+        return MakeToken(TokenValue::kDec);
+      } else if (Try('=')) {
+        return MakeToken(TokenValue::kSubAssign);
+      } else {
+        return MakeToken(TokenValue::kSub);
+      }
     }
-}
-
-void Scanner::HandleEscape() {
-    std::string buffer;
-
-    GetChar();
-    switch (current_char_) {
-        case '\'':current_char_ = '\'';
-            break;
-        case '\"':current_char_ = '\"';
-            break;
-        case '\?':current_char_ = '\?';
-            break;
-        case '\\':current_char_ = '\\';
-            break;
-        case 'a':current_char_ = '\a';
-            break;
-        case 'b':current_char_ = '\b';
-            break;
-        case 'f':current_char_ = '\f';
-            break;
-        case 'n':current_char_ = '\n';
-            break;
-        case 'r':current_char_ = '\r';
-            break;
-        case 't':current_char_ = '\t';
-            break;
-        case 'v':current_char_ = '\v';
-            break;
-        default:
-            if (current_char_ == 'x' || current_char_ == 'X') {
-                GetChar();
-                std::string num;
-                while (std::isdigit(current_char_)) {
-                    num.push_back(current_char_);
-                    if (std::size(num) == 2) {
-                        break;
-                    }
-                    GetChar();
-                }
-
-                if (std::size(num) == 0) {
-                    ErrorReport("miss number");
-                }
-
-                current_char_ = static_cast<char>(std::stoi(num, nullptr, 16));
-            } else if (std::isdigit(current_char_)) {
-                std::string num;
-                do {
-                    num.push_back(current_char_);
-                    if (std::size(num) == 3) {
-                        break;
-                    }
-                    GetChar();
-                } while (std::isdigit(current_char_));
-
-                if (std::size(num) == 0) {
-                    ErrorReport("miss number");
-                }
-
-                current_char_ = static_cast<char>(std::stoi(num, nullptr, 8));
-            }
-            break;
+    case '+': {
+      if (Try('+')) {
+        return MakeToken(TokenValue::kInc);
+      } else if (Try('=')) {
+        return MakeToken(TokenValue::kAddAssign);
+      } else {
+        return MakeToken(TokenValue::kAdd);
+      }
     }
-}
-
-void Scanner::HandleString() {
-    GetChar();
-    bool ok{false};
-    bool escape_quotes{false};
-    bool new_line{false};
-
-    while (!new_line) {
-        if (current_char_ == EOF) {
-            throw std::out_of_range("eof");
-        } else if (current_char_ == '\"' && !escape_quotes) {
-            ok = true;
-            break;
-        }
-        buffer_.push_back(current_char_);
-        GetChar();
-        escape_quotes = false;
-        if (current_char_ == '\n') {
-            new_line = true;
-        } else if (current_char_ == '\\') {
-            HandleEscape();
-            if (current_char_ == '\"') {
-                escape_quotes = true;
-            }
-            if (current_char_ == '\n') {
-                new_line = false;
-            }
-        }
-    }
-
-    if (!ok) {
-        ErrorReport("string error");
-    }
-
-    while (std::isspace(PeekChar())) {
-        for (auto i{index_ + 1};; ++i) {
-            if (i >= std::size(input_)) {
-                MakeToken(TokenType::kString, TokenValue::kUnreserved, buffer_, buffer_);
-                return;
-            }
-            if (std::isspace(input_[i])) {
-                continue;
-            } else if (input_[i] == '\"') {
-                index_ = i;
-                GetChar();
-
-                GetChar();
-                bool ok2{false};
-
-                while (current_char_ != '\n') {
-                    if (current_char_ == EOF) {
-                        throw std::out_of_range("eof");
-                    } else if (current_char_ == '\"') {
-                        ok2 = true;
-                        break;
-                    }
-                    buffer_.push_back(current_char_);
-                    GetChar();
-                }
-
-                if (!ok2) {
-                    ErrorReport("string error");
-                }
-                break;
-            }
-        }
-    }
-    MakeToken(TokenType::kString, TokenValue::kUnreserved, buffer_, buffer_);
-}
-
-void Scanner::HandleChar() {
-    GetChar();
-
-    if (current_char_ == '\\') {
-        HandleEscape();
-    }
-
-    buffer_.push_back(current_char_);
-    GetChar();
-    if (current_char_ != '\'') {
-        ErrorReport("miss \'");
-    } else {
-        MakeToken(TokenType::kCharacter, TokenValue::kUnreserved, buffer_, buffer_[0]);
-    }
-}
-
-void Scanner::HandleNumber() {
-    if (current_char_ == '.') {
-        buffer_.push_back(current_char_);
-        GetChar();
-        while (std::isdigit(current_char_)) {
-            buffer_.push_back(current_char_);
-            GetChar();
-        }
-        PutBack();
-        MakeToken(TokenType::kDouble, TokenValue::kUnreserved, buffer_, std::stod(buffer_));
-        return;
-    }
-
-    bool is_float{false};
-    bool is_exp{false};
-    bool is_long{false};
-    bool is_sin{false};
-
-    enum class NumberState {
-        kInteger,
-        kFraction,
-        kExp,
-        kDone
-    };
-
-    NumberState number_state{NumberState::kInteger};
-
-    std::int32_t base{10};
-
-    if (current_char_ == '0') {
-        base = 8;
-    }
-
-    buffer_.push_back(current_char_);
-    GetChar();
-
-    if (current_char_ == 'x' || current_char_ == 'X') {
-        if (std::size(buffer_) == 1 && buffer_.front() == '0') {
-            base = 16;
-            buffer_.push_back(current_char_);
-            GetChar();
-            if (!std::isdigit(current_char_)) {
-                ErrorReport("number error");
-            }
+    case '<': {
+      if (Try('<')) {
+        if (Try('=')) {
+          return MakeToken(TokenValue::kShlAssign);
         } else {
-            ErrorReport("number error");
+          return MakeToken(TokenValue::kShl);
         }
+      } else if (Try('=')) {
+        return MakeToken(TokenValue::kLessOrEqual);
+      } else {
+        return MakeToken(TokenValue::kLess);
+      }
     }
-
-    do {
-        switch (number_state) {
-            case NumberState::kInteger:is_long = HandleDigit();
-                break;
-
-            case NumberState::kFraction:is_sin = HandleFraction();
-                is_float = true;
-                break;
-            case NumberState::kExp:HandleExp();
-                is_exp = true;
-                break;
-            case NumberState::kDone:break;
-        }
-        if (is_long || is_sin) {
-            break;
-        }
-        if (current_char_ == '.') {
-            if (is_float) {
-                ErrorReport("Fraction number can not have more than one dot.");
-            }
-            number_state = NumberState::kFraction;
-        } else if (current_char_ == 'e' || current_char_ == 'E') {
-            if (is_exp) {
-                ErrorReport("number error");
-            }
-            number_state = NumberState::kExp;
-        } else if (std::isalpha(current_char_)) {
-            ErrorReport("number error");
+    case '>': {
+      if (Try('>')) {
+        if (Try('=')) {
+          return MakeToken(TokenValue::kShrAssign);
         } else {
-            number_state = NumberState::kDone;
+          return MakeToken(TokenValue::kShr);
         }
-    } while (number_state != NumberState::kDone);
-
-    if (is_long) {
-        MakeToken(TokenType::kLongInterger, TokenValue::kUnreserved, buffer_,
-                  std::stol(buffer_, nullptr, base));
-    } else if (is_sin) {
-        MakeToken(TokenType::kFolat, TokenValue::kUnreserved, buffer_,
-                  std::stof(buffer_));
-    } else if (is_float || is_exp) {
-        MakeToken(TokenType::kDouble, TokenValue::kUnreserved, buffer_,
-                  std::stod(buffer_));
-    } else {
-        MakeToken(TokenType::kInterger, TokenValue::kUnreserved, buffer_,
-                  std::stoi(buffer_, nullptr, base));
+      } else if (Try('=')) {
+        return MakeToken(TokenValue::kGreaterOrEqual);
+      } else {
+        return MakeToken(TokenValue::kGreater);
+      }
     }
+    case '%': {
+      if (Try('=')) {
+        return MakeToken(TokenValue::kModAssign);
+      } else {
+        return MakeToken(TokenValue::kMod);
+      }
+    }
+    case '=': {
+      if (Try('=')) {
+        return MakeToken(TokenValue::kEqual);
+      } else {
+        return MakeToken(TokenValue::kAssign);
+      }
+    }
+    case '!': {
+      if (Try('=')) {
+        return MakeToken(TokenValue::kNotEqual);
+      } else {
+        return MakeToken(TokenValue::kLogicNeg);
+      }
+    }
+    case '&': {
+      if (Try('&')) {
+        return MakeToken(TokenValue::kLogicAnd);
+      } else if (Try('=')) {
+        return MakeToken(TokenValue::kAndAssign);
+      } else {
+        return MakeToken(TokenValue::kAnd);
+      }
+    }
+    case '|': {
+      if (Try('|')) {
+        return MakeToken(TokenValue::kLogicOr);
+      } else if (Try('=')) {
+        return MakeToken(TokenValue::kOrAssign);
+      } else {
+        return MakeToken(TokenValue::kOr);
+      }
+    }
+    case '*': {
+      if (Try('=')) {
+        return MakeToken(TokenValue::kMulAssign);
+      } else {
+        return MakeToken(TokenValue::kMul);
+      }
+    }
+    case '/': {
+      if (Try('=')) {
+        return MakeToken(TokenValue::kDivAssign);
+      } else {
+        return MakeToken(TokenValue::kDiv);
+      }
+    }
+    case '^': {
+      if (Try('=')) {
+        return MakeToken(TokenValue::kXorAssign);
+      } else {
+        return MakeToken(TokenValue::kXor);
+      }
+    }
+    case '.': {
+      if (std::isdigit(PeekNextChar())) {
+        buffer_.push_back(ch);
+        return HandleNumber();
+      } else if (auto[next, next_two]{PeekNextTwoChar()};
+          next == '.' && next_two == '.') {
+        return MakeToken(TokenValue::kEllipsis);
+      } else {
+        return MakeToken(TokenValue::kPeriod);
+      }
+    }
+    case '0' ... '9': {
+      buffer_.push_back(ch);
+      return HandleNumber();
+    }
+    case '\'':return HandleChar();
+    case '\"':return HandleString();
+    case 'a' ... 'z':
+    case 'A' ... 'Z':
+    case '_': {
+      buffer_.push_back(ch);
+      return HandleIdentifierOrKeyword();
+    }
+    case EOF:return MakeToken(TokenValue::kEof);
+    default: {
+      ErrorReportAndExit(location_, "Unknown character.");
+      return MakeToken(TokenValue::kNone);
+    }
+  }
 }
 
-bool Scanner::HandleDigit() {
-    if (!std::isdigit(current_char_)) {
-        return false;
-    }
+Token Scanner::HandleIdentifierOrKeyword() {
+  char ch{GetNextChar()};
+  while (std::isalnum(ch) || ch == '_') {
+    buffer_.push_back(ch);
+    ch = GetNextChar();
+  }
+  PutBack();
 
-    buffer_.push_back(current_char_);
-    GetChar();
-
-    while (std::isdigit(current_char_)) {
-        buffer_.push_back(current_char_);
-        GetChar();
-    }
-
-    if (current_char_ == 'L' || current_char_ == 'l') {
-        GetChar();
-        return true;
-    }
-    return false;
+  auto token{keywords_dictionary_.Find(buffer_)};
+  return MakeToken(token, buffer_);
 }
 
-bool Scanner::HandleFraction() {
-    buffer_.push_back(current_char_);
-
-    if (!std::isdigit(PeekChar())) {
-        GetChar();
-        buffer_.push_back('0');
-        return false;
-    }
-
-    GetChar();
-    while (std::isdigit(current_char_)) {
-        buffer_.push_back(current_char_);
-        GetChar();
-    }
-
-    if (current_char_ == 'f' || current_char_ == 'F') {
-        GetChar();
-        return true;
-    }
-    return false;
-}
-
-void Scanner::HandleExp() {
-    buffer_.push_back(current_char_);
-
-    if (!std::isdigit(PeekChar())) {
-        if (PeekChar() == '+' || PeekChar() == '-') {
-            GetChar();
-            buffer_.push_back(current_char_);
-        } else {
-            ErrorReport("number error");
-        }
-    }
-
-    GetChar();
-    while (std::isdigit(current_char_)) {
-        buffer_.push_back(current_char_);
-        GetChar();
-    }
-}
-
-void Scanner::HandleIdentifierOrKeyword() {
-    buffer_.push_back(current_char_);
-    GetChar();
-
-    while (std::isalnum(current_char_) || current_char_ == '_') {
-        buffer_.push_back(current_char_);
-        GetChar();
+Token Scanner::HandleNumber() {
+  if (buffer_.front() == '.') {
+    auto ch{GetNextChar()};
+    while (std::isdigit(ch)) {
+      buffer_.push_back(ch);
+      ch = GetNextChar();
     }
     PutBack();
+    return MakeToken(std::stod(buffer_));
+  }
 
-    auto token{dictionary_.LookUp(buffer_)};
-    MakeToken(std::get<0>(token), std::get<1>(token), std::get<2>(token), buffer_);
-}
-
-void Scanner::HandleOperatorOrDelimiter() {
-    buffer_.push_back(current_char_);
-    buffer_.push_back(PeekChar());
-
-    if (dictionary_.HaveToken(buffer_)) {
-        GetChar();
+  if (buffer_.front() == '0') {
+    auto ch{GetNextChar()};
+    if (ch == 'x' || ch == 'X') {
+      return MakeToken(HandleHexNumber());
+    } else if (IsOctDigit(ch)) {
+      buffer_.push_back(ch);
+      return MakeToken(HandleOctNumber());
+    } else if (ch == '.') {
+      do {
+        buffer_.push_back(ch);
+        ch = GetNextChar();
+      } while (std::isdigit(ch));
+      PutBack();
+      return MakeToken(std::stod(buffer_));
     } else {
-        buffer_.pop_back();
+      PutBack();
+      return MakeToken(0);
     }
+  }
 
-    auto token{dictionary_.LookUp(buffer_)};
-    MakeToken(std::get<0>(token), std::get<1>(token), std::get<2>(token), buffer_);
+  std::int32_t dot_count{};
+  auto ch{GetNextChar()};
+  while (std::isdigit(ch) || ch == '.') {
+    if (ch == '.') {
+      ++dot_count;
+    }
+    buffer_.push_back(ch);
+    ch = GetNextChar();
+  }
+
+  PutBack();
+  if (dot_count > 1) {
+    ErrorReportAndExit(location_, "No more than one decimal point");
+    return MakeToken(TokenValue::kNone);
+  } else if (dot_count == 1) {
+    return MakeToken(std::stod(buffer_));
+  } else {
+    return MakeToken(std::stoi(buffer_));
+  }
 }
 
-void Scanner::MakeToken(TokenType type, TokenValue value, const std::string &name) {
-    token_ = Token{type, value, name};
+std::int32_t Scanner::HandleOctNumber() {
+  auto next{GetNextChar()};
+  while (IsOctDigit(next)) {
+    buffer_.push_back(next);
+    next = GetNextChar();
+  }
+  PutBack();
+  return std::stoi(buffer_, nullptr, 8);
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        std::int32_t symbol_precedence,
-                        const std::string &name) {
-    token_ = Token{type, value, symbol_precedence, name};
+std::int32_t Scanner::HandleHexNumber() {
+  auto next{GetNextChar()};
+  while (std::isxdigit(next)) {
+    buffer_.push_back(next);
+    next = GetNextChar();
+  }
+  PutBack();
+  return std::stoi(buffer_, nullptr, 16);
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        bool bool_value) {
-    token_ = Token{type, value, name, bool_value};
+Token Scanner::HandleChar() {
+  char ch{GetNextChar()};
+
+  if (ch == '\\') {
+    ch = HandleEscape();
+  }
+  if (ch == EOF) {
+    return MakeToken(TokenTypes::kEof);
+  }
+
+  if (auto next{GetNextChar()}; next != '\'') {
+    ErrorReportAndExit(location_, "miss '");
+    return MakeToken(TokenTypes::kNone);
+  }
+
+  return MakeToken(ch);
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        unsigned char unsigned_char_value) {
-    token_ = Token{type, value, name, unsigned_char_value};
+Token Scanner::HandleString() {
+  while (HasNextChar() && !Test('\"') && !Test('\n')) {
+    char ch{GetNextChar()};
+    if (ch == '\\') {
+      ch = HandleEscape();
+      if (ch == EOF) {
+        return MakeToken(TokenTypes::kNone);
+      }
+    }
+    buffer_.push_back(ch);
+  }
+
+  if (GetNextChar() != '\"') {
+    ErrorReportAndExit(location_, "miss \"");
+    return MakeToken(TokenTypes::kNone);
+  }
+
+  return MakeToken(buffer_);
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        signed char signed_char_value) {
-    token_ = Token{type, value, name, signed_char_value};
+char Scanner::HandleEscape() {
+  auto ch{GetNextChar()};
+  switch (ch) {
+    case '\\':
+    case '\'':
+    case '\"':
+    case '\?':return ch;
+    case 'a':return '\a';
+    case 'b':return '\b';
+    case 'f':return '\f';
+    case 'n':return '\n';
+    case 'r':return '\r';
+    case 't':return '\t';
+    case 'v':return '\v';
+    case 'X':
+    case 'x':return HandleHexEscape();
+    case '0' ... '7':return HandleOctEscape(ch);
+    default: {
+      ErrorReportAndExit(location_, "unrecognized escape character '{}'", ch);
+      return EOF;
+    }
+  }
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        char char_value) {
-    token_ = Token{type, value, name, char_value};
+char Scanner::HandleOctEscape(char ch) {
+  std::string buf;
+  buf.push_back(ch);
+
+  for (std::int32_t i{0}; i < 2; ++i) {
+    if (char next{GetNextChar()}; IsOctDigit(next)) {
+      buf.push_back(next);
+    } else {
+      PutBack();
+      break;
+    }
+  }
+  return static_cast<char>(std::stoi(buf, nullptr, 8));
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        short short_value) {
-    token_ = Token{type, value, name, short_value};
+char Scanner::HandleHexEscape() {
+  std::string buf;
+
+  for (std::int32_t i{0}; i < 2; ++i) {
+    if (char next{GetNextChar()}; std::isxdigit(next)) {
+      buf.push_back(next);
+    } else {
+      PutBack();
+      break;
+    }
+  }
+  return static_cast<char>(std::stoi(buf, nullptr, 16));
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        int int_value) {
-    token_ = Token{type, value, name, int_value};
+void Scanner::SkipSpace() {
+  while (std::isspace(PeekNextChar())) {
+    GetNextChar();
+  }
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        long long_value) {
-    token_ = Token{type, value, name, long_value};
+void Scanner::SkipComment() {
+  std::string buff;
+  GetNextChar();
+  char ch = GetNextChar();
+  while (HasNextChar() && std::isdigit(ch)) {
+    buff.push_back(ch);
+    ch = GetNextChar();
+  }
+  PutBack();
+
+  while (HasNextChar() && PeekNextChar() != '\n') {
+    GetNextChar();
+  }
+  GetNextChar();
+  location_.row_ = std::stoi(buff);
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        long long long_long_value) {
-    token_ = Token{type, value, name, long_long_value};
+char Scanner::GetNextChar() {
+  if (HasNextChar()) {
+    char next_char{input_[index_++]};
+    if (next_char == '\n') {
+      ++location_.row_;
+      pre_column_ = location_.column_;
+      location_.column_ = 0;
+    } else {
+      ++location_.column_;
+    }
+    return next_char;
+  } else {
+    return EOF;
+  }
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        unsigned short unsigned_short_value) {
-    token_ = Token{type, value, name, unsigned_short_value};
+char Scanner::PeekNextChar() const {
+  if (HasNextChar()) {
+    return input_[index_];
+  } else {
+    return EOF;
+  }
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        unsigned int unsigned_int_value) {
-    token_ = Token{type, value, name, unsigned_int_value};
+std::pair<char, char> Scanner::PeekNextTwoChar() const {
+  std::pair<char, char> ret{EOF, EOF};
+  if (index_ + 1 < std::size(input_)) {
+    ret = {input_[index_], input_[index_ + 1]};
+  }
+  return ret;
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        unsigned long unsigned_long_value) {
-    token_ = Token{type, value, name, unsigned_long_value};
+void Scanner::PutBack() {
+  if (index_ > 0) {
+    --index_;
+    if (location_.column_ > 0) {
+      --location_.column_;
+    } else {
+      --location_.row_;
+      location_.column_ = pre_column_;
+    }
+  }
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        unsigned long long unsigned_long_long_value) {
-    token_ = Token{type, value, name, unsigned_long_long_value};
+bool Scanner::HasNextChar() const { return index_ < std::size(input_); }
+
+bool Scanner::Try(char ch) {
+  if (PeekNextChar() == ch) {
+    GetNextChar();
+    return true;
+  } else {
+    return false;
+  }
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        float float_value) {
-    token_ = Token{type, value, name, float_value};
+bool Scanner::Test(char ch) const { return PeekNextChar() == ch; }
+
+Token Scanner::MakeToken(TokenValue value) { return Token{location_, value}; }
+
+Token Scanner::MakeToken(TokenValue value, const std::string &name) {
+  return Token{location_, value, name};
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        double double_value) {
-    token_ = Token{type, value, name, double_value};
+Token Scanner::MakeToken(char char_value) {
+  return Token{location_, char_value};
 }
 
-void Scanner::MakeToken(TokenType type,
-                        TokenValue value,
-                        const std::string &name,
-                        const std::string &string_value) {
-    token_ = Token{type, value, name, string_value};
+Token Scanner::MakeToken(std::int32_t int32_value) {
+  return Token{location_, int32_value};
 }
+
+Token Scanner::MakeToken(double double_value) {
+  return Token{location_, double_value};
+}
+
+Token Scanner::MakeToken(const std::string &string_value) {
+  return Token{location_, string_value};
+}
+
+bool IsOctDigit(char ch) { return ch >= '0' && ch < '8'; }
+
+}  // namespace tcc

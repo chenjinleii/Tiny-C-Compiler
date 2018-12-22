@@ -5,181 +5,396 @@
 #ifndef TINY_C_COMPILER_AST_H
 #define TINY_C_COMPILER_AST_H
 
-#include <llvm/IR/Value.h>
+#include "location.h"
+#include "token.h"
 
-#include <vector>
+#include <llvm/IR/Value.h>
+#include <QtCore/QMetaEnum>
+#include <QtCore/QJsonObject>
+#include <QtCore/QString>
+
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <cstdint>
+#include <utility>
+#include <vector>
+
+namespace tcc {
 
 class CodeGenContext;
 class Expression;
 class Statement;
-class VariableDeclaration;
+class Declaration;
 
-using ExpressionList=std::vector<std::unique_ptr<Expression>>;
-using StatementList=std::vector<std::unique_ptr<Statement>>;
-using VariableDeclarationList=std::vector<std::unique_ptr<VariableDeclaration>>;
+using ExpressionList = std::vector<std::shared_ptr<Expression>>;
+using StatementList = std::vector<std::shared_ptr<Statement>>;
+using DeclarationList = std::vector<std::shared_ptr<Declaration>>;
+
+class ASTNodeTypes : public QObject {
+ Q_OBJECT
+ public:
+  enum Type {
+    kASTNode,
+
+    kType,
+    kPrimitiveType,
+
+    kStatement,
+    kCompoundStatement,
+    kExpressionStatement,
+    kIfStatement,
+    kWhileStatement,
+    kForStatement,
+    kReturnStatement,
+    kDeclaration,
+
+    kExpression,
+    kUnaryOpExpression,
+    kPostfixExpression,
+    kBinaryOpExpression,
+    kIdentifier,
+    kFunctionCall,
+    kFunctionDefinition,
+    kFunctionDeclaration,
+
+    kCharConstant,
+    kInt32Constant,
+    kDoubleConstant,
+    kStringLiteral,
+  };
+  Q_ENUM(Type)
+
+  static QString ToString(Type type);
+};
+
+using ASTNodeType = ASTNodeTypes::Type;
 
 class ASTNode {
-public:
-    virtual ~ASTNode() = default;
-    virtual llvm::Value *CodeGen(CodeGenContext &context) = 0;
+ public:
+  ASTNode() = default;
+  virtual ~ASTNode() = default;
+
+  virtual ASTNodeType Kind() const { return ASTNodeType::kASTNode; }
+
+  virtual QJsonObject JsonGen() const { return QJsonObject{}; }
+  // 该方法表示为该AST节点生成IR所依赖的所有内容
+  // llvm::Value 是用于表示LLVM中SSA值的类
+  virtual llvm::Value *CodeGen(CodeGenContext &context);
+
+  SourceLocation location_;
 };
 
-class Expression : public ASTNode {};
+class Type : public ASTNode {
+ public:
+  Type() = default;
+  explicit Type(TokenValue type) : type_{type} {}
+  ASTNodeType Kind() const override { return ASTNodeType::kType; }
+  QJsonObject JsonGen() const override;
 
-class Statement : public ASTNode {};
-
-class Double : public Expression {
-public:
-    explicit Double(double value) : value_{value} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    double value_;
+  TokenValue type_{TokenValue::kNone};
 };
 
-class Integer : public Expression {
-public:
-    explicit Integer(std::int32_t value) : value_{value} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+class PrimitiveType : public Type {
+ public:
+  PrimitiveType() = default;
+  explicit PrimitiveType(TokenValue type) : Type{type} {}
 
-    std::int32_t value_;
+  ASTNodeType Kind() const override { return ASTNodeType::kPrimitiveType; }
+  QJsonObject JsonGen() const override;
 };
 
-class String : public Expression {
-public:
-    explicit String(const std::string &value) : value_{value} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::string value_;
+class Statement : public ASTNode {
+ public:
+  ASTNodeType Kind() const override { return ASTNodeType::kStatement; }
+  QJsonObject JsonGen() const override;
 };
 
-class IdentifierOrType : public Expression {
-public:
-    explicit IdentifierOrType(const std::string &name) : name_{name} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+class CompoundStatement : public Statement {
+ public:
+  CompoundStatement() = default;
+  explicit CompoundStatement(std::shared_ptr<StatementList> statements)
+      : statements_{std::move(statements)} {}
 
-    std::string name_;
-    bool is_type_{false};
-};
+  ASTNodeType Kind() const override { return ASTNodeType::kCompoundStatement; }
+  void AddStatement(std::shared_ptr<Statement> statement);
 
-class FunctionCall : public Expression {
-public:
-    explicit FunctionCall(std::unique_ptr<IdentifierOrType> function_name,
-                          std::unique_ptr<ExpressionList> args = nullptr) :
-            function_name_{std::move(function_name)}, args_{std::move(args)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
 
-    std::unique_ptr<IdentifierOrType> function_name_;
-    std::unique_ptr<ExpressionList> args_;
-};
-
-class BinaryOpExpression : public Expression {
-public:
-    BinaryOpExpression(std::unique_ptr<Expression> lhs, std::unique_ptr<Expression> rhs,
-                       char op) : lhs_{std::move(lhs)}, rhs_{std::move(lhs)}, op_{op} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<Expression> lhs_;
-    std::unique_ptr<Expression> rhs_;
-    char op_;
-};
-
-class Assignment : public BinaryOpExpression {
-public:
-    Assignment(std::unique_ptr<Expression> lhs, std::unique_ptr<Expression> rhs) :
-            BinaryOpExpression{std::move(lhs), std::move(rhs), '='} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-};
-
-class Block : public Statement {
-public:
-    explicit Block(std::unique_ptr<StatementList> statements) :
-            statements_{std::move(statements)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
-
-    std::unique_ptr<StatementList> statements_;
+  std::shared_ptr<StatementList> statements_;
 };
 
 class ExpressionStatement : public Statement {
-public:
-    explicit ExpressionStatement(std::unique_ptr<Expression> expression) :
-            expression_{std::move(expression)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+ public:
+  ExpressionStatement() = default;
+  explicit ExpressionStatement(std::shared_ptr<Expression> expression)
+      : expression_{std::move(expression)} {}
 
-    std::unique_ptr<Expression> expression_;
+  ASTNodeType Kind() const override {
+    return ASTNodeType::kExpressionStatement;
+  }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> expression_;
 };
 
-class VariableDeclaration : public Statement {
-public:
-    VariableDeclaration(std::unique_ptr<IdentifierOrType> type,
-                        std::unique_ptr<IdentifierOrType> variable_name,
-                        std::unique_ptr<Expression> initialization_expression = nullptr) :
-            type_{std::move(type)}, variable_name_{std::move(variable_name)},
-            initialization_expression_{std::move(initialization_expression)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+class IfStatement : public Statement {
+ public:
+  IfStatement() = default;
+  IfStatement(std::shared_ptr<Expression> condition_,
+              std::shared_ptr<Statement> then_block,
+              std::shared_ptr<Statement> else_block)
+      : condition_{std::move(condition_)},
+        then_block_{std::move(then_block)},
+        else_block_{std::move(else_block)} {}
 
-    std::unique_ptr<IdentifierOrType> type_;
-    std::unique_ptr<IdentifierOrType> variable_name_;
-    std::unique_ptr<Expression> initialization_expression_;
+  ASTNodeType Kind() const override { return ASTNodeType::kIfStatement; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> condition_;
+  std::shared_ptr<Statement> then_block_;
+  std::shared_ptr<Statement> else_block_;
+};
+
+class WhileStatement : public Statement {
+ public:
+  WhileStatement() = default;
+  WhileStatement(std::shared_ptr<Expression> condition,
+                 std::shared_ptr<Statement> block)
+      : cond_{std::move(condition)}, block_{std::move(block)} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kWhileStatement; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> cond_;
+  std::shared_ptr<Statement> block_;
+};
+
+class ForStatement : public Statement {
+ public:
+  ForStatement() = default;
+  ForStatement(std::shared_ptr<Expression> init,
+               std::shared_ptr<Expression> condition,
+               std::shared_ptr<Expression> increment,
+               std::shared_ptr<Statement> block,
+               std::shared_ptr<Declaration> declaration)
+      : init_{std::move(init)},
+        cond_{std::move(condition)},
+        increment_{std::move(increment)},
+        block_{std::move(block)},
+        declaration_{std::move(declaration)} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kForStatement; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> init_, cond_, increment_;
+  std::shared_ptr<Statement> block_;
+  std::shared_ptr<Declaration> declaration_;
+};
+
+class ReturnStatement : public Statement {
+ public:
+  ReturnStatement() = default;
+  explicit ReturnStatement(std::shared_ptr<Expression> expression)
+      : expression_{std::move(expression)} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kReturnStatement; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> expression_;
+};
+
+class Identifier;
+
+class Declaration : public Statement {
+ public:
+  Declaration() = default;
+  Declaration(std::shared_ptr<PrimitiveType> type,
+              std::shared_ptr<Identifier> name,
+              std::shared_ptr<Expression> init = nullptr)
+      : type_{std::move(type)},
+        name_{std::move(name)},
+        init_{std::move(init)} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kDeclaration; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Type> type_;
+  std::shared_ptr<Identifier> name_;
+  std::shared_ptr<Expression> init_;
+};
+
+class Expression : public ASTNode {
+ public:
+  ASTNodeType Kind() const override { return ASTNodeType::kExpression; }
+  QJsonObject JsonGen() const override;
+};
+
+class UnaryOpExpression : public Expression {
+ public:
+  UnaryOpExpression() = default;
+  UnaryOpExpression(std::shared_ptr<Expression> object, TokenValue op)
+      : object_{std::move(object)}, op_{op} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kUnaryOpExpression; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> object_;
+  TokenValue op_{};
+};
+
+class PostfixExpression : public Expression {
+ public:
+  PostfixExpression() = default;
+  PostfixExpression(std::shared_ptr<Expression> object, TokenValue op)
+      : object_{std::move(object)}, op_{op} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kPostfixExpression; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> object_;
+  TokenValue op_{};
+};
+
+class BinaryOpExpression : public Expression {
+ public:
+  BinaryOpExpression() = default;
+  BinaryOpExpression(std::shared_ptr<Expression> lhs,
+                     std::shared_ptr<Expression> rhs, TokenValue op)
+      : lhs_{std::move(lhs)}, rhs_{std::move(rhs)}, op_{op} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kBinaryOpExpression; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Expression> lhs_;
+  std::shared_ptr<Expression> rhs_;
+  TokenValue op_{};
+};
+
+class Identifier : public Expression {
+ public:
+  Identifier() = default;
+  explicit Identifier(std::string name) : name_{std::move(name)} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kIdentifier; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::string name_;
+};
+
+class FunctionCall : public Expression {
+ public:
+  FunctionCall() = default;
+  explicit FunctionCall(std::shared_ptr<Identifier> name,
+                        std::shared_ptr<ExpressionList> args = nullptr)
+      : name_{std::move(name)}, args_{std::move(args)} {}
+
+  ASTNodeType Kind() const override { return ASTNodeType::kFunctionCall; }
+  void AddArg(std::shared_ptr<Expression> arg);
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Identifier> name_;
+  std::shared_ptr<ExpressionList> args_;
 };
 
 class FunctionDeclaration : public Statement {
-public:
-    FunctionDeclaration(std::unique_ptr<IdentifierOrType> return_type,
-                        std::unique_ptr<IdentifierOrType> function_name,
-                        std::unique_ptr<VariableDeclarationList> args,
-                        std::unique_ptr<Block> body)
-            : return_type_{std::move(return_type)}, function_name_{std::move(function_name)},
-              args_{std::move(args)}, body_{std::move(body)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+ public:
+  FunctionDeclaration() = default;
+  FunctionDeclaration(std::shared_ptr<Type> return_type,
+                      std::shared_ptr<Identifier> name,
+                      std::shared_ptr<DeclarationList> args,
+                      std::shared_ptr<CompoundStatement> body)
+      : return_type_{std::move(return_type)},
+        name_{std::move(name)},
+        args_{std::move(args)},
+        body_{std::move(body)} {}
 
-    std::unique_ptr<IdentifierOrType> return_type_;
-    std::unique_ptr<IdentifierOrType> function_name_;
-    std::unique_ptr<VariableDeclarationList> args_;
-    std::unique_ptr<Block> body_;
-    bool is_extern_{false};
+  ASTNodeType Kind() const override;
+  void AddArg(std::shared_ptr<Declaration> arg);
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::shared_ptr<Type> return_type_;
+  std::shared_ptr<Identifier> name_;
+  std::shared_ptr<DeclarationList> args_;
+  std::shared_ptr<Statement> body_;
 };
 
-class IfStatenment : public Statement {
-public:
-    IfStatenment(std::unique_ptr<Expression> condition_,
-                 std::unique_ptr<Block> then_block,
-                 std::unique_ptr<Block> else_block)
-            : condition_{std::move(condition_)}, then_block_{std::move(then_block)},
-              else_block_{std::move(else_block)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+class CharConstant : public Expression {
+ public:
+  CharConstant() = default;
+  explicit CharConstant(char value) : value_{value} {}
 
-    std::unique_ptr<Expression> condition_;
-    std::unique_ptr<Block> then_block_;
-    std::unique_ptr<Block> else_block_;
+  ASTNodeType Kind() const override { return ASTNodeType::kCharConstant; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  char value_{};
 };
 
-class ForStatenment : public Statement {
-public:
-    ForStatenment(std::unique_ptr<Expression> initial,
-                  std::unique_ptr<Expression> condition,
-                  std::unique_ptr<Expression> increment,
-                  std::unique_ptr<Block> block) :
-            initial_{std::move(initial)},
-            condition_{std::move(condition)},
-            increment_{std::move(increment)}, block_{std::move(block)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+class Int32Constant : public Expression {
+ public:
+  Int32Constant() = default;
+  explicit Int32Constant(std::int32_t value) : value_{value} {}
 
-    std::unique_ptr<Expression> initial_, condition_, increment_;
-    std::unique_ptr<Block> block_;
+  ASTNodeType Kind() const override { return ASTNodeType::kInt32Constant; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::int32_t value_{};
 };
 
-class ReturnStatenment : public Statement {
-public:
-    explicit ReturnStatenment(std::unique_ptr<Expression> expression) :
-            expression_{std::move(expression)} {}
-    llvm::Value *CodeGen(CodeGenContext &context) override;
+class DoubleConstant : public Expression {
+ public:
+  DoubleConstant() = default;
+  explicit DoubleConstant(double value) : value_{value} {}
 
-    std::unique_ptr<Expression> expression_;
+  ASTNodeType Kind() const override { return ASTNodeType::kDoubleConstant; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  double value_{};
 };
 
-//TODO struct array enum以及其他内置类型
+class StringLiteral : public Expression {
+ public:
+  StringLiteral() = default;
+  explicit StringLiteral(std::string value) : value_{std::move(value)} {}
 
-#endif //TINY_C_COMPILER_AST_H
+  ASTNodeType Kind() const override { return ASTNodeType::kStringLiteral; }
+
+  QJsonObject JsonGen() const override;
+  llvm::Value *CodeGen(CodeGenContext &context) override;
+
+  std::string value_;
+};
+
+}  // namespace tcc
+
+#endif  // TINY_C_COMPILER_AST_H

@@ -5,97 +5,75 @@
 #ifndef TINY_C_COMPILER_SCANNER_H
 #define TINY_C_COMPILER_SCANNER_H
 
-#include "dictionary.h"
 #include "token.h"
+
+#include <cstdint>
+#include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
-#include <fstream>
 
-class Scanner {
-public:
-    explicit Scanner(const std::string &file_name);
-    Token GetNextToken();
-    std::vector<Token> GetTokenSequence();
-private:
-    enum class State {
-        kNone,
-        kIdentifier,
-        kNumber,
-        kString,
-        kCharacter,
-        kOperators
-    };
+namespace tcc {
 
-    char GetChar();
-    char PeekChar() const;
-    void PutBack();
-    void Clear();
-    void ErrorReport(const std::string &msg);
+class KeywordsDictionary {
+ public:
+  KeywordsDictionary();
+  TokenValue Find(const std::string &name) const;
 
-    void Skip();
-    void HandleWell();
-
-    void HandleEscape();
-    void HandleChar();
-    void HandleString();
-
-    void HandleNumber();
-    bool HandleDigit();
-    bool HandleFraction();
-    void HandleExp();
-
-    void HandleIdentifierOrKeyword();
-    void HandleOperatorOrDelimiter();
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name);
-    void MakeToken(TokenType type, TokenValue value,
-                   std::int32_t symbol_precedence, const std::string &name);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, bool bool_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned char unsigned_char_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, signed char signed_char_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, char char_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, short short_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, int int_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, long long_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, long long long_long_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned short unsigned_short_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned int unsigned_int_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned long unsigned_long_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, unsigned long long unsigned_long_long_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, float float_value);
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, double double_value);
-
-    void MakeToken(TokenType type, TokenValue value,
-                   const std::string &name, const std::string &string_value);
-
-    char current_char_{};
-    std::string input_;
-    decltype(input_)::size_type index_{};
-
-    State state_{State::kNone};
-
-    Dictionary dictionary_;
-    Token token_;
-    std::string buffer_;
+ private:
+  std::unordered_map<std::string, TokenValue> keywords_;
 };
 
-#endif //TINY_C_COMPILER_SCANNER_H
+class Scanner {
+ public:
+  explicit Scanner(const std::string &processed_file,
+                   const std::string &input_file);
+  std::vector<Token> Scan();
+  static std::vector<Token> Test(const std::string &processed_file,
+                                 const std::string &input_file,
+                                 std::ostream &os = std::cout);
+
+ private:
+  Token GetNextToken();
+
+  Token HandleIdentifierOrKeyword();
+  Token HandleNumber();
+  std::int32_t HandleOctNumber();
+  std::int32_t HandleHexNumber();
+  Token HandleChar();
+  Token HandleString();
+  char HandleEscape();
+  char HandleOctEscape(char ch);
+  char HandleHexEscape();
+
+  void SkipSpace();
+  void SkipComment();
+
+  char GetNextChar();
+  char PeekNextChar() const;
+  std::pair<char, char> PeekNextTwoChar() const;
+  void PutBack();
+  bool HasNextChar() const;
+  bool Try(char ch);
+  bool Test(char ch) const;
+
+  Token MakeToken(TokenValue value);
+  Token MakeToken(TokenValue value, const std::string &name);
+  Token MakeToken(char char_value);
+  Token MakeToken(std::int32_t int32_value);
+  Token MakeToken(double double_value);
+  Token MakeToken(const std::string &string_value);
+
+  SourceLocation location_;
+  std::int32_t pre_column_{};
+  std::string input_;
+  std::string::size_type index_{};
+  std::string buffer_;
+  KeywordsDictionary keywords_dictionary_;
+};
+
+bool IsOctDigit(char ch);
+
+}  // namespace tcc
+
+#endif  // TINY_C_COMPILER_SCANNER_H

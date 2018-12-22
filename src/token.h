@@ -5,209 +5,185 @@
 #ifndef TINY_C_COMPILER_TOKEN_H
 #define TINY_C_COMPILER_TOKEN_H
 
-#include <string>
+#include "location.h"
+
+#include <QtCore/QObject>
+#include <QtCore/QString>
+
 #include <cstdint>
-#include <vector>
-#include <iostream>
+#include <string>
+#include <unordered_map>
 
-enum class TokenType {
-    kBoolean,
-    kCharacter,
-    KUnsignedCharacter,
-    KSignedCharacter,
+namespace tcc {
 
-    kShortInterger,
-    kInterger,
-    kLongInterger,
-    kLongLongInterger,
-
-    kUnsignedShortInterger,
-    kUnsignedInterger,
-    kUnsignedLongInterger,
-    kUnsignedLongLongInterger,
-
-    kFolat,
-    kDouble,
-
-    kString,
+class TokenTypes : public QObject {
+ Q_OBJECT
+ public:
+  enum Types {
+    kCharConstant,
+    kIntConstant,
+    kDoubleConstant,
+    kStringLiteral,
 
     kIdentifier,
-    kKeyword,
-    kOperator,
-    kDelimiter,
-    kEof,
 
-    kUnknown
+    kAuto,
+    kBreak,
+    kCase,
+    kChar,
+    kConst,
+    kContinue,
+    kDefault,
+    kDo,
+    kDouble,
+    kElse,
+    kEnum,
+    kExtern,
+    kFloat,
+    kFor,
+    kGoto,
+    kIf,
+    kInline,
+    kInt,
+    kLong,
+    kRegister,
+    kRestrict,
+    kReturn,
+    kShort,
+    kSigned,
+    kSizeof,
+    kStatic,
+    kStruct,
+    kSwitch,
+    kTypedef,
+    kUnion,
+    kUnsigned,
+    kVoid,
+    kVolatile,
+    kWhile,
+    kBool,
+    kComplex,
+    kImaginary,
+
+    kAssign,     // =
+    kAddAssign,  // +=
+    kSubAssign,  // -=
+    kMulAssign,  // *=
+    kDivAssign,  // /=
+    kModAssign,  // %=
+    kAndAssign,  // &=
+    kOrAssign,   // |=
+    kXorAssign,  // ^=
+    kShlAssign,  // <<=
+    kShrAssign,  // >>=
+
+    kInc,  // ++
+    kDec,  // --
+
+    kAdd,  // +
+    kSub,  // -
+    kMul,  // *
+    kDiv,  // /
+    kMod,  // %
+    kNeg,  // ~
+    kAnd,  // &
+    kOr,   // |
+    kXor,  // ^
+    kShl,  // <<
+    kShr,  // >>
+
+    kLogicNeg,  // !
+    kLogicAnd,  // &&
+    kLogicOr,   // ||
+
+    kEqual,           // ==
+    kNotEqual,        // !=
+    kLess,            // <
+    kGreater,         // >
+    kLessOrEqual,     // <=
+    kGreaterOrEqual,  // >=
+
+    kArrow,   // ->
+    kPeriod,  // .
+
+    kQuestionMark,  // ?
+    kComma,         // ,
+
+    kLeftParen,    // (
+    kRightParen,   // )
+    kLeftSquare,   // [
+    kRightSquare,  // ]
+    kLeftCurly,    // {
+    kRightCurly,   // }
+    kSemicolon,    // ;
+    KColon,        // :
+    kEllipsis,     // ...
+
+    kNone,
+    kEof
+  };
+  Q_ENUM(Types)
+
+  static QString ToString(Types Type);
 };
 
-enum class TokenValue {
-    kAutoKey,
-    kBreakKey,
-    kCaseKey,
-    kCharKey,
-    kConstKey,
-    kContinueKey,
-    kDefaultKey,
-    kDoKey,
-    kDoubleKey,
-    kElseKey,
-    kEnumKey,
-    kExternKey,
-    kFloatKey,
-    kForKey,
-    kGotoKey,
-    kIfKey,
-    kInlineKey,
-    kIntKey,
-    kLongKey,
-    kRegisterKey,
-    kRestrictKey,
-    kReturnKey,
-    kShortKey,
-    kSignedKey,
-    kSizeofKey,
-    kStaticKey,
-    kStructKey,
-    kSwitchKey,
-    kTypedefKey,
-    kUnionKey,
-    kUnsignedKey,
-    kVoidKey,
-    kVolatileKey,
-    kWhileKey,
-    kBoolKey,
-    kComplexKey,
-    kImaginaryKey,
+using TokenValue = TokenTypes::Types;
 
-    kAssign,           // =
+class PrecedenceDictionary {
+ public:
+  PrecedenceDictionary();
+  std::int32_t Find(TokenValue value) const;
 
-    kPlusPlus,         // ++
-    kMinusMinus,       // --
-
-    kPlus,             // +
-    kMinus,            // -
-    kMultiply,         // *
-    kDivide,           // /
-    kMod,              // %
-    kNeg,              // ~
-    kAnd,              // &
-    kOr,               // |
-    kXor,              // ^
-    kShl,              // <<
-    kShr,              // >>
-
-    kLogicNeg,         // !
-    kLogicAnd,         // &&
-    kLogicOr,          // ||
-
-    kEqual,            // ==
-    kNotEqual,         // !=
-    kLess,             // <
-    kGreater,          // >
-    kLessOrEqual,      // <=
-    kGreaterOrEqual,   // >=
-
-    kArrow,            // ->
-    kPeriod,           // .
-
-    kComma,            // ,
-
-    kLeftParen,        // (
-    kRightParen,       // )
-    kLeftSquare,       // [
-    kRightSquare,      // ]
-    kLeftCurly,        // {
-    kRightCurly,       // }
-    kSemicolon,        // ;
-
-    kIdentifier,
-    kUnreserved
+ private:
+  std::unordered_map<TokenValue, std::int32_t> precedence_;
 };
 
 class Token {
-public:
-    Token() = default;
-    Token(TokenType type, TokenValue value, const std::string &name);
-    Token(TokenType type,
-          TokenValue value,
-          std::int32_t symbol_precedence,
-          const std::string &name);
+ public:
+  Token() = default;
+  Token(const SourceLocation &location, TokenValue value);
+  Token(const SourceLocation &location, TokenValue value,
+        const std::string &name);
+  Token(const SourceLocation &location, char char_value);
+  Token(const SourceLocation &location, std::int32_t int32_value);
+  Token(const SourceLocation &location, double double_value);
+  Token(const SourceLocation &location, const std::string &string_value);
 
-    Token(TokenType type, TokenValue value, const std::string &name, bool bool_value);
-    Token(TokenType type, TokenValue value, const std::string &name, char char_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned char unsigned_char_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          signed char signed_char_value);
+  std::string ToString() const;
 
-    Token(TokenType type, TokenValue value, const std::string &name, short short_value);
-    Token(TokenType type, TokenValue value, const std::string &name, int int_value);
-    Token(TokenType type, TokenValue value, const std::string &name, long long_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          long long long_long_value);
+  bool IsChar() const;
+  bool IsInt32() const;
+  bool IsDouble() const;
+  bool IsString() const;
 
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned short unsigned_short_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned int unsigned_int_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          unsigned long unsigned_long_value);
-    Token(TokenType type, TokenValue value,
-          const std::string &name,
-          unsigned long long unsigned_long_long_value);
+  bool IsTypeSpecifier() const;
+  bool IsIdentifier() const;
 
-    Token(TokenType type, TokenValue value, const std::string &name, float float_value);
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          double double_value);
+  bool TokenValueIs(TokenValue value) const;
+  SourceLocation GetTokenLocation() const;
+  TokenValue GetTokenValue() const;
+  std::string GetTokenName() const;
+  std::int32_t GetTokenPrecedence() const;
 
-    Token(TokenType type,
-          TokenValue value,
-          const std::string &name,
-          const std::string &string_value);
+  char GetCharValue() const;
+  std::int32_t GetInt32Value() const;
+  double GetDoubleValue() const;
+  std::string GetStringValue() const;
+  void AppendStringValue(const std::string &str);
 
-    TokenType GetTokenType() const;
-    TokenValue GetTokenValue() const;
-    std::string GetTokenName() const;
-    std::int32_t GetTokPrecedence() const;
-private:
-    TokenType type_{TokenType::kUnknown};
-    TokenValue value_{TokenValue::kUnreserved};
-    std::string name_;
-    std::int32_t symbol_precedence_{};
+ private:
+  SourceLocation location_;
+  TokenValue value_{TokenValue::kNone};
+  std::string name_;
+  std::int32_t precedence_{-1};
 
-    bool bool_value_{};
-    char char_value_{};
-    unsigned char unsigned_char_value_{};
-    signed char signed_char_value_{};
-
-    short short_value_{};
-    int int_value_{};
-    long long_value_{};
-    long long long_long_value_{};
-
-    unsigned short unsigned_short_value_{};
-    unsigned int unsigned_int_value_{};
-    unsigned long unsigned_long_value_{};
-    unsigned long long unsigned_long_long_value_{};
-
-    float float_value_{};
-    double double_value_{};
-
-    std::string string_value_;
+  char char_value_{};
+  std::int32_t int32_value_{};
+  double double_value_{};
+  std::string string_value_;
+  PrecedenceDictionary precedence_dictionary_;
 };
 
-#endif //TINY_C_COMPILER_TOKEN_H
+}  // namespace tcc
+
+#endif  // TINY_C_COMPILER_TOKEN_H

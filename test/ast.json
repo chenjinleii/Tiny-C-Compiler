@@ -1,0 +1,319 @@
+{
+    "children": [
+        {
+            "children": [
+                {
+                    "name": "PrimitiveType Int"
+                },
+                {
+                    "name": "Identifier putchar"
+                },
+                {
+                    "children": [
+                        {
+                            "name": "PrimitiveType Int"
+                        },
+                        {
+                            "name": "Identifier c"
+                        }
+                    ],
+                    "name": "Declaration"
+                }
+            ],
+            "name": "FunctionDeclaration"
+        },
+        {
+            "children": [
+                {
+                    "name": "PrimitiveType Int"
+                },
+                {
+                    "name": "Identifier main"
+                },
+                {
+                    "children": [
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "PrimitiveType Double"
+                                        },
+                                        {
+                                            "name": "Identifier y"
+                                        },
+                                        {
+                                            "name": "DoubleConstant 1.500000"
+                                        }
+                                    ],
+                                    "name": "Declaration"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier y"
+                                        },
+                                        {
+                                            "name": "DoubleConstant -1.500000"
+                                        }
+                                    ],
+                                    "name": "BinaryOpExpression Greater"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier y"
+                                        },
+                                        {
+                                            "name": "DoubleConstant 0.100000"
+                                        }
+                                    ],
+                                    "name": "BinaryOpExpression SubAssign"
+                                },
+                                {
+                                    "children": [
+                                        {
+                                            "children": [
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "name": "PrimitiveType Double"
+                                                        },
+                                                        {
+                                                            "name": "Identifier x"
+                                                        },
+                                                        {
+                                                            "name": "DoubleConstant -1.500000"
+                                                        }
+                                                    ],
+                                                    "name": "Declaration"
+                                                },
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "name": "Identifier x"
+                                                        },
+                                                        {
+                                                            "name": "DoubleConstant 1.500000"
+                                                        }
+                                                    ],
+                                                    "name": "BinaryOpExpression Less"
+                                                },
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "name": "Identifier x"
+                                                        },
+                                                        {
+                                                            "name": "DoubleConstant 0.050000"
+                                                        }
+                                                    ],
+                                                    "name": "BinaryOpExpression AddAssign"
+                                                },
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "children": [
+                                                                {
+                                                                    "name": "PrimitiveType Double"
+                                                                },
+                                                                {
+                                                                    "name": "Identifier a"
+                                                                },
+                                                                {
+                                                                    "children": [
+                                                                        {
+                                                                            "children": [
+                                                                                {
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "name": "Identifier x"
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Identifier x"
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "BinaryOpExpression Mul"
+                                                                                },
+                                                                                {
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "name": "Identifier y"
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Identifier y"
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "BinaryOpExpression Mul"
+                                                                                }
+                                                                            ],
+                                                                            "name": "BinaryOpExpression Add"
+                                                                        },
+                                                                        {
+                                                                            "name": "Int32Constant 1"
+                                                                        }
+                                                                    ],
+                                                                    "name": "BinaryOpExpression Sub"
+                                                                }
+                                                            ],
+                                                            "name": "Declaration"
+                                                        },
+                                                        {
+                                                            "children": [
+                                                                {
+                                                                    "children": [
+                                                                        {
+                                                                            "children": [
+                                                                                {
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "children": [
+                                                                                                {
+                                                                                                    "name": "Identifier a"
+                                                                                                },
+                                                                                                {
+                                                                                                    "name": "Identifier a"
+                                                                                                }
+                                                                                            ],
+                                                                                            "name": "BinaryOpExpression Mul"
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Identifier a"
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "BinaryOpExpression Mul"
+                                                                                },
+                                                                                {
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "children": [
+                                                                                                {
+                                                                                                    "children": [
+                                                                                                        {
+                                                                                                            "children": [
+                                                                                                                {
+                                                                                                                    "name": "Identifier x"
+                                                                                                                },
+                                                                                                                {
+                                                                                                                    "name": "Identifier x"
+                                                                                                                }
+                                                                                                            ],
+                                                                                                            "name": "BinaryOpExpression Mul"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "name": "Identifier y"
+                                                                                                        }
+                                                                                                    ],
+                                                                                                    "name": "BinaryOpExpression Mul"
+                                                                                                },
+                                                                                                {
+                                                                                                    "name": "Identifier y"
+                                                                                                }
+                                                                                            ],
+                                                                                            "name": "BinaryOpExpression Mul"
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Identifier y"
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "BinaryOpExpression Mul"
+                                                                                }
+                                                                            ],
+                                                                            "name": "BinaryOpExpression Sub"
+                                                                        },
+                                                                        {
+                                                                            "name": "DoubleConstant 0.000000"
+                                                                        }
+                                                                    ],
+                                                                    "name": "BinaryOpExpression LessOrEqual"
+                                                                },
+                                                                {
+                                                                    "children": [
+                                                                        {
+                                                                            "children": [
+                                                                                {
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "name": "Identifier putchar"
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "CharConstant *"
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "FunctionCall"
+                                                                                }
+                                                                            ],
+                                                                            "name": "ExpressionStatement"
+                                                                        }
+                                                                    ],
+                                                                    "name": "CompoundStatement"
+                                                                },
+                                                                {
+                                                                    "children": [
+                                                                        {
+                                                                            "children": [
+                                                                                {
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "name": "Identifier putchar"
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "CharConstant  "
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "FunctionCall"
+                                                                                }
+                                                                            ],
+                                                                            "name": "ExpressionStatement"
+                                                                        }
+                                                                    ],
+                                                                    "name": "CompoundStatement"
+                                                                }
+                                                            ],
+                                                            "name": "IfStatement"
+                                                        }
+                                                    ],
+                                                    "name": "CompoundStatement"
+                                                }
+                                            ],
+                                            "name": "ForStatement"
+                                        },
+                                        {
+                                            "children": [
+                                                {
+                                                    "children": [
+                                                        {
+                                                            "name": "Identifier putchar"
+                                                        },
+                                                        {
+                                                            "name": "CharConstant \n"
+                                                        }
+                                                    ],
+                                                    "name": "FunctionCall"
+                                                }
+                                            ],
+                                            "name": "ExpressionStatement"
+                                        }
+                                    ],
+                                    "name": "CompoundStatement"
+                                }
+                            ],
+                            "name": "ForStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "name": "Int32Constant 0"
+                                }
+                            ],
+                            "name": "ReturnStatement"
+                        }
+                    ],
+                    "name": "CompoundStatement"
+                }
+            ],
+            "name": "FunctionDefinition"
+        }
+    ],
+    "name": "CompoundStatement"
+}

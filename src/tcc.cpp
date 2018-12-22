@@ -2,130 +2,214 @@
 // Created by kaiser on 18-12-8.
 //
 
-#include "scanner.h"
-#include "parser.h"
 #include "ast.h"
 #include "code_gen.h"
+#include "error.h"
 #include "obj_gen.h"
+#include "parser.h"
+#include "scanner.h"
 
-#include <iostream>
+#include <sys/wait.h>
+#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
-#include <algorithm>
-#include <unordered_set>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <sstream>
+#include <unordered_set>
 
 void ShowHelpInfo();
-bool FileExists(const std::string &input_file);
 void ShowVersionInfo();
+bool FileExists(const std::string &file_name);
 std::string RemoveExtension(const std::string &file_name);
-void RunTcc(const std::string &input_file,
-            std::ostringstream &obj_files, std::vector<std::string> &files_to_delete);
+bool CommandSuccess(std::int32_t status);
+void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
+            std::vector<std::string> &files_to_delete, bool optimization);
+void RunTest();
 
 int main(int argc, char *argv[]) {
-    if (argc == 1) {
-        ShowHelpInfo();
-        std::exit(EXIT_SUCCESS);
-    }
+#ifndef __linux
+  std::cerr << "Only support linux system\n";
+  std::exit(EXIT_FAILURE);
+#else
+  if (argc == 1) {
+    ShowHelpInfo();
+    std::exit(EXIT_SUCCESS);
+  }
 
-    std::unordered_set<std::string> input_files;
-    std::unordered_set<std::string> args;
-    std::string program_name("a.out");
+  std::unordered_set<std::string> input_files;
+  std::unordered_set<std::string> args;
+  std::string program_name("a.out");
 
-    for (int i = 1; i < argc; ++i) {
-        if (argv[i][0] != '-') {
-            if (FileExists(argv[i])) {
-                input_files.emplace(argv[i]);
-            } else {
-                std::cerr << "error: " << argv[i] << ": This file does not exist.\n";
-                std::exit(EXIT_FAILURE);
-            }
+  for (int i = 1; i < argc; ++i) {
+    if (argv[i][0] == '-') {
+      if (argv[i][1] == 'o') {
+        if (argv[i + 1]) {
+          program_name = argv[i + 1];
+          ++i;
         } else {
-            if (argv[i][1] == 'o') {
-                if (argv[i + 1]) {
-                    program_name = argv[i + 1];
-                } else {
-                    std::cerr << "error: " << "No program name entered.\n";
-                    std::exit(EXIT_FAILURE);
-                }
-            } else {
-                args.emplace(argv[i]);
-            }
+          tcc::ErrorReportAndExit("error: No program name entered.\n");
         }
+      } else {
+        args.emplace(argv[i]);
+      }
+    } else {
+      if (FileExists(argv[i])) {
+        input_files.emplace(argv[i]);
+      } else {
+        tcc::ErrorReportAndExit("error: {}: This file does not exist.\n",
+                                argv[i]);
+      }
     }
+  }
 
-    if (args.find("-v") != std::end(args)) {
-        ShowVersionInfo();
-        std::exit(EXIT_SUCCESS);
+  if (args.find("-h") != std::end(args)) {
+    ShowHelpInfo();
+    std::exit(EXIT_SUCCESS);
+  } else if (args.find("-v") != std::end(args)) {
+    ShowVersionInfo();
+    std::exit(EXIT_SUCCESS);
+  } else if (args.find("-t") != std::end(args)) {
+    RunTest();
+    std::exit(EXIT_SUCCESS);
+  }
+
+  bool optimization{false};
+
+  for (const auto &arg : args) {
+    switch (arg[1]) {
+      case 'O':optimization = true;
+        break;
+      default: {
+        tcc::ErrorReportAndExit("Unknown compilation option.\n");
+        break;
+      }
     }
+  }
 
-    if (std::size(input_files) == 0) {
-        std::cerr << "fatal error: no input files.\n";
-    }
+  if (auto size{std::size(input_files)}; size == 0) {
+    tcc::ErrorReportAndExit("fatal error: no input files.\n");
+  } else if (size > 1) {
+    tcc::ErrorReportAndExit("Do not support multiple files at this time.\n");
+  }
 
-    //TODO 支持更多编译参数
-    for (const auto &arg:args) {
-        switch (arg[1]) {
-            default:break;
-        }
-    }
+  std::vector<std::string> files_to_delete;
+  std::ostringstream obj_files;
 
-    std::vector<std::string> files_to_delete;
-    std::ostringstream obj_files;
+  for (const auto &input_file : input_files) {
+    RunTcc(input_file, obj_files, files_to_delete, optimization);
+  }
 
-    for (const auto &input_file:input_files) {
-        RunTcc(input_file, obj_files, files_to_delete);
-    }
+  std::string cmd("gcc -std=c99 -o " + program_name + obj_files.str());
+  if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
+    tcc::ErrorReportAndExit("Link Failed\n");
+  }
 
-    std::string cmd("gcc -std=c99 -o a.out " + obj_files.str());
-    std::system(cmd.c_str());
+  for (const auto &file : files_to_delete) {
+    std::filesystem::remove(std::filesystem::path{file});
+  }
 
-    for (const auto &file:files_to_delete) {
-        std::filesystem::remove(std::filesystem::path{file});
-    }
+  if (FileExists(program_name)) {
+    std::cout << "Compiled Successfully\n";
+    std::cout << "The name of the executable is " + program_name << '\n';
+    std::exit(EXIT_SUCCESS);
+  } else {
+    tcc::ErrorReportAndExit("Compile Failed\n");
+  }
+
+#endif
 }
 
 void ShowHelpInfo() {
-    std::cout << "Usage: tcc [options] file...\n"
-                 "Options: \n"
-                 "-v\t\t\tDisplay version information.\n";
+  std::cout << "Usage: tcc [options] a file\n"
+               "Options: \n"
+               "-h\t\t\tDisplay Display help information\n"
+               "-v\t\t\tDisplay version information.\n"
+               "-o\t\t\tSpecify program name\n"
+               "-O\t\t\tTurn on optimization\n"
+               "-t\t\t\tTest mode (developer use)\n";
 }
 
-bool FileExists(const std::string &input_file) {
-    return std::filesystem::exists(std::filesystem::path{input_file});
-}
+void ShowVersionInfo() { std::cout << "Tiny C Compiler by Kaiser.\n"; }
 
-void ShowVersionInfo() {
-    std::cout << "Tiny C Compiler by Kaiser.\n";
+bool FileExists(const std::string &file_name) {
+  return std::filesystem::exists(std::filesystem::path{file_name});
 }
 
 std::string RemoveExtension(const std::string &file_name) {
-    return file_name.substr(0, file_name.find('.'));
+  return file_name.substr(0, file_name.find('.'));
 }
 
-void RunTcc(const std::string &input_file,
-            std::ostringstream &obj_files, std::vector<std::string> &files_to_delete) {
-    std::string processed_file(RemoveExtension(input_file) + ".i");
-    files_to_delete.push_back(processed_file);
+bool CommandSuccess(std::int32_t status) {
+  return status != -1 && WIFEXITED(status) && !WEXITSTATUS(status);
+}
 
-    std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
-    std::system(cmd.c_str());
+void RunTcc(const std::string &input_file, std::ostringstream &obj_files,
+            std::vector<std::string> &files_to_delete, bool optimization) {
+  std::string processed_file(RemoveExtension(input_file) + ".i");
+  files_to_delete.push_back(processed_file);
 
-    Scanner scanner{processed_file};
-    auto token_sequence{scanner.GetTokenSequence()};
+  std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+  if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
+    tcc::ErrorReportAndExit("Preprocessing Failure\n");
+  }
 
-    //Parser parse;
-    //parse.parse();
+  tcc::Scanner scanner{processed_file, input_file};
 
-    std::unique_ptr<Block> program_block;
+  tcc::Parser parse{scanner.Scan()};
+  auto root{parse.Parse()};
 
-    CodeGenContext context;
-    context.GenerateCode(*program_block);
+  tcc::CodeGenContext context(optimization);
+  context.GenerateCode(*root);
 
-    std::string obj_file(RemoveExtension(input_file) + ".o");
-    files_to_delete.push_back(obj_file);
-    obj_files << obj_file << ' ';
+  std::string obj_file(RemoveExtension(input_file) + ".o");
+  files_to_delete.push_back(obj_file);
+  obj_files << ' ' << obj_file;
 
-    ObjGen(context, obj_file);
+  tcc::ObjGen(context, obj_file);
+}
+
+void RunTest() {
+  std::cout << "Test Mode\n";
+  std::string input_file(
+      "/home/kaiser/CLionProjects/Tiny-C-Compiler/test/test.c");
+
+  std::string processed_file(RemoveExtension(input_file) + ".i");
+  std::string cmd("gcc -std=c99 -o " + processed_file + " -E " + input_file);
+  if (auto status{std::system(cmd.c_str())}; !CommandSuccess(status)) {
+    tcc::ErrorReportAndExit("Preprocessing Failure.\n");
+  }
+
+  std::ofstream ofs{"../test/token"};
+  if (!ofs) {
+    tcc::ErrorReportAndExit("Can not open token file.\n");
+  }
+  auto token_sequence{tcc::Scanner::Test(processed_file, input_file, ofs)};
+
+  std::ofstream ast{"../test/ast.json"};
+  if (!ast) {
+    tcc::ErrorReportAndExit("Can not open json file.\n");
+  }
+  auto ast_root{tcc::Parser::Test(token_sequence, ast)};
+
+  tcc::CodeGenContext context(false);
+  context.Test(*ast_root, "../test/ir.ll");
+  std::cout << "LLVM IR Successfully Generate\n";
+
+  tcc::ObjGen(context, "test.o");
+
+  if (auto status{std::system("gcc -std=c99 -o test test.o")};
+      !CommandSuccess(status)) {
+    tcc::ErrorReportAndExit("Link failed\n");
+  }
+
+  std::cout << "Compiled Successfully\n";
+  std::cout
+      << "The program runs-----------------------------------------------\n\n";
+
+  if (auto status{std::system("./test")}; !CommandSuccess(status)) {
+    tcc::ErrorReportAndExit("Program Startup Failed\n");
+  }
 }
