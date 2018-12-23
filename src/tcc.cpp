@@ -190,7 +190,12 @@ void RunTest() {
   }
   auto root{tcc::Parser::Test(token_sequence, ast_file)};
 
-  tcc::CodeGenContext context(false);
+  std::ofstream symbol_file{"../test/symbol"};
+  if (!symbol_file) {
+    tcc::ErrorReportAndExit("Can not open symbol file.\n");
+  }
+
+  tcc::CodeGenContext context(false, symbol_file);
   context.Test(*root, "../test/test.ll");
   std::cout << "LLVM IR Successfully Generate.\n";
 

@@ -3,6 +3,7 @@
 //
 
 #include "code_gen.h"
+#include "token.h"
 
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
@@ -129,11 +130,32 @@ void CodeGenContext::PushBlock(llvm::BasicBlock *block) {
 }
 
 void CodeGenContext::PopBlock() {
+  if (test_) {
+    static std::string prefix;
+    for (const auto &[name, addr] : block_stack_.back()->locals) {
+      ofs_ << prefix << name << ": "
+           << TokenTypes::ToString((*GetSymbolType(name)).type_).toStdString()
+           << '\t' << addr << '\n';
+    }
+    prefix += "\t";
+  }
   block_stack_.pop_back();
 }
 
 bool CodeGenContext::GetOptimization() const {
   return optimization_;
+}
+
+CodeGenContext::CodeGenContext(bool optimization, std::ostream &os)
+    : builder_{the_context_},
+      the_module_{std::make_unique<llvm::Module>("main", the_context_)},
+      type_system_{the_context_},
+      ofs_{os} {
+  test_ = true;
+  if (optimization) {
+    InitializePassManager();
+    optimization_ = optimization;
+  }
 }
 
 }  // namespace tcc

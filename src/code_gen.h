@@ -36,6 +36,7 @@ struct CodeGenBlock {
 class CodeGenContext {
  public:
   explicit CodeGenContext(bool optimization);
+  explicit CodeGenContext(bool optimization, std::ostream &os);
   void InitializePassManager();
   llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *parent,
                                            llvm::Type *type,
@@ -61,6 +62,8 @@ class CodeGenContext {
   std::shared_ptr<Type> GetSymbolType(const std::string &name) const;
   void PushBlock(llvm::BasicBlock *block);
   void PopBlock();
+  std::ostream &ofs_ = std::cout;
+  bool test_{false};
 
  private:
   std::vector<std::unique_ptr<CodeGenBlock>> block_stack_;
