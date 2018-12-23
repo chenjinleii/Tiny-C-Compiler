@@ -16,206 +16,235 @@ test.c:4:8:         type: Return
 test.c:4:10:        type: Identifier          name:  i
 test.c:4:11:        type: Semicolon           
 test.c:5:1:         type: RightCurly          
-test.c:7:3:         type: Int                 
-test.c:7:8:         type: Identifier          name:  main
-test.c:7:9:         type: LeftParen           
-test.c:7:10:        type: RightParen          
-test.c:7:12:        type: LeftCurly           
-test.c:8:8:         type: Identifier          name:  printf
-test.c:8:9:         type: LeftParen           
-test.c:8:28:        type: StringLiteral       value: Hello World! %d
+test.c:7:6:         type: Double              
+test.c:7:11:        type: Identifier          name:  shit
+test.c:7:12:        type: LeftParen           
+test.c:7:18:        type: Double              
+test.c:7:20:        type: Identifier          name:  i
+test.c:7:21:        type: RightParen          
+test.c:7:23:        type: LeftCurly           
+test.c:8:8:         type: Return              
+test.c:8:10:        type: Identifier          name:  i
+test.c:8:11:        type: Semicolon           
+test.c:9:1:         type: RightCurly          
+test.c:11:3:        type: Int                 
+test.c:11:8:        type: Identifier          name:  main
+test.c:11:9:        type: LeftParen           
+test.c:11:10:       type: RightParen          
+test.c:11:12:       type: LeftCurly           
+test.c:12:8:        type: Identifier          name:  printf
+test.c:12:9:        type: LeftParen           
+test.c:12:28:       type: StringLiteral       value: Hello World! %d
 
-test.c:8:29:        type: Comma               
-test.c:8:32:        type: IntConstant         value: 42
-test.c:8:33:        type: RightParen          
-test.c:8:34:        type: Semicolon           
-test.c:9:5:         type: For                 
-test.c:9:7:         type: LeftParen           
-test.c:9:13:        type: Double              
-test.c:9:15:        type: Identifier          name:  y
-test.c:9:17:        type: Assign              
-test.c:9:21:        type: DoubleConstant      value: 1.500000
-test.c:9:22:        type: Semicolon           
-test.c:9:24:        type: Identifier          name:  y
-test.c:9:26:        type: Greater             
-test.c:9:28:        type: Sub                 
-test.c:9:31:        type: DoubleConstant      value: 1.500000
-test.c:9:32:        type: Semicolon           
-test.c:9:34:        type: Identifier          name:  y
-test.c:9:37:        type: SubAssign           
-test.c:9:41:        type: DoubleConstant      value: 0.100000
-test.c:9:42:        type: RightParen          
-test.c:9:44:        type: LeftCurly           
-test.c:10:7:        type: For                 
-test.c:10:9:        type: LeftParen           
-test.c:10:15:       type: Double              
-test.c:10:17:       type: Identifier          name:  x
-test.c:10:19:       type: Assign              
-test.c:10:21:       type: Sub                 
-test.c:10:24:       type: DoubleConstant      value: 1.500000
-test.c:10:25:       type: Semicolon           
-test.c:10:27:       type: Identifier          name:  x
-test.c:10:29:       type: Less                
-test.c:10:33:       type: DoubleConstant      value: 1.500000
-test.c:10:34:       type: Semicolon           
-test.c:10:36:       type: Identifier          name:  x
-test.c:10:39:       type: AddAssign           
-test.c:10:44:       type: DoubleConstant      value: 0.050000
-test.c:10:45:       type: RightParen          
-test.c:10:47:       type: LeftCurly           
-test.c:11:12:       type: Double              
-test.c:11:14:       type: Identifier          name:  a
-test.c:11:16:       type: Assign              
-test.c:11:18:       type: Identifier          name:  x
-test.c:11:20:       type: Mul                 
-test.c:11:22:       type: Identifier          name:  x
-test.c:11:24:       type: Add                 
-test.c:11:26:       type: Identifier          name:  y
-test.c:11:28:       type: Mul                 
-test.c:11:30:       type: Identifier          name:  y
-test.c:11:32:       type: Sub                 
-test.c:11:34:       type: IntConstant         value: 1
-test.c:11:35:       type: Semicolon           
-test.c:12:8:        type: If                  
-test.c:12:10:       type: LeftParen           
-test.c:12:11:       type: Identifier          name:  a
-test.c:12:13:       type: Mul                 
-test.c:12:15:       type: Identifier          name:  a
-test.c:12:17:       type: Mul                 
-test.c:12:19:       type: Identifier          name:  a
-test.c:12:21:       type: Sub                 
-test.c:12:23:       type: Identifier          name:  x
-test.c:12:25:       type: Mul                 
-test.c:12:27:       type: Identifier          name:  x
-test.c:12:29:       type: Mul                 
-test.c:12:31:       type: Identifier          name:  y
-test.c:12:33:       type: Mul                 
-test.c:12:35:       type: Identifier          name:  y
-test.c:12:37:       type: Mul                 
-test.c:12:39:       type: Identifier          name:  y
-test.c:12:42:       type: LessEqual           
-test.c:12:46:       type: DoubleConstant      value: 0.000000
-test.c:12:47:       type: RightParen          
-test.c:12:49:       type: LeftCurly           
-test.c:13:15:       type: Identifier          name:  putchar
-test.c:13:16:       type: LeftParen           
-test.c:13:19:       type: CharConstant        value: 42
-test.c:13:20:       type: RightParen          
-test.c:13:21:       type: Semicolon           
-test.c:14:7:        type: RightCurly          
-test.c:14:12:       type: Else                
-test.c:14:14:       type: LeftCurly           
-test.c:15:15:       type: Identifier          name:  putchar
-test.c:15:16:       type: LeftParen           
-test.c:15:19:       type: CharConstant        value: 32
-test.c:15:20:       type: RightParen          
-test.c:15:21:       type: Semicolon           
-test.c:16:7:        type: RightCurly          
-test.c:17:5:        type: RightCurly          
-test.c:18:11:       type: Identifier          name:  putchar
-test.c:18:12:       type: LeftParen           
-test.c:18:16:       type: CharConstant        value: 10
-test.c:18:17:       type: RightParen          
-test.c:18:18:       type: Semicolon           
-test.c:19:3:        type: RightCurly          
-test.c:21:4:        type: If                  
-test.c:21:6:        type: LeftParen           
-test.c:21:7:        type: LogicNot            
-test.c:21:11:       type: Identifier          name:  fuck
-test.c:21:12:       type: LeftParen           
-test.c:21:13:       type: IntConstant         value: 0
-test.c:21:14:       type: RightParen          
-test.c:21:15:       type: RightParen          
+test.c:12:29:       type: Comma               
+test.c:12:32:       type: IntConstant         value: 42
+test.c:12:33:       type: RightParen          
+test.c:12:34:       type: Semicolon           
+test.c:13:5:        type: For                 
+test.c:13:7:        type: LeftParen           
+test.c:13:13:       type: Double              
+test.c:13:15:       type: Identifier          name:  y
+test.c:13:17:       type: Assign              
+test.c:13:21:       type: DoubleConstant      value: 1.500000
+test.c:13:22:       type: Semicolon           
+test.c:13:24:       type: Identifier          name:  y
+test.c:13:26:       type: Greater             
+test.c:13:28:       type: Sub                 
+test.c:13:31:       type: DoubleConstant      value: 1.500000
+test.c:13:32:       type: Semicolon           
+test.c:13:34:       type: Identifier          name:  y
+test.c:13:37:       type: SubAssign           
+test.c:13:41:       type: DoubleConstant      value: 0.100000
+test.c:13:42:       type: RightParen          
+test.c:13:44:       type: LeftCurly           
+test.c:14:7:        type: For                 
+test.c:14:9:        type: LeftParen           
+test.c:14:15:       type: Double              
+test.c:14:17:       type: Identifier          name:  x
+test.c:14:19:       type: Assign              
+test.c:14:21:       type: Sub                 
+test.c:14:24:       type: DoubleConstant      value: 1.500000
+test.c:14:25:       type: Semicolon           
+test.c:14:27:       type: Identifier          name:  x
+test.c:14:29:       type: Less                
+test.c:14:33:       type: DoubleConstant      value: 1.500000
+test.c:14:34:       type: Semicolon           
+test.c:14:36:       type: Identifier          name:  x
+test.c:14:39:       type: AddAssign           
+test.c:14:44:       type: DoubleConstant      value: 0.050000
+test.c:14:45:       type: RightParen          
+test.c:14:47:       type: LeftCurly           
+test.c:15:12:       type: Double              
+test.c:15:14:       type: Identifier          name:  a
+test.c:15:16:       type: Assign              
+test.c:15:18:       type: Identifier          name:  x
+test.c:15:20:       type: Mul                 
+test.c:15:22:       type: Identifier          name:  x
+test.c:15:24:       type: Add                 
+test.c:15:26:       type: Identifier          name:  y
+test.c:15:28:       type: Mul                 
+test.c:15:30:       type: Identifier          name:  y
+test.c:15:32:       type: Sub                 
+test.c:15:34:       type: IntConstant         value: 1
+test.c:15:35:       type: Semicolon           
+test.c:16:8:        type: If                  
+test.c:16:10:       type: LeftParen           
+test.c:16:11:       type: Identifier          name:  a
+test.c:16:13:       type: Mul                 
+test.c:16:15:       type: Identifier          name:  a
+test.c:16:17:       type: Mul                 
+test.c:16:19:       type: Identifier          name:  a
+test.c:16:21:       type: Sub                 
+test.c:16:23:       type: Identifier          name:  x
+test.c:16:25:       type: Mul                 
+test.c:16:27:       type: Identifier          name:  x
+test.c:16:29:       type: Mul                 
+test.c:16:31:       type: Identifier          name:  y
+test.c:16:33:       type: Mul                 
+test.c:16:35:       type: Identifier          name:  y
+test.c:16:37:       type: Mul                 
+test.c:16:39:       type: Identifier          name:  y
+test.c:16:42:       type: LessEqual           
+test.c:16:46:       type: DoubleConstant      value: 0.000000
+test.c:16:47:       type: RightParen          
+test.c:16:49:       type: LeftCurly           
+test.c:17:15:       type: Identifier          name:  putchar
+test.c:17:16:       type: LeftParen           
+test.c:17:19:       type: CharConstant        value: 42
+test.c:17:20:       type: RightParen          
+test.c:17:21:       type: Semicolon           
+test.c:18:7:        type: RightCurly          
+test.c:18:12:       type: Else                
+test.c:18:14:       type: LeftCurly           
+test.c:19:15:       type: Identifier          name:  putchar
+test.c:19:16:       type: LeftParen           
+test.c:19:19:       type: CharConstant        value: 32
+test.c:19:20:       type: RightParen          
+test.c:19:21:       type: Semicolon           
+test.c:20:7:        type: RightCurly          
+test.c:21:5:        type: RightCurly          
 test.c:22:11:       type: Identifier          name:  putchar
 test.c:22:12:       type: LeftParen           
-test.c:22:14:       type: IntConstant         value: 48
-test.c:22:15:       type: RightParen          
-test.c:22:16:       type: Semicolon           
-test.c:23:4:        type: If                  
-test.c:23:6:        type: LeftParen           
-test.c:23:10:       type: Identifier          name:  fuck
-test.c:23:11:       type: LeftParen           
-test.c:23:12:       type: IntConstant         value: 2
-test.c:23:13:       type: RightParen          
-test.c:23:14:       type: RightParen          
-test.c:24:11:       type: Identifier          name:  putchar
-test.c:24:12:       type: LeftParen           
-test.c:24:14:       type: IntConstant         value: 49
-test.c:24:15:       type: RightParen          
-test.c:24:16:       type: Semicolon           
+test.c:22:16:       type: CharConstant        value: 10
+test.c:22:17:       type: RightParen          
+test.c:22:18:       type: Semicolon           
+test.c:23:3:        type: RightCurly          
 test.c:25:4:        type: If                  
 test.c:25:6:        type: LeftParen           
-test.c:25:7:        type: Not                 
+test.c:25:7:        type: LogicNot            
 test.c:25:11:       type: Identifier          name:  fuck
 test.c:25:12:       type: LeftParen           
-test.c:25:13:       type: IntConstant         value: 2
+test.c:25:13:       type: IntConstant         value: 0
 test.c:25:14:       type: RightParen          
 test.c:25:15:       type: RightParen          
 test.c:26:11:       type: Identifier          name:  putchar
 test.c:26:12:       type: LeftParen           
-test.c:26:14:       type: IntConstant         value: 50
+test.c:26:14:       type: IntConstant         value: 48
 test.c:26:15:       type: RightParen          
 test.c:26:16:       type: Semicolon           
-test.c:28:9:        type: Identifier          name:  putchar
-test.c:28:10:       type: LeftParen           
-test.c:28:14:       type: Identifier          name:  fuck
-test.c:28:15:       type: LeftParen           
-test.c:28:17:       type: IntConstant         value: 48
-test.c:28:18:       type: RightParen          
-test.c:28:19:       type: RightParen          
-test.c:28:20:       type: Semicolon           
-test.c:29:9:        type: Identifier          name:  putchar
-test.c:29:10:       type: LeftParen           
-test.c:29:11:       type: Not                 
-test.c:29:12:       type: IntConstant         value: 2
-test.c:29:13:       type: RightParen          
-test.c:29:14:       type: Semicolon           
-test.c:30:9:        type: Identifier          name:  putchar
-test.c:30:10:       type: LeftParen           
-test.c:30:11:       type: IntConstant         value: 2
-test.c:30:12:       type: RightParen          
-test.c:30:13:       type: Semicolon           
-test.c:31:9:        type: Identifier          name:  putchar
-test.c:31:10:       type: LeftParen           
-test.c:31:11:       type: LogicNot            
-test.c:31:12:       type: IntConstant         value: 2
-test.c:31:13:       type: RightParen          
-test.c:31:14:       type: Semicolon           
+test.c:27:4:        type: If                  
+test.c:27:6:        type: LeftParen           
+test.c:27:10:       type: Identifier          name:  fuck
+test.c:27:11:       type: LeftParen           
+test.c:27:12:       type: IntConstant         value: 2
+test.c:27:13:       type: RightParen          
+test.c:27:14:       type: RightParen          
+test.c:28:11:       type: Identifier          name:  putchar
+test.c:28:12:       type: LeftParen           
+test.c:28:14:       type: IntConstant         value: 49
+test.c:28:15:       type: RightParen          
+test.c:28:16:       type: Semicolon           
+test.c:29:4:        type: If                  
+test.c:29:6:        type: LeftParen           
+test.c:29:7:        type: Not                 
+test.c:29:11:       type: Identifier          name:  fuck
+test.c:29:12:       type: LeftParen           
+test.c:29:13:       type: IntConstant         value: 2
+test.c:29:14:       type: RightParen          
+test.c:29:15:       type: RightParen          
+test.c:30:11:       type: Identifier          name:  putchar
+test.c:30:12:       type: LeftParen           
+test.c:30:14:       type: IntConstant         value: 50
+test.c:30:15:       type: RightParen          
+test.c:30:16:       type: Semicolon           
 test.c:32:9:        type: Identifier          name:  putchar
 test.c:32:10:       type: LeftParen           
-test.c:32:11:       type: LogicNot            
-test.c:32:14:       type: DoubleConstant      value: 2.000000
-test.c:32:15:       type: RightParen          
-test.c:32:16:       type: Semicolon           
+test.c:32:14:       type: Identifier          name:  fuck
+test.c:32:15:       type: LeftParen           
+test.c:32:17:       type: IntConstant         value: 48
+test.c:32:18:       type: RightParen          
+test.c:32:19:       type: RightParen          
+test.c:32:20:       type: Semicolon           
+test.c:33:9:        type: Identifier          name:  putchar
+test.c:33:10:       type: LeftParen           
+test.c:33:11:       type: Not                 
+test.c:33:12:       type: IntConstant         value: 2
+test.c:33:13:       type: RightParen          
+test.c:33:14:       type: Semicolon           
 test.c:34:9:        type: Identifier          name:  putchar
 test.c:34:10:       type: LeftParen           
-test.c:34:12:       type: IntConstant         value: 10
-test.c:34:13:       type: RightParen          
-test.c:34:14:       type: Semicolon           
-test.c:36:5:        type: Int                 
-test.c:36:7:        type: Identifier          name:  i
-test.c:36:9:        type: Assign              
-test.c:36:11:       type: IntConstant         value: 9
-test.c:36:12:       type: Semicolon           
-test.c:37:7:        type: While               
-test.c:37:9:        type: LeftParen           
-test.c:37:10:       type: Identifier          name:  i
-test.c:37:12:       type: Greater             
-test.c:37:14:       type: IntConstant         value: 0
-test.c:37:15:       type: RightParen          
-test.c:37:17:       type: LeftCurly           
-test.c:38:11:       type: Identifier          name:  putchar
-test.c:38:12:       type: LeftParen           
-test.c:38:13:       type: Identifier          name:  i
-test.c:38:15:       type: Add                 
-test.c:38:18:       type: IntConstant         value: 48
-test.c:38:19:       type: RightParen          
-test.c:38:20:       type: Semicolon           
-test.c:39:6:        type: Dec                 
-test.c:39:7:        type: Identifier          name:  i
-test.c:39:8:        type: Semicolon           
-test.c:40:3:        type: RightCurly          
-test.c:42:8:        type: Return              
-test.c:42:10:       type: IntConstant         value: 0
-test.c:42:11:       type: Semicolon           
-test.c:43:1:        type: RightCurly          
+test.c:34:11:       type: IntConstant         value: 2
+test.c:34:12:       type: RightParen          
+test.c:34:13:       type: Semicolon           
+test.c:35:9:        type: Identifier          name:  putchar
+test.c:35:10:       type: LeftParen           
+test.c:35:11:       type: LogicNot            
+test.c:35:12:       type: IntConstant         value: 2
+test.c:35:13:       type: RightParen          
+test.c:35:14:       type: Semicolon           
+test.c:36:9:        type: Identifier          name:  putchar
+test.c:36:10:       type: LeftParen           
+test.c:36:11:       type: LogicNot            
+test.c:36:14:       type: DoubleConstant      value: 2.000000
+test.c:36:15:       type: RightParen          
+test.c:36:16:       type: Semicolon           
+test.c:39:9:        type: Identifier          name:  putchar
+test.c:39:10:       type: LeftParen           
+test.c:39:12:       type: IntConstant         value: 10
+test.c:39:13:       type: RightParen          
+test.c:39:14:       type: Semicolon           
+test.c:41:5:        type: Int                 
+test.c:41:7:        type: Identifier          name:  i
+test.c:41:9:        type: Assign              
+test.c:41:11:       type: IntConstant         value: 9
+test.c:41:12:       type: Semicolon           
+test.c:42:7:        type: While               
+test.c:42:9:        type: LeftParen           
+test.c:42:10:       type: Identifier          name:  i
+test.c:42:12:       type: Greater             
+test.c:42:14:       type: IntConstant         value: 0
+test.c:42:15:       type: RightParen          
+test.c:42:17:       type: LeftCurly           
+test.c:43:11:       type: Identifier          name:  putchar
+test.c:43:12:       type: LeftParen           
+test.c:43:13:       type: Identifier          name:  i
+test.c:43:15:       type: Add                 
+test.c:43:18:       type: IntConstant         value: 48
+test.c:43:19:       type: RightParen          
+test.c:43:20:       type: Semicolon           
+test.c:44:6:        type: Dec                 
+test.c:44:7:        type: Identifier          name:  i
+test.c:44:8:        type: Semicolon           
+test.c:45:3:        type: RightCurly          
+test.c:46:8:        type: Double              
+test.c:46:10:       type: Identifier          name:  a
+test.c:46:12:       type: Assign              
+test.c:46:14:       type: IntConstant         value: 1
+test.c:46:15:       type: Semicolon           
+test.c:47:8:        type: Identifier          name:  printf
+test.c:47:9:        type: LeftParen           
+test.c:47:17:       type: StringLiteral       value: %.2f
+
+test.c:47:18:       type: Comma               
+test.c:47:20:       type: Identifier          name:  a
+test.c:47:21:       type: RightParen          
+test.c:47:22:       type: Semicolon           
+test.c:48:9:        type: Identifier          name:  putchar
+test.c:48:10:       type: LeftParen           
+test.c:48:14:       type: DoubleConstant      value: 48.600000
+test.c:48:15:       type: RightParen          
+test.c:48:16:       type: Semicolon           
+test.c:49:8:        type: Return              
+test.c:49:10:       type: IntConstant         value: 0
+test.c:49:11:       type: Semicolon           
+test.c:50:1:        type: RightCurly          

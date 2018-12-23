@@ -60,6 +60,41 @@
         {
             "children": [
                 {
+                    "name": "PrimitiveType Double"
+                },
+                {
+                    "name": "Identifier shit"
+                },
+                {
+                    "children": [
+                        {
+                            "name": "PrimitiveType Double"
+                        },
+                        {
+                            "name": "Identifier i"
+                        }
+                    ],
+                    "name": "Declaration"
+                },
+                {
+                    "children": [
+                        {
+                            "children": [
+                                {
+                                    "name": "Identifier i"
+                                }
+                            ],
+                            "name": "ReturnStatement"
+                        }
+                    ],
+                    "name": "CompoundStatement"
+                }
+            ],
+            "name": "FunctionDefinition"
+        },
+        {
+            "children": [
+                {
                     "name": "PrimitiveType Int"
                 },
                 {
@@ -635,6 +670,55 @@
                                 }
                             ],
                             "name": "WhileStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "name": "PrimitiveType Double"
+                                },
+                                {
+                                    "name": "Identifier a"
+                                },
+                                {
+                                    "name": "Int32Constant 1"
+                                }
+                            ],
+                            "name": "Declaration"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier printf"
+                                        },
+                                        {
+                                            "name": "StringLiteral %.2f\n"
+                                        },
+                                        {
+                                            "name": "Identifier a"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
+                        },
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "name": "Identifier putchar"
+                                        },
+                                        {
+                                            "name": "DoubleConstant 48.600000"
+                                        }
+                                    ],
+                                    "name": "FunctionCall"
+                                }
+                            ],
+                            "name": "ExpressionStatement"
                         },
                         {
                             "children": [

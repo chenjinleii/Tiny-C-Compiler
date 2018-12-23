@@ -11,6 +11,10 @@ int fuck(int i) {
   return i;
 }
 
+double shit(double i) {
+  return i;
+}
+
 int main() {
   printf("Hello World! %d\n", 42);
   for (double y = 1.5; y > -1.5; y -= 0.1) {
@@ -38,6 +42,7 @@ int main() {
   putchar(!2);
   putchar(!2.0);
 
+
   putchar(10);
 
   int i = 9;
@@ -45,6 +50,8 @@ int main() {
     putchar(i + 48);
     --i;
   }
-
+  double a = 1;
+  printf("%.2f\n", a);
+  putchar(48.6);
   return 0;
 }

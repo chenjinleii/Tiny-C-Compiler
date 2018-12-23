@@ -2,6 +2,7 @@
 source_filename = "main"
 
 @0 = private unnamed_addr constant [17 x i8] c"Hello World! %d\0A\00"
+@1 = private unnamed_addr constant [6 x i8] c"%.2f\0A\00"
 
 declare i32 @putchar(i32)
 
@@ -13,8 +14,17 @@ entry:
   ret i32 %i2
 }
 
+define double @shit(double %i) {
+entry:
+  %i1 = alloca double
+  store double %i, double* %i1
+  %i2 = load double, double* %i1
+  ret double %i2
+}
+
 define i32 @main() {
 entry:
+  %a37 = alloca double
   %i = alloca i32
   %a = alloca double
   %x = alloca double
@@ -155,6 +165,13 @@ while_loop:                                       ; preds = %while_loop, %if_aft
   br i1 %49, label %while_loop, label %while_after
 
 while_after:                                      ; preds = %while_loop, %if_after32
+  store double 0.000000e+00, double* %a37
+  %cast38 = sitofp i32 1 to double
+  store double %cast38, double* %a37
+  %a39 = load double, double* %a37
+  %50 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), double %a39)
+  %cast40 = fptosi double 4.860000e+01 to i32
+  %51 = call i32 @putchar(i32 %cast40)
   ret i32 0
 }
 

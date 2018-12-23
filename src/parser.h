@@ -56,7 +56,7 @@ class Parser {
   std::shared_ptr<Int32Constant> ParseSizeof();
   std::shared_ptr<Expression> ParseParenExpression();
   std::shared_ptr<Expression> ParseIdentifierExpression();
-  std::shared_ptr<Expression> ParseBinOpRHS(std::int32_t precedence,
+  std::shared_ptr<Expression> ParseBinOpRhs(std::int32_t precedence,
                                             std::shared_ptr<Expression> lhs);
   std::shared_ptr<CharConstant> ParseCharConstant();
   std::shared_ptr<Int32Constant> ParseInt32Constant();

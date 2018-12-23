@@ -502,7 +502,6 @@ QJsonObject UnaryOpExpression::JsonGen() const {
 }
 
 // ++/--/~/!
-// TODO 类型转换
 llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
   if (op_ == TokenValue::kInc || op_ == TokenValue::kDec) {
     return PostfixExpression{object_, op_}.CodeGen(context);
@@ -511,9 +510,14 @@ llvm::Value *UnaryOpExpression::CodeGen(CodeGenContext &context) {
     return context.builder_.CreateICmpNE(
         value,
         llvm::ConstantInt::get(context.the_context_,
-                               llvm::APInt(1, true)));
+                               llvm::APInt(1, static_cast<uint64_t>(true))));
   } else if (op_ == TokenValue::kNot) {
-    return context.builder_.CreateNot(object_->CodeGen(context));
+    auto value{object_->CodeGen(context)};
+    if (value->getType()->isDoubleTy()) {
+      ErrorReportAndExit(location_, "Can not apply ~ to double.");
+      return nullptr;
+    }
+    return context.builder_.CreateNot(value);
   } else {
     ErrorReportAndExit(location_, "Unknown unary prefix operator.");
     return nullptr;
@@ -541,7 +545,6 @@ QJsonObject PostfixExpression::JsonGen() const {
 }
 
 // ++/--
-// TODO 类型转换
 llvm::Value *PostfixExpression::CodeGen(CodeGenContext &context) {
   BinaryOpExpression postfix{
       object_,
@@ -574,7 +577,6 @@ QJsonObject BinaryOpExpression::JsonGen() const {
   return root;
 }
 
-// TODO 类型转换
 llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
   if (op_ == TokenValue::kAssign) {
     auto lhs{std::dynamic_pointer_cast<Identifier>(lhs_)};
@@ -593,6 +595,14 @@ llvm::Value *BinaryOpExpression::CodeGen(CodeGenContext &context) {
     if (!var) {
       ErrorReportAndExit(location_, "Unknown variable name {}.", lhs->name_);
     }
+
+    if (context.type_system_.GetType(*context.GetSymbolType(lhs->name_))
+        != rhs_value->getType()) {
+      rhs_value = context.type_system_.Cast(rhs_value,
+                                            context.type_system_.GetType(*context.GetSymbolType(lhs->name_)),
+                                            context.builder_.GetInsertBlock());
+    }
+
     context.builder_.CreateStore(rhs_value, var);
 
     return rhs_value;
@@ -788,20 +798,30 @@ QJsonObject FunctionCall::JsonGen() const {
 }
 
 // LLVM 默认使用本机C调用约定
-// TODO 类型转换
 llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
   if (name_->name_ == "printf") {
-    std::vector<llvm::Type *> printf_args;
-    printf_args.push_back(llvm::Type::getInt8PtrTy(context.the_context_));
-    auto printf_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(context.the_context_),
-                                             printf_args, true)};
-    auto func{llvm::Function::Create(printf_type, llvm::Function::ExternalLinkage,
-                                     "printf", context.the_module_.get())};
+    if (!context.the_module_->getFunction(name_->name_)) {
+      std::vector<llvm::Type *> printf_args;
+      printf_args.push_back(llvm::Type::getInt8PtrTy(context.the_context_));
+      auto printf_type{llvm::FunctionType::get(llvm::Type::getInt32Ty(context.the_context_),
+                                               printf_args, true)};
+      llvm::Function::Create(printf_type, llvm::Function::ExternalLinkage,
+                             "printf", context.the_module_.get());
+    }
+
+    auto func{context.the_module_->getFunction("printf")};
+
     std::vector<llvm::Value *> args_value;
 
     if (args_) {
       for (const auto &arg : *args_) {
-        args_value.push_back(arg->CodeGen(context));
+        auto value{arg->CodeGen(context)};
+        // 传入省略符形参时会发生整型提升和浮点提升
+        if (value->getType()->isIntegerTy(8)) {
+          value = context.type_system_.Cast(value, context.type_system_.int32_type_,
+                                            context.builder_.GetInsertBlock());
+        }
+        args_value.push_back(value);
         if (!args_value.back()) {
           ErrorReportAndExit(location_, "Function parameter code generation failed.");
           return nullptr;
@@ -826,10 +846,11 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
       return nullptr;
     }
 
-    for (const auto &arg : *args_) {
-      auto value{arg->CodeGen(context)};
-      if (value->getType()->isIntegerTy(8)) {
-        value = context.type_system_.Cast(value, context.type_system_.int32_type_,
+    auto origin_arg_iter{std::begin(*args_)};
+    for (auto &arg : func->args()) {
+      auto value{(*origin_arg_iter)->CodeGen(context)};
+      if (value->getType() != arg.getType()) {
+        value = context.type_system_.Cast(value, arg.getType(),
                                           context.builder_.GetInsertBlock());
       }
       args_value.push_back(value);
@@ -837,6 +858,7 @@ llvm::Value *FunctionCall::CodeGen(CodeGenContext &context) {
         ErrorReportAndExit(location_, "Function parameter code generation failed.");
         return nullptr;
       }
+      ++origin_arg_iter;
     }
   }
 

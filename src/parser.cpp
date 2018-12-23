@@ -325,7 +325,7 @@ std::shared_ptr<Expression> Parser::ParseExpression() {
     return nullptr;
   }
 
-  return ParseBinOpRHS(0, std::move(lhs));
+  return ParseBinOpRhs(0, std::move(lhs));
 }
 
 std::shared_ptr<Expression> Parser::ParsePrimary() {
@@ -396,7 +396,7 @@ std::shared_ptr<Expression> Parser::ParseUnaryOpExpression() {
           !static_cast<std::int32_t >(ParseDoubleConstant()->value_));
     } else if (op.TokenValueIs(TokenValue::kNot)) {
       ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
-                         "Cannot apply neg to double.");
+                         "Cannot apply not to double.");
       return nullptr;
     } else {
       ErrorReportAndExit(PeekNextToken().GetTokenLocation(),
@@ -481,7 +481,7 @@ std::shared_ptr<Expression> Parser::ParseIdentifierExpression() {
 }
 
 // precedence 表示该函数允许吃的最小运算符优先级
-std::shared_ptr<Expression> Parser::ParseBinOpRHS(
+std::shared_ptr<Expression> Parser::ParseBinOpRhs(
     std::int32_t precedence, std::shared_ptr<Expression> lhs) {
   while (true) {
     std::int32_t curr_precedence = PeekNextToken().GetTokenPrecedence();
@@ -496,7 +496,7 @@ std::shared_ptr<Expression> Parser::ParseBinOpRHS(
     }
 
     if (curr_precedence < PeekNextToken().GetTokenPrecedence()) {
-      rhs = ParseBinOpRHS(curr_precedence + 1, std::move(rhs));
+      rhs = ParseBinOpRhs(curr_precedence + 1, std::move(rhs));
       if (!rhs) {
         return nullptr;
       }
